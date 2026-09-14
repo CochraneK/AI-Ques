@@ -35,7 +35,7 @@ const SCALES = {
   cape15: {
     id:'cape15', name:'Current CAPE-P15', subtitle:'近期精神病性样体验 · 15题', window:'过去三个月', publicDomain:false,
     note:'Current CAPE-P15 的公开论文描述为 15 题、三个维度，并可在体验出现后追加困扰度。本仓库不把自译文本冒充正式中文版；以下为基于构念的研究原型转述。',
-    choices:['从未','有时','经常','几乎总是'],
+    scoreOffset:1, choices:['从未','有时','经常','几乎总是'],
     chapters:[
       {key:'PI',title:'读空气',desc:'人与人之间的信息有时会显得格外有指向性。',range:[1,5]},
       {key:'BE',title:'边界感',desc:'有些体验涉及思维归属、控制感或现实边界。',range:[6,12]},
@@ -125,7 +125,7 @@ function renderStep(){
       ${state.mode==='emoji'?`<div class="emoji-counter">已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分</div>`:''}
     </div>
   </div>`;
-  document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{state.answers.push(Number(b.dataset.score));state.index++;renderStep();});
+  document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{state.answers.push(Number(b.dataset.score)+(scale.scoreOffset||0));state.index++;renderStep();});
   const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';$('.emoji-counter').textContent=`已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分`; } };
 }
 
@@ -151,16 +151,16 @@ function finishStandard(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const s=SCALES[state.scale], total=state.answers.reduce((a,b)=>a+b,0), clusters={};
   s.items.forEach((it,i)=>{clusters[it.cluster]=(clusters[it.cluster]||0)+(state.answers[i]||0)});
-  const max=s.items.length*(s.id==='pcl5'?4:3);
+  const max=s.id==='pcl5'?80:60;
   const interpretation=s.id==='pcl5' ? pclInterpret(total,state.answers) : capeInterpret(total,clusters);
-  $('#result').innerHTML=`<p class="eyebrow">完成 · ${MODES[state.mode].name}</p><h2>${s.name} 原型结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原始频率/严重度总分（本原型） / ${max}</p><p>${interpretation}</p>${state.mode==='emoji'?`<p>Emoji：找到 <strong>${state.emojiFound}</strong> / ${state.emojiSeen}</p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=cnt*(s.id==='pcl5'?4:3);return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/maxc*100}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>不是诊断结果。</strong> ${s.note}</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
+  $('#result').innerHTML=`<p class="eyebrow">完成 · ${MODES[state.mode].name}</p><h2>${s.name} 原型结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原始频率/严重度总分（本原型） / ${max}</p><p>${interpretation}</p>${state.mode==='emoji'?`<p>Emoji：找到 <strong>${state.emojiFound}</strong> / ${state.emojiSeen}</p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=cnt*4,minc=s.id==='pcl5'?0:cnt,pct=s.id==='pcl5'?v/maxc*100:(v-minc)/(maxc-minc)*100;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>不是诊断结果。</strong> ${s.note}</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
   window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
 }
 function pclInterpret(total,a){
   const B=a.slice(0,5).filter(x=>x>=2).length,C=a.slice(5,7).filter(x=>x>=2).length,D=a.slice(7,14).filter(x=>x>=2).length,E=a.slice(14,20).filter(x=>x>=2).length;
   return `PCL-5 官方评分允许计算 0–80 总分，并可按 ≥2 作为症状条目阈值查看 B/C/D/E 聚类。本次聚类计数：B=${B}、C=${C}、D=${D}、E=${E}。正式解释应由合格专业人员结合人群、目的和访谈完成。`;
 }
-function capeInterpret(){return 'Current CAPE-P15 在文献中通常按三个维度观察近期精神病性样体验频率，并可追加困扰度。本原型暂只演示频率层，不设置临床阈值或“高风险”标签。';}
+function capeInterpret(){return 'Current CAPE-P15 在文献中通常按三个维度观察近期精神病性样体验频率（本原型按 1–4 编码，总分 15–60），并可对出现的体验追加困扰度。本原型第一版暂只演示频率层，不设置临床阈值或“高风险”标签。';}
 function finishRush(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const entries=Object.entries(state.rushSignals); const max=Math.max(...entries.map(x=>x[1]),1);
