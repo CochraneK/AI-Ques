@@ -86,7 +86,7 @@ const RUSH = {
   ]
 };
 
-const state={scale:null,mode:null,index:0,answers:[],emojiFound:0,emojiSeen:0,rushSignals:{},lastReflection:''};
+const state={scale:null,mode:null,index:0,answers:[],emojiFound:0,emojiSeen:0,rushSignals:{},lastReflection:'',chapterSeen:{}};
 const $=s=>document.querySelector(s);
 
 function renderLauncher(){
@@ -97,7 +97,7 @@ function renderLauncher(){
   $('#startBtn').disabled=!(state.scale&&state.mode);
 }
 
-function resetRun(){state.index=0;state.answers=[];state.emojiFound=0;state.emojiSeen=0;state.rushSignals={};state.lastReflection='';}
+function resetRun(){state.index=0;state.answers=[];state.emojiFound=0;state.emojiSeen=0;state.rushSignals={};state.lastReflection='';state.chapterSeen={};}
 function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
 function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
 function progress(done,total){$('#progressBar').style.width=`${Math.min(100,done/total*100)}%`;$('#progressText').textContent=`${done}/${total}`;}
@@ -109,6 +109,7 @@ function renderStep(){
   if(!item) return finishStandard();
   progress(state.index,scale.items.length);
   const ch=currentChapter(scale,item), chapterStart=state.index===0 || scale.items[state.index-1].cluster!==item.cluster;
+  if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
   const emojiActive=state.mode==='emoji' && [1,3,5,7,9,11,13,16,19].includes(state.index);
   if(emojiActive) state.emojiSeen++;
   $('#gameBody').innerHTML=`<div class="scene">
@@ -127,6 +128,21 @@ function renderStep(){
   </div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{state.answers.push(Number(b.dataset.score)+(scale.scoreOffset||0));state.index++;renderStep();});
   const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';$('.emoji-counter').textContent=`已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分`; } };
+}
+
+function renderVassipIntro(scale,ch){
+  progress(state.index,scale.items.length);
+  const choices={
+    B:['沿着有光的墙面走','戴上耳机再往前','先看一眼出口在哪里'],
+    C:['走最短的路','绕一小段再过去','先站在原地观察一下'],
+    D:['翻开桌上的记录本','看向窗外','先整理散落的卡片'],
+    E:['调暗灯光','坐到靠门的位置','把桌面清空'],
+    PI:['从人多的主路走','选安静的小路','先看看校园地图'],
+    BE:['触碰控制台','先读说明书','观察屏幕变化'],
+    PA:['戴上耳机','打开一盏小灯','先确认周围环境']
+  }[ch.key] || ['继续向前','先观察一下','换一条路'];
+  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">VASSIP 式 · 不计分互动</span><h2>${ch.title}</h2><p>${ch.desc}</p></div><p class="story">进入这一章节前，选一个你此刻更想做的小动作。它只改变故事氛围，<strong>不会进入任何量表计分</strong>。</p><div class="rush-options">${choices.map((c,i)=>`<button class="rush-option" data-vassip-choice="${i}">${c}</button>`).join('')}</div></div>`;
+  document.querySelectorAll('[data-vassip-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=Number(b.dataset.vassipChoice);renderStep();});
 }
 
 function storyLine(scale,item){
