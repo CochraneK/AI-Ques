@@ -1,4 +1,4 @@
-const STORAGE_KEY='aiuni_future_me_v1';
+const STORAGE_KEY='aiques_future_me_v1';
 const state={screen:'welcome',profile:{},memory:null,messages:[],generated:false};
 const screens=['welcome','identity','present','future','generate','ready','chat','letter'];
 const $=s=>document.querySelector(s);
