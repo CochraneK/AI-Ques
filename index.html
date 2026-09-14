@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#f4efe7" />
+  <title>AI-Uni · 心理测评交互实验室</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="brand">AI-Uni / 心理测评交互实验室</div>
+      <h1>同一份心理测评，<br><span>三种更有参与感的做法。</span></h1>
+      <p class="lede">用 VASSIP、Emoji Game、HEXACO-RUSH 的思路，为 PCL-5 与 Current CAPE-P15 做低成本原型。标准量表计分与实验性情景推断严格分开。</p>
+      <div class="notice"><strong>研究原型，不用于诊断。</strong> PCL-5 标准层遵循公开评分结构；CAPE-P15 中文文本为原型转述，不是经验证的正式中文版。HEXACO-RUSH 式情景结果仅作研究假设，不输出临床结论。</div>
+    </header>
+
+    <section id="launcher" class="panel launcher">
+      <div>
+        <p class="eyebrow">01 · 选择量表</p>
+        <div id="scaleChoices" class="choice-grid"></div>
+      </div>
+      <div>
+        <p class="eyebrow">02 · 选择玩法</p>
+        <div id="modeChoices" class="choice-grid modes"></div>
+      </div>
+      <button id="startBtn" class="primary" disabled>开始体验</button>
+    </section>
+
+    <section id="game" class="panel hidden" aria-live="polite">
+      <div class="game-topbar">
+        <button id="backBtn" class="ghost">← 返回</button>
+        <div class="progress-wrap"><div id="progressBar" class="progress"></div></div>
+        <div id="progressText" class="progress-text"></div>
+      </div>
+      <div id="gameBody"></div>
+    </section>
+
+    <section id="result" class="panel hidden"></section>
+
+    <footer>
+      <p>AI-Uni · 交互式心理测评研究原型。请在正式研究或服务部署前完成伦理、授权、语言版本与心理测量学验证。</p>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
