@@ -1,4 +1,4 @@
-# Future Me (AI-Uni)
+# Future Me (AI-Ques)
 
 A low-cost, photo-free prototype inspired by the research architecture of MIT Future You.
 
