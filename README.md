@@ -2,59 +2,97 @@
 
 AI + 心理健康教育的低成本交互原型仓库。
 
-当前版本先做一件事：**把传统量表的完成体验变得更有参与感，同时明确区分“标准量表计分”和“实验性游戏推断”。**
+当前版本把同一心理测评做成 **8 种不同完成方式**，重点比较：改编得越有趣，测量形式究竟改变了多少。
+
+> 研究原型，不用于诊断。除“原题”外，任何重写、情景化、自动生成或游戏化版本都应先视为实验测验，不能直接继承原量表的效度、阈值或诊断解释。
 
 ## 当前量表
 
 ### 1. PCL-5
 
 - PTSD Checklist for DSM-5，20 项。
-- 官方页面明确说明该量表由 VA National Center for PTSD 开发，**public domain / not copyrighted**。
+- VA National Center for PTSD 官方说明为 public domain / not copyrighted。
 - 过去一个月，0–4 级评分，总分 0–80。
-- 可计算 DSM-5 的 B/C/D/E 症状簇；正式筛查/解释应由合格专业人员结合使用目的与人群完成。
-- 本仓库保留公开英文原题作为来源核对，并提供**非验证的中文原型转述**用于 UI 演示。
+- 可观察 DSM-5 的 B/C/D/E 症状簇。
+- 本仓库保留公开英文来源题用于核对，中文为原型转述；正式部署应替换成合规、验证过的目标语言版本。
 
 ### 2. Current CAPE-P15
 
 - 15 项，聚焦过去 3 个月的 psychotic-like experiences。
 - 三个维度：Persecutory Ideation (PI, 5)、Bizarre Experiences (BE, 7)、Perceptual Abnormalities (PA, 3)。
-- 文献版本常用 1–4 的 4 级频率，并可对出现的体验追加困扰度；当前原型按 1–4 编码频率，第一版暂未加入困扰度追问。
-- 本仓库暂不复制/宣称任何“正式中文版”；UI 使用**基于公开构念与项目内容的原型中文转述**，正式研究必须替换成有授权/合规、经过验证的目标语言版本。
+- 当前原型按 1–4 编码频率，第一版暂未加入困扰度追问。
+- 本仓库不宣称当前中文为正式验证中文版。
 
-## 四种玩法
+## 八种模式
 
-### 1. 原题（对照基线）
+### 1. 原题（baseline）
 
-不加入故事、不隐藏 Emoji、不做情景改写，直接按量表时间窗口、题目和原有反应选项完成测评。
+不加故事、不加 Emoji、不改写题目，作为所有实验模式的对照基线。
 
-这个模式作为后续 A/B 或同被试研究的标准对照，可以与其他三种游戏化版本比较完成率、耗时、漏答、主观负担和回答分布。
+### 2. 原题逐题情景化（item-level scenario）
 
-### 2. VASSIP 式（推荐第一版）
+每一个原题都对应一个具体生活情景，保持“一题 ↔ 一情景”的映射。
 
-VASSIP 的关键不是重写量表，而是：
+适合研究：同一参与者完成原题和情景版后，逐题比较相关、均值偏移、回答分布与测量等价性。
 
-1. 原题与反应格式保持不变；
-2. 增加 storyfication（故事化）；
-3. 增加 immersion（视觉/环境沉浸）；
-4. 穿插不参与测评计分的 puzzles / decisions。
+### 3. 构念情景化（construct-level SJT）
 
-本仓库把 PCL-5 的 B/C/D/E，以及 CAPE-P15 的 PI/BE/PA 分别包装成章节。真正计分的仍是量表回答。
+不要求情景逐题对应，而是围绕 B/C/D/E 或 PI/BE/PA 构念设计多个独立情境。
 
-### 3. Emoji Game 式（成本最低）
+输出的是构念信号，不是 PCL-5 / CAPE-P15 正式分数。
 
-保持题目和评分完全不变，只随机出现可寻找的小 emoji。Emoji 收集数量与量表分数完全分离。
+### 4. AI-SJT（当前为预生成题库）
 
-适合做 A/B 测试：原题版 vs Emoji 版，对比完成率、时长、漏答、主观负担与回答分布。
+遵循“构念 → 校园情境 → 梯度行为选项”的自动题目生成思路。
 
-### 4. HEXACO-RUSH 式（实验版）
+当前 GitHub Pages 版不调用在线 LLM，而是使用预生成并冻结的 AI-style SJT 题库，以保持零后端和可复现实验。后续接 LLM 时应加入：专家审核、去偏差、版本冻结、难度控制、重复题检测和心理测量验证。
 
-把目标构念转成连续校园情景，让用户通过选择推进故事，形成维度“信号”。
+### 5. PsychoGAT-lite
 
-**这一版本不是 PCL-5/CAPE-P15 的替代计分方式。** 在重新完成心理测量学验证前，不输出正式量表分数、风险标签或诊断结论。
+参考 Yang et al. (ACL 2024) 的 PsychoGAT（Psychological Game AgenTs）范式：
+
+1. 标准量表提供心理构念和节点；
+2. Game Designer 组织故事结构；
+3. Game Controller 把当前节点实例化为互动剧情；
+4. Critic 检查连贯性、选择偏差和遗漏；
+5. Memory 保持长故事连续性；
+6. psychometric evaluator 在后台根据选择计分。
+
+当前仓库先实现 **10 回合、预生成内容的 PsychoGAT-lite**：玩家看不到原题，选择会进入故事记忆并影响连续体验，但结果只显示实验性构念信号。
+
+这不是 PsychoGAT 作者官方代码的复现，也不宣称达到论文报告的心理测量性能。
+
+### 6. VASSIP 式
+
+原题和反应格式保持不变，在外面增加 storyfication、immersion 和不计分小游戏。
+
+### 7. Emoji Game 式
+
+原题和评分不变，只加入寻找 Emoji 的轻任务；Emoji 收集与心理得分完全分离。
+
+### 8. HEXACO-RUSH 式
+
+用连续情景决策推进故事，形成维度信号。它代表更深层的 game-based / SJT 路线，需要重新验证。
+
+## 现在最值得比较的四个情景化层次
+
+```text
+原题
+  ↓
+逐题情景化        保留 item-level 对应
+  ↓
+构念情景化        只保留 construct-level 对应
+  ↓
+AI-SJT            自动生成大量候选情景
+  ↓
+PsychoGAT         把量表节点串成连续互动小说
+```
+
+越往下体验自由度越高，但越不能直接继承原量表的信效度。
 
 ## 运行
 
-这是纯静态原型：
+纯静态原型：
 
 ```bash
 python -m http.server 8000
@@ -62,15 +100,14 @@ python -m http.server 8000
 
 打开 `http://localhost:8000`。
 
-也可以直接部署到 GitHub Pages。
+线上 Demo：<https://cochranek.github.io/AI-Uni/>
 
-## 推荐的验证路线
+## 推荐验证路线
 
-第一阶段只验证体验：完成率、耗时、漏答率、主观吸引力、舒适度。
-
-第二阶段做同被试对照：原题模式 + 游戏化版本，检查均值差异、相关、内部一致性、顺序效应。
-
-第三阶段才验证 HEXACO-RUSH 式版本：预注册构念映射，扩大样本，做因子结构、收敛/区分效度、重测信度与必要的分类性能。
+1. **体验层**：完成率、耗时、漏答、主观负担、趣味性、沉浸感。
+2. **逐题层**：原题 vs 逐题情景版，检查 item-level 相关和系统偏差。
+3. **构念层**：原题 vs SJT / AI-SJT，检查内部一致性、收敛/区分效度、重测信度、因子结构。
+4. **连续游戏层**：PsychoGAT / RUSH 需要单独建立计分模型，并预注册构念映射和验证方案。
 
 ## Sources
 
@@ -80,6 +117,7 @@ python -m http.server 8000
 - Ramos-Villagrasa et al. (2024), VASSIP: https://doi.org/10.1371/journal.pone.0302429
 - Kleiman et al. (2025), Emoji Game: https://doi.org/10.1037/pas0001371
 - Nikolaou & Katsadoraki (2025), HEXACO-RUSH: https://doi.org/10.1016/j.chb.2024.108467
+- Yang et al. (2024), *PsychoGAT: A Novel Psychological Measurement Paradigm through Interactive Fiction Games with LLM Agents*: https://doi.org/10.18653/v1/2024.acl-long.779
 
 ## Safety / research boundary
 
