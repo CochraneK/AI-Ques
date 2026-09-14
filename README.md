@@ -1,4 +1,4 @@
-# AI-Uni
+# AI-Ques
 
 AI + 心理健康教育的低成本交互原型仓库。
 
@@ -100,7 +100,7 @@ python -m http.server 8000
 
 打开 `http://localhost:8000`。
 
-线上 Demo：<https://cochranek.github.io/AI-Uni/>
+线上 Demo：<https://cochranek.github.io/AI-Ques/>
 
 ## 推荐验证路线
 
