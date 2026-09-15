@@ -115,7 +115,7 @@ const state = {
   futurePortrait:'',
   capsules:[],
   generated:false,
-  settings:{ voiceMode:false, unlockMonths:12 }
+  settings:{ voiceMode:false, unlockMonths:12, shareCardStyle:'minimal' }
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -477,30 +477,6 @@ function renderSurvey(){
   const root=$('#surveyInput');
   if(q.type==='matrix'&&protocolMode()==='guided'){
     renderMatrixQuestion(q,root);
-  }else if(q.type==='decision'&&protocolMode()==='guided'){
-    root.innerHTML=
-      '<div class="decision-presets">'+
-      ['升学 / 工作','留下 / 离开','稳定 / 冒险','这座城市 / 另一座城市','继续一段关系 / 结束','暂时没有'].map((x)=>'<button type="button" class="answer-option" data-decision-preset="'+x+'">'+x+'</button>').join('')+
-      '</div>'+
-      '<div class="decision-inputs">'+
-      '<label><span>我正在决定</span><input id="decisionMain" placeholder="可选"></label>'+
-      '<div class="decision-options">'+
-      '<label><span>Option A</span><input id="decisionA" placeholder="A"></label>'+
-      '<label><span>Option B</span><input id="decisionB" placeholder="B"></label>'+
-      '</div></div>';
-    $('#decisionMain').value=state.profile.decision||'';
-    $('#decisionA').value=state.profile.optionA||'';
-    $('#decisionB').value=state.profile.optionB||'';
-    $$('[data-decision-preset]').forEach((button)=>button.addEventListener('click',()=>{
-      const value=button.dataset.decisionPreset;
-      if(value==='暂时没有'){
-        $('#decisionMain').value='';$('#decisionA').value='';$('#decisionB').value='';
-        showToast('已跳过 A / B');
-        return;
-      }
-      $('#decisionMain').value=value;
-      $('#decisionMain').focus();
-    }));
   }else if(protocolMode()==='guided'&&q.guidedType){
     renderGuidedChoices(q,root);
   }else{
@@ -532,17 +508,6 @@ function captureSurvey(){
     syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),structured:current,value:selected,surveyIndex:state.surveyIndex});
     return true;
   }
-  if(q.type==='decision'&&protocolMode()==='guided'){
-    state.profile.decision=clean($('#decisionMain').value,'');
-    state.profile.optionA=clean($('#decisionA').value,'');
-    state.profile.optionB=clean($('#decisionB').value,'');
-    save();
-    syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),value:{
-      decision:state.profile.decision,optionA:state.profile.optionA,optionB:state.profile.optionB
-    },surveyIndex:state.surveyIndex});
-    return true;
-  }
-
   if(protocolMode()==='guided'&&q.guidedType){
     const current=state.structuredAnswers[q.key]||{};
     const selected=Array.isArray(current.selected)?current.selected:[];
@@ -1130,42 +1095,79 @@ function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines=99){
   lines.forEach((row,i)=>ctx.fillText(row,x,y+i*lineHeight));
   return y+lines.length*lineHeight;
 }
+const CARD_STYLES = {
+  minimal:{label:'留白',bg:'#ffffff',ink:'#151515',muted:'#8a8a8f',accent:'#5b3cf6',line:'#e6e6e8'},
+  warm:{label:'暖纸',bg:'#f7f1e8',ink:'#2e2924',muted:'#887d70',accent:'#b86a4b',line:'#ded2c4'},
+  night:{label:'夜航',bg:'#151824',ink:'#f6f3ff',muted:'#aaa7bd',accent:'#9f8cff',line:'#36394a'},
+  mint:{label:'青简',bg:'#eef7f2',ink:'#18322b',muted:'#688078',accent:'#2d7c69',line:'#cfe2d9'}
+};
+function selectedCardStyle(){
+  const key=state.settings.shareCardStyle||'minimal';
+  return CARD_STYLES[key]?key:'minimal';
+}
+function drawCardBackground(ctx,w,h,styleKey,style){
+  ctx.fillStyle=style.bg;ctx.fillRect(0,0,w,h);
+  if(styleKey==='warm'){
+    ctx.strokeStyle=style.line;ctx.lineWidth=1;
+    for(let y=230;y<h-120;y+=62){ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(w-72,y);ctx.stroke()}
+  }else if(styleKey==='night'){
+    ctx.fillStyle=style.accent;ctx.globalAlpha=.12;ctx.beginPath();ctx.arc(w-140,170,180,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  }else if(styleKey==='mint'){
+    ctx.strokeStyle=style.accent;ctx.globalAlpha=.2;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(w-110,h-130,210,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
+  }
+}
 function renderShareCard(){
   const canvas=$('#shareCardCanvas');if(!canvas)return;
   const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
-  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,w,h);
-  ctx.fillStyle='#5b3cf6';ctx.fillRect(72,72,16,16);
-  ctx.fillStyle='#151515';ctx.font='700 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  const styleKey=selectedCardStyle(),style=CARD_STYLES[styleKey];
+  drawCardBackground(ctx,w,h,styleKey,style);
+
+  ctx.fillStyle=style.accent;ctx.fillRect(72,72,16,16);
+  ctx.fillStyle=style.ink;ctx.font='700 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('FUTURE ME',112,93);
-  ctx.fillStyle='#8a8a8f';ctx.font='500 22px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='500 22px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('一个可能的未来，不是预测',72,150);
 
-  ctx.fillStyle='#151515';ctx.font='650 72px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.ink;ctx.font='650 72px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   let y=300;
   y=wrapCanvasText(ctx,clean(state.profile.name,'我')+' × '+targetPhrase()+'的我',72,y,900,92,2)+38;
 
-  ctx.strokeStyle='#e6e6e8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(1008,y);ctx.stroke();y+=70;
+  ctx.strokeStyle=style.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(1008,y);ctx.stroke();y+=70;
 
-  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  ctx.fillText('我想守住',72,y);y+=54;
-  ctx.fillStyle='#151515';ctx.font='600 42px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  const qualities=(state.structuredAnswers.p001Qualities&&state.structuredAnswers.p001Qualities.selected)||[];
+  if(qualities.length){
+    ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('现在的我',72,y);y+=50;
+    ctx.fillStyle=style.ink;ctx.font='600 34px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+    y=wrapCanvasText(ctx,qualities.slice(0,6).join('  ·  '),72,y,900,50,2)+48;
+  }
+
+  ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('对我重要',72,y);y+=50;
+  ctx.fillStyle=style.ink;ctx.font='600 38px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   const vals=cardValues();
-  ctx.fillText(vals.join('  ·  '),72,y);y+=110;
+  y=wrapCanvasText(ctx,vals.join('  ·  '),72,y,900,54,2)+66;
 
-  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('未来片段',72,y);y+=48;
-  ctx.fillStyle='#333338';ctx.font='400 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  y=wrapCanvasText(ctx,(state.memory&&state.memory.futureVignette)||'未来仍然有变化，但重要的东西没有完全丢掉。',72,y,900,48,4)+70;
+  ctx.fillStyle=style.ink;ctx.font='400 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  y=wrapCanvasText(ctx,(state.memory&&state.memory.futureVignette)||'未来仍然有变化，但重要的东西没有完全丢掉。',72,y,900,48,4)+64;
 
-  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('Future Me 留给我的一句话',72,y);y+=54;
-  ctx.fillStyle='#151515';ctx.font='500 38px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  y=wrapCanvasText(ctx,'“'+latestFutureQuote()+'”',72,y,900,58,5);
+  ctx.fillStyle=style.ink;ctx.font='500 36px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  wrapCanvasText(ctx,'“'+latestFutureQuote()+'”',72,y,900,56,4);
 
-  ctx.fillStyle='#b0b0b5';ctx.font='500 20px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='500 20px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('P005 · '+new Date().toLocaleDateString('zh-CN'),72,h-86);
-  syncAdmin('share_card_generated',{target:targetPhrase()});
+  $$('#cardStyleChoices button').forEach((button)=>button.classList.toggle('active',button.dataset.cardStyle===styleKey));
+  syncAdmin('share_card_generated',{target:targetPhrase(),style:styleKey});
 }
+$$('[data-card-style]').forEach((button)=>button.addEventListener('click',()=>{
+  state.settings.shareCardStyle=button.dataset.cardStyle;
+  save();renderShareCard();
+}));
 function cardBlob(){
   return new Promise((resolve)=>$('#shareCardCanvas').toBlob(resolve,'image/png',.95));
 }
@@ -1175,14 +1177,14 @@ $('#downloadCardBtn').addEventListener('click',async()=>{
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='Future-Me-card-'+new Date().toISOString().slice(0,10)+'.png';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),600);
-  syncAdmin('share_card_saved',{});showToast('卡片已保存');
+  syncAdmin('share_card_saved',{style:selectedCardStyle()});showToast('卡片已保存');
 });
 $('#shareCardBtn').addEventListener('click',async()=>{
   renderShareCard();
   const blob=await cardBlob();if(!blob)return;
   const file=new File([blob],'future-me-card.png',{type:'image/png'});
   if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:'Future Me',text:'和未来的自己聊了一次。'});syncAdmin('share_card_shared',{});return}catch(error){if(error&&error.name==='AbortError')return}
+    try{await navigator.share({files:[file],title:'Future Me',text:'和未来的自己聊了一次。'});syncAdmin('share_card_shared',{style:selectedCardStyle()});return}catch(error){if(error&&error.name==='AbortError')return}
   }
   showToast('当前浏览器不支持直接分享，可先保存图片');
 });
