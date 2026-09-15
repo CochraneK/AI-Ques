@@ -47,6 +47,7 @@ def scan_repo() -> list[dict]:
         "p004/index.html",
         "p004/app.js",
         "p004/module-manifest.json",
+        "p004/NVWA_CONTRACT.md",
         "p005/index.html",
         "p005/app.js",
         "p005/module-manifest.json",
@@ -161,14 +162,14 @@ def scan_repo() -> list[dict]:
     if "aiques.global.profile.v1" in p004_app:
         findings.append(finding(
             "p004-legacy-global-storage", "P0", "p004/app.js",
-            "P004 still writes to the old mixed public/private profile namespace.",
-            "Use sessionStorage for private inference and shared/profile.js only for public reusable fields.",
+            "P004 still uses the old mixed public/private profile namespace.",
+            "Use shared/profile.js only for reusable public Persona fields and keep observer evidence in a P004-only namespace or protected backend.",
         ))
-    if "sessionStorage.setItem(K" not in p004_app or "bjtu.p004.session.v1" not in p004_app:
+    if "bjtu.p004.observer.v2" not in p004_app or "BJTU_PROFILE.update" in p004_app:
         findings.append(finding(
             "p004-private-storage-boundary", "P0", "p004/app.js",
-            "P004 private inference is not isolated in its session namespace.",
-            "Keep research-side inference in bjtu.p004.session.v1 or a protected backend.",
+            "P004 longitudinal observer evidence is not isolated from the shared public profile.",
+            "Keep research-side evidence in the P004 observer namespace / protected backend and never write it through BJTU_PROFILE.update.",
         ))
     if "confidence:" in p004_app:
         findings.append(finding(
@@ -176,11 +177,17 @@ def scan_repo() -> list[dict]:
             "P004 exposes a heuristic number as confidence.",
             "Use evidence strength/coverage wording unless a calibrated confidence model exists.",
         ))
-    if "sessionStorage" not in p004_index or "清除本次画像" not in p004_index:
+    if "BACKGROUND OBSERVER" not in p004_index or "IndexedDB" not in p004_index:
         findings.append(finding(
             "p004-storage-disclosure", "P0", "p004/index.html",
-            "P004 does not accurately disclose or clear its private browser session state.",
-            "Explain tab-scoped storage and expose a real clear action.",
+            "P004 does not disclose its background evidence accumulation and local Skill Vault behavior.",
+            "Disclose cross-module observer accumulation and browser-local Skill storage in the public interface.",
+        ))
+    if "doNotExposeClinicalLabels:true" not in p004_app or "roleplayMustYieldToSafety:true" not in p004_app:
+        findings.append(finding(
+            "p004-user-safety-boundary", "P0", "p004/app.js",
+            "P004 chat runtime is missing the user-facing clinical-label guardrail or safety override.",
+            "Keep clinical inference admin-only and make immediate safety override character roleplay.",
         ))
 
     if "bjtu.p005.state.v1" not in p005_app:
