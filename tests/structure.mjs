@@ -59,6 +59,13 @@ const p004Manifest = JSON.parse(read("p004/module-manifest.json"));
 assert.equal(p004Manifest.version, "2.0.0");
 assert.equal(p004Manifest.user_experience.clinical_labels_visible, false);
 assert.equal(p004Manifest.user_experience.nvwa_distillation_optional, true);
+assert.equal(p004Manifest.user_experience.openai_compatible_byok, true);
+assert.equal(p004Manifest.user_experience.playful_character_creator, true);
+const p004Api = read("p004/api-client.js");
+assert.match(p004Api, /chat\\/completions/);
+assert.match(p004Api, /sessionStorage\.setItem\(DIRECT_KEY/);
+assert.match(p004Index, /OPENAI-COMPATIBLE · BYOK/);
+assert.match(p004Index, /CHARACTER STUDIO/);
 
 const p005 = read("p005/app.js");
 assert.match(p005, /bjtu\.p005\.state\.v1/);
