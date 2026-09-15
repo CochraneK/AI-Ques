@@ -42,14 +42,14 @@ const STRENGTH_GROUPS=[
 ];
 
 const CHAT_FEELS=[
-  {value:'坚定主导',emoji:'↑',agency:1,communion:0,desc:'有方向感 · 会带着对话往前走',prompt:'坚定、清楚、有主见，倾向主动推进对话，但不过度压迫'},
-  {value:'温暖带领',emoji:'↗',agency:.7,communion:.7,desc:'主动，也让人觉得被接住',prompt:'温暖而有主见，会主动引导，同时保持理解和支持'},
-  {value:'温暖亲近',emoji:'→',agency:0,communion:1,desc:'亲和 · 有回应 · 重视连接',prompt:'亲近、友好、回应感强，重视情绪连接，不抢夺对话主导权'},
-  {value:'温和配合',emoji:'↘',agency:-.7,communion:.7,desc:'体贴 · 配合 · 很少抢话',prompt:'温和、配合、支持性强，更愿意顺着用户的节奏交流'},
-  {value:'安静跟随',emoji:'↓',agency:-1,communion:0,desc:'少主导 · 多听 · 留空间',prompt:'克制主导欲，多听少带领，给用户充分空间决定对话方向'},
-  {value:'克制退让',emoji:'↙',agency:-.7,communion:-.7,desc:'保留距离 · 不主动靠近',prompt:'克制、谨慎、保持距离，也较少主动推动关系或话题'},
-  {value:'冷静疏离',emoji:'←',agency:0,communion:-1,desc:'理性 · 有边界 · 情绪距离较远',prompt:'冷静、理性、边界清晰，情绪表达少，不刻意拉近关系'},
-  {value:'锋利强势',emoji:'↖',agency:.7,communion:-.7,desc:'直接 · 强势 · 敢于挑战',prompt:'直接、强势、敢挑战用户观点，较少安抚，但避免羞辱和攻击'}
+  {value:'坚定主导',emoji:'↑',pos:'n',agency:1,communion:0,desc:'有方向感 · 会带着对话往前走',prompt:'坚定、清楚、有主见，倾向主动推进对话，但不过度压迫'},
+  {value:'温暖带领',emoji:'↗',pos:'ne',agency:.7,communion:.7,desc:'主动，也让人觉得被接住',prompt:'温暖而有主见，会主动引导，同时保持理解和支持'},
+  {value:'温暖亲近',emoji:'→',pos:'e',agency:0,communion:1,desc:'亲和 · 有回应 · 重视连接',prompt:'亲近、友好、回应感强，重视情绪连接，不抢夺对话主导权'},
+  {value:'温和配合',emoji:'↘',pos:'se',agency:-.7,communion:.7,desc:'体贴 · 配合 · 很少抢话',prompt:'温和、配合、支持性强，更愿意顺着用户的节奏交流'},
+  {value:'安静跟随',emoji:'↓',pos:'s',agency:-1,communion:0,desc:'少主导 · 多听 · 留空间',prompt:'克制主导欲，多听少带领，给用户充分空间决定对话方向'},
+  {value:'克制退让',emoji:'↙',pos:'sw',agency:-.7,communion:-.7,desc:'保留距离 · 不主动靠近',prompt:'克制、谨慎、保持距离，也较少主动推动关系或话题'},
+  {value:'冷静疏离',emoji:'←',pos:'w',agency:0,communion:-1,desc:'理性 · 有边界 · 情绪距离较远',prompt:'冷静、理性、边界清晰，情绪表达少，不刻意拉近关系'},
+  {value:'锋利强势',emoji:'↖',pos:'nw',agency:.7,communion:-.7,desc:'直接 · 强势 · 敢于挑战',prompt:'直接、强势、敢挑战用户观点，较少安抚，但避免羞辱和攻击'}
 ];
 
 const WORLDS=[
@@ -152,7 +152,7 @@ function renderStrengthGrid(){
 function renderStyleGrid(){
   const box=$('styleGrid');box.replaceChildren();
   CHAT_FEELS.forEach(item=>{
-    const b=document.createElement('button');b.type='button';b.className='style-chip feel-chip'+(creatorDraft.feel===item.value?' selected':'');
+    const b=document.createElement('button');b.type='button';b.className='style-chip feel-chip'+(creatorDraft.feel===item.value?' selected':'');b.dataset.pos=item.pos;
     const e=document.createElement('span');e.textContent=item.emoji;
     const title=document.createElement('b');title.textContent=item.value;
     const small=document.createElement('small');small.textContent=item.desc;
@@ -160,6 +160,7 @@ function renderStyleGrid(){
     b.onclick=()=>{creatorDraft.feel=item.value;creatorDraft.styleTags=[item.value];creatorDraft.initiative=item.agency>0?'偏主动':item.agency<0?'偏跟随':'平衡';renderCreatorStudio()};
     box.append(b);
   });
+  const center=document.createElement('div');center.className='circumplex-center';center.innerHTML='<b>IPC</b><small>主导 ↕ 跟随<br>温暖 ↔ 疏离</small>';box.append(center);
 }
 
 function renderWorldGrid(){
