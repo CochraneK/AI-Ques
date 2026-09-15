@@ -35,8 +35,7 @@ jobs:
           cp index.html app.js styles.css module-registry.json _site/
           cp shared/profile.js _site/shared/
 
-          cp p001/index.html p001/report.js p001/static-api.js p001/app-loader.js _site/p001/
-          cp p001/app-source-*.js _site/p001/
+          cp p001/index.html p001/report.js p001/static-api.js p001/app.js p001/v53.css _site/p001/
           cp p001/styles-*.css _site/p001/
 
           cp p002/index.html p002/app.js p002/experiments.js p002/styles.css _site/p002/

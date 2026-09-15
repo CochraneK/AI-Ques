@@ -1,19 +1,32 @@
 {
   "schema_version": 1,
   "module": "P001",
-  "version": "5.2-pages",
+  "version": "5.3-pages",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "constructs": {
     "current_self_facets": {
       "pool": 30,
-      "domains": ["N","E","O","A","C"],
+      "domains": [
+        "N",
+        "E",
+        "O",
+        "A",
+        "C"
+      ],
       "method": "randomized swipe + adaptive paired comparison"
     },
     "ideal_self_facets": {
       "pool": 24,
-      "domains": ["E","O","A","C"],
-      "excludes": ["N"],
+      "domains": [
+        "E",
+        "O",
+        "A",
+        "C"
+      ],
+      "excludes": [
+        "N"
+      ],
       "method": "randomized swipe + adaptive paired comparison"
     },
     "personal_values": {
@@ -21,12 +34,25 @@
       "method": "swipe + paired comparison",
       "note": "activity-adapted; UI categories are not validated scale dimensions"
     },
-    "future_self_distance": {"type":"continuous slider"},
-    "future_self_overlap": {"type":"continuous overlap game"}
+    "future_self_distance": {
+      "type": "continuous slider"
+    },
+    "future_self_overlap": {
+      "type": "continuous overlap game"
+    }
   },
   "pages_storage": {
     "mode": "localStorage demo only",
     "not_for_sensitive_or_formal_research": true
   },
-  "terminology": ["现在的我","理想的我","未来的我"]
+  "terminology": [
+    "现在的我",
+    "理想的我",
+    "未来的我"
+  ],
+  "notes": [
+    "Reuse AI-Ques shared profile; no duplicate identity form in P001 Pages.",
+    "Current-self card is the movable object in both distance and overlap tasks.",
+    "Result poster includes all participant-facing content and uses native Canvas PNG export."
+  ]
 }

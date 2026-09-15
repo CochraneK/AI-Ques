@@ -21,6 +21,9 @@ jobs:
         run: |
           node --check app.js
           node --check shared/profile.js
+          node --check p001/app.js
+          node --check p001/report.js
+          node --check p001/static-api.js
           node --check p002/app.js
           node --check p002/experiments.js
           node --check p004/app.js
