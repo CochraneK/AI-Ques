@@ -12,8 +12,17 @@ def main() -> int:
         print(json.dumps({"status": "at-set-point"}, ensure_ascii=False, indent=2))
         return 0
 
-    severity = findings[0]["severity"]
-    same_band = [f for f in findings if f["severity"] == severity]
+    actionable = [f for f in findings if f["severity"] in {"P0", "P1"}]
+    if not actionable:
+        print(json.dumps({
+            "status": "human-decision-required",
+            "policy": "P2 scope changes are advisory and must not be auto-actuated",
+            "findings": findings,
+        }, ensure_ascii=False, indent=2))
+        return 0
+
+    severity = actionable[0]["severity"]
+    same_band = [f for f in actionable if f["severity"] == severity]
     selected = same_band[0]
     print(json.dumps({
         "status": "target-selected",

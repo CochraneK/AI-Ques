@@ -36,7 +36,12 @@ def scan_repo() -> list[dict]:
         ("app.js", "name:'原题'"),
         ("app.js", "tag:'对照基线'"),
         ("app.js", "故事中的真实量表题"),
+        ("app.js", "原题：作为标准对照基线"),
         ("README.md", "原题（baseline）"),
+        ("README.md", "除“原题”外"),
+        ("README.md", "原题\\n  ↓"),
+        ("experiments.js", "与原题一一映射"),
+        ("experiments.js", "与原题做研究比较"),
     ]
     for path, needle in misleading:
         content = app if path == "app.js" else readme

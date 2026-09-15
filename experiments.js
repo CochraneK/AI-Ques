@@ -130,7 +130,7 @@ function renderItemScene(){
   if(!item) return finishMappedExperiment('逐题情景化');
   progress(state.index, scale.items.length);
   const scene=ITEM_SCENES[state.scale][state.index];
-  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">逐题映射 · ${scale.name} #${item.id}</div><h2>把这一题放进一个具体时刻</h2><p class="story">${scene}</p><div class="question-card"><div class="question-id">对应构念：${item.cluster} · 与原题一一映射</div><div class="question">回看 ${scale.window}，这种情形与你的真实体验有多接近？</div><div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i+(scale.scoreOffset||0)}</span></button>`).join('')}</div><div class="safe-note">这一版改变了题目呈现，因此这里的映射分数只用于与原题做研究比较，不能直接宣称等同于正式量表分数。</div></div></div>`;
+  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">逐题映射 · ${scale.name} #${item.id}</div><h2>把这一题放进一个具体时刻</h2><p class="story">${scene}</p><div class="question-card"><div class="question-id">对应构念：${item.cluster} · 与直接问卷题一一映射</div><div class="question">回看 ${scale.window}，这种情形与你的真实体验有多接近？</div><div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i+(scale.scoreOffset||0)}</span></button>`).join('')}</div><div class="safe-note">这一版改变了题目呈现，因此这里的映射分数只用于与直接问卷条件做研究比较，不能直接宣称等同于正式量表分数。</div></div></div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{state.answers.push(Number(b.dataset.score)+(scale.scoreOffset||0));state.index++;renderItemScene();});
 }
 
@@ -164,7 +164,7 @@ function finishMappedExperiment(label){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const s=SCALES[state.scale], total=state.answers.reduce((a,b)=>a+b,0), clusters={};
   s.items.forEach((it,i)=>clusters[it.cluster]=(clusters[it.cluster]||0)+(state.answers[i]||0));
-  $('#result').innerHTML=`<p class="eyebrow">完成 · ${label}</p><h2>逐题情景映射结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>情景映射总分，仅用于研究比较。</p><p>下一步最关键的是让同一参与者完成“原题 + 此版本”，逐题检查相关与系统偏差。</p></div><div class="result-card"><h3>映射维度</h3>${signalBars(clusters)}</div></div><div class="safe-note"><strong>不是正式 ${s.name} 分数。</strong> 题干已经情景化，必须重新检验测量等价性。</div>${experimentalSourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
+  $('#result').innerHTML=`<p class="eyebrow">完成 · ${label}</p><h2>逐题情景映射结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>情景映射总分，仅用于研究比较。</p><p>下一步最关键的是让同一参与者完成“直接问卷条件 + 此版本”，逐题检查相关与系统偏差。</p></div><div class="result-card"><h3>映射维度</h3>${signalBars(clusters)}</div></div><div class="safe-note"><strong>不是正式 ${s.name} 分数。</strong> 题干已经情景化，必须重新检验测量等价性。</div>${experimentalSourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
 }
 
 function finishSignalExperiment(label){
