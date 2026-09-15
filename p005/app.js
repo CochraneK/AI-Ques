@@ -762,11 +762,11 @@ function ensureGreeting(){
   });
   state.messages.push({
     role:'future',
-    text:'我像你这么大时，也在想“'+firstClause(p.career,'以后到底会成为什么样的人')+'”。后来有些事情按预期发生，也有很多没有。真正留下来的，是我一直没舍得丢掉“'+firstClause(p.values,'真正重要的东西')+'”。'
+    text:'我像你这么大时，也在想“'+firstClause(p.career||p.currentWork,'以后到底会成为什么样的人')+'”。我还记得“'+firstClause(p.proud,'那个让我第一次觉得自己做得到的时刻')+'”，它后来比我当时想象得更重要。'
   });
   state.messages.push({
     role:'future',
-    text:'你知道吗，从'+targetPhrase()+'回头看，我最珍惜的往往不是某个头衔，而是'+firstClause(p.people,'重要的人')+'和那些慢慢长出来的日常。你现在最想问我什么？'
+    text:'从'+targetPhrase()+'回头看，'+firstClause(p.people,'重要的人')+'、'+firstClause(p.turningPoint,'那个改变方向的节点')+'，还有“'+firstClause(p.values||p.personalLife,'真正想守住的生活')+'”，一起把很多选择串了起来。你现在最想问我哪一件？'
   });
   save();
 }
@@ -783,7 +783,16 @@ function renderMessages(){
   if(exchanged>3)$('#promptChips').classList.add('hidden');
 }
 
-function startChat(){ensureGreeting();renderMessages();updateVoiceUI();updateChatModeNote()}
+function renderPersonalizedPrompts(){
+  const p=state.profile;
+  const prompts=[
+    p.career?'关于“'+firstClause(p.career)+'”，后来真的接近了吗？':'你后来最满意的工作是什么？',
+    p.people?'你和'+firstClause(p.people)+'后来怎么样？':'后来哪些关系一直留在身边？',
+    p.turningPoint?'回头看，“'+firstClause(p.turningPoint)+'”真的改变了人生吗？':'最大的意外是什么？'
+  ];
+  $('#promptChips button').forEach((button,i)=>{if(prompts[i])button.textContent=prompts[i]});
+}
+function startChat(){ensureGreeting();renderPersonalizedPrompts();renderMessages();updateVoiceUI();updateChatModeNote()}
 
 function localFutureReply(input){
   const p=state.profile,m=state.memory||buildMemory(),a=m.voiceAnchors||{};
@@ -798,16 +807,16 @@ function localFutureReply(input){
       '有快乐，也有很普通甚至很难的几年。真正稳定下来的，是我终于不再要求每个阶段都证明自己走对了。'
     ],
     career:[
-      '当年我把职业看得像一道单选题。后来才知道它更像连续实验。围绕“'+project+'”积累下来的能力和关系，比某个职位更能带走。',
-      '“'+firstClause(p.career,'想做的事')+'”最后没有完全照剧本发生，但它一直像一根线，帮我判断哪些机会值得投入。'
+      '你现在的状态是“'+firstClause(p.currentWork,'正在寻找自己的位置')+'”。回头看，真正有复利的不是一次选对，而是围绕“'+project+'”持续积累。你曾经为“'+firstClause(p.proud,'一次小小的突破')+'”骄傲，那种能力后来没有消失。',
+      '“'+firstClause(p.career,'想做的事')+'”最后没有完全照剧本发生。真正帮我判断机会的，是它是否同时照顾到“'+firstClause(p.values||p.personalLife,'我想要的生活')+'”。'
     ],
     people:[
-      '我最想提醒你的，是别总等“忙完这一阵”再联系重要的人。后来真正留下来的关系，都是一次次很具体的出现。',
-      '关系没有自动变好。它们是被时间、道歉、边界和反复回来慢慢做出来的。'
+      '你写下的“'+firstClause(p.people,'重要的人')+'”后来并没有自动留在生命里。真正留下来的关系，是一次次具体地出现、表达、道歉和设边界。',
+      '你希望未来的关系更接近“'+firstClause(p.family,'稳定而真实')+'”。这件事不是等来的，而是在很多很普通的日子里慢慢做出来的。'
     ],
     regret:[
-      '当然有遗憾。但大多数遗憾后来都变成信息，不再是判决。真正难受的通常不是“选错”，而是当时没有诚实面对自己在意什么。',
-      '我没有得到一条零后悔的人生。好消息是，人可以在错误之后继续成为别的人。'
+      '当然有遗憾。尤其经历过“'+firstClause(p.lowPoint,'那段低谷')+'”以后，我很久都想把每一步走对。后来才知道，很多遗憾会变成信息，不是判决。',
+      '“'+firstClause(p.turningPoint,'那个转折点')+'”当时看起来像一条不可逆的路，后来才发现人可以在选择之后继续修正自己。'
     ],
     fear:[
       '我记得这种不确定。焦虑常常在要求你提前拿到未来的保证，但未来很少给这种保证。你能做的是让下一步更小、更真实、更可撤回。',
@@ -823,8 +832,8 @@ function localFutureReply(input){
       '未来最常见的不是戏剧性反转，而是一些当时不起眼的选择，几年后突然显出差异。'
     ],
     default:[
-      '当我从'+targetPhrase()+'往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
-      '我能给你的不是答案，而是一点时间距离。很多问题放到未来的尺度里，会从“必须马上选对”变成“先做一次真实尝试”。'
+      '当我从'+targetPhrase()+'往回看，我不会先问“正确答案是什么”，而会问：这件事和“'+values+'”、'+firstClause(p.people,'重要的人')+'，以及“'+firstClause(p.personalLife,'我真正想过的生活')+'”分别有什么关系？',
+      '你已经经历过“'+firstClause(p.turningPoint,'一次方向变化')+'”，也做成过“'+firstClause(p.proud,'一件让自己骄傲的事')+'”。这让我更愿意把现在的问题当成下一次真实实验，而不是一次必须完美的考试。'
     ]
   };
 
@@ -1021,7 +1030,8 @@ function updateChatModeNote(){
 }
 
 function cardValues(){
-  const raw=clean(state.profile.values,'保持真实、好奇、连接');
+  const p=state.profile;
+  const raw=clean(p.values,[firstClause(p.people,''),firstClause(p.personalLife,''),firstClause(p.lifeProject,'')].filter(Boolean).join('、')||'真实、连接、成长');
   return raw.split(/[、，,；;\/]/).map((x)=>x.replace(/^补充：/,'').trim()).filter(Boolean).slice(0,3);
 }
 function latestFutureQuote(){
