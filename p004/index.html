@@ -1,184 +1,98 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#f4f4f1" />
-  <meta name="description" content="P004 对话式人物理解：通过自然聊天形成趣味人物画像与研究侧结构化观察。" />
-  <title>P004 · 对话式人物理解</title>
-  <link rel="stylesheet" href="styles.css?v=20260915-1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f3f2ed">
+  <meta name="description" content="P004 角色世界：可设定 NPC、可选 NVWA 蒸馏、长期记忆与后台人物画像。">
+  <title>P004 · 角色世界</title>
+  <link rel="stylesheet" href="styles.css?v=20260915-v2">
 </head>
 <body>
-  <div class="ambient ambient-a" aria-hidden="true"></div>
-  <div class="ambient ambient-b" aria-hidden="true"></div>
+<header class="topbar">
+  <a class="brand" href="../"><span class="brand-mark">04</span><span><b>角色世界</b><small>P004 · character conversations</small></span></a>
+  <div class="top-actions"><span id="runtimeBadge" class="runtime"><i></i> local first</span><button id="newCharacterBtn" class="quiet">＋ 新角色</button><button id="adminBtn" class="quiet hidden">研究视图</button></div>
+</header>
 
-  <header class="topbar">
-    <a class="brand" href="../" aria-label="返回 AI-Ques">
-      <span class="brand-mark">04</span>
-      <span class="brand-copy"><strong>P004</strong><small>conversation portrait</small></span>
-    </a>
-    <div class="top-actions">
-      <span class="prototype-pill"><i></i> research prototype</span>
-      <button id="aboutBtn" class="icon-btn" type="button" aria-label="关于 P004">?</button>
+<main class="workspace">
+  <aside class="rail">
+    <div class="rail-title"><span class="eyebrow">CHARACTERS</span><h1>想和谁聊？</h1></div>
+    <div id="characterList" class="character-list"></div>
+    <button id="railNewBtn" class="rail-new">＋ 创建 NPC</button>
+    <div class="persona-chip"><span id="personaAvatar">我</span><div><b id="personaName">你的 Persona</b><small>P001–P005 共用资料</small></div></div>
+  </aside>
+
+  <section class="chat-stage">
+    <header class="chat-head">
+      <div class="active-character"><div id="activeAvatar" class="active-avatar">M</div><div><span class="eyebrow">ACTIVE CHARACTER</span><h2 id="activeName">Mori</h2><p id="activeTagline"></p></div></div>
+      <div class="chat-actions"><button id="distillBtn" class="distill"><span>✦</span><b id="distillBtnText">蒸馏</b></button><button id="editCharacterBtn" class="dots" aria-label="编辑角色">•••</button></div>
+    </header>
+    <div id="skillStrip" class="skill-strip hidden"><span class="skill-dot"></span><div><b id="skillStripTitle">NVWA Skill 已加载</b><small id="skillStripMeta"></small></div><button id="exportSkillBtn" class="text-btn">导出 SKILL.md</button></div>
+    <div id="chatLog" class="chat-log" aria-live="polite"></div>
+    <form id="composer" class="composer">
+      <textarea id="messageInput" rows="1" maxlength="3000" placeholder="发一条消息…"></textarea>
+      <div class="composer-bottom"><div class="hints"><span id="memoryHint">长期记忆开启</span><span>Enter 发送 · Shift+Enter 换行</span></div><button id="sendBtn" class="send" type="submit">↗</button></div>
+    </form>
+  </section>
+
+  <aside class="inspector">
+    <section class="side-card character-card">
+      <div class="card-topline"><span class="eyebrow">CHARACTER CARD</span><button id="editCardBtn" class="text-btn">编辑</button></div>
+      <div class="character-hero"><div id="cardAvatar" class="card-avatar">M</div><div><h3 id="cardName">Mori</h3><p id="cardIdentity"></p></div></div>
+      <div class="meta-stack"><div><span>人格</span><p id="cardPersonality"></p></div><div><span>场景</span><p id="cardScenario"></p></div><div><span>说话方式</span><p id="cardStyle"></p></div></div>
+    </section>
+    <section class="side-card"><div class="card-topline"><span class="eyebrow">MEMORY</span><span id="memoryCount" class="tiny-badge">0</span></div><div id="memoryList" class="memory-list"></div></section>
+    <section class="side-card observer-card"><div class="card-topline"><span class="eyebrow">BACKGROUND OBSERVER</span><i></i></div><p>只在后台累计用户主动表达。P004 对话与 Future You 的开放式回答会进入同一证据池。</p><div id="sourceCounts" class="source-counts"></div></section>
+  </aside>
+</main>
+
+<div id="characterModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="backdrop" data-close="character"></div><section class="modal-card editor-modal">
+  <button class="modal-close" data-close="character">×</button><p class="eyebrow">CHARACTER BUILDER</p><h2 id="characterModalTitle">创建一个角色</h2>
+  <div class="form-grid">
+    <label><span>名字</span><input id="charName" maxlength="48" placeholder="例如 Mori"></label>
+    <label><span>头像符号</span><input id="charAvatar" maxlength="4" placeholder="M / 🌙"></label>
+    <label class="wide"><span>一句话身份</span><input id="charIdentity" maxlength="180" placeholder="TA 是谁？与你是什么关系？"></label>
+    <label class="wide"><span>人格</span><textarea id="charPersonality" rows="3" maxlength="1200" placeholder="性格、价值观、边界、偏好…"></textarea></label>
+    <label class="wide"><span>场景</span><textarea id="charScenario" rows="3" maxlength="1200" placeholder="你们在哪里、关系背景、正在发生什么…"></textarea></label>
+    <label class="wide"><span>说话方式</span><textarea id="charStyle" rows="3" maxlength="1200" placeholder="语气、句长、幽默、是否主动追问…"></textarea></label>
+    <label class="wide"><span>第一句话</span><textarea id="charFirst" rows="3" maxlength="1400" placeholder="新对话开始时 TA 会说什么？"></textarea></label>
+  </div>
+  <div class="modal-actions"><button id="deleteCharacterBtn" class="danger hidden">删除角色</button><span></span><button class="secondary" data-close="character">取消</button><button id="saveCharacterBtn" class="primary">保存角色</button></div>
+  </section>
+</div>
+
+<div id="distillModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="backdrop" data-close="distill"></div><section class="modal-card distill-modal">
+    <button class="modal-close" data-close="distill">×</button><p class="eyebrow">NVWA · OPTIONAL</p><h2>把“设定”蒸馏成可运行的思维 Skill。</h2>
+    <p class="modal-lead">不开启时，P004 直接使用 Character Card。开启后，后端按 NVWA 的研究→提炼→验证路线生成 <code>SKILL.md</code>，保存在本地 Skill Vault，并在之后的对话中作为角色思维层调用。</p>
+    <label class="switch-row"><span><b>启用 NVWA 蒸馏</b><small>表达 DNA · 心智模型 · 决策启发式 · 反模式 · 诚实边界</small></span><input id="distillEnabled" type="checkbox"><i></i></label>
+    <div id="distillFields" class="distill-fields hidden">
+      <label><span>蒸馏对象 / 主题</span><input id="distillSubject" maxlength="100" placeholder="人物、你创建的 NPC 原型，或某种主题视角"></label>
+      <label><span>聚焦方向（可选）</span><input id="distillFocus" maxlength="220" placeholder="例如：全面画像 / 只聚焦产品判断与表达"></label>
+      <label><span>一手素材（可选）</span><textarea id="distillMaterial" rows="5" maxlength="12000" placeholder="贴访谈、文章、聊天记录或你自己整理的资料。"></textarea></label>
+      <label class="file-drop"><span>＋ 添加本地文本素材</span><input id="distillFiles" type="file" multiple accept=".txt,.md,.json,.csv,.srt,.vtt"><small id="fileSummary">支持 txt / md / json / csv / srt / vtt</small></label>
     </div>
-  </header>
+    <div id="distillProgress" class="distill-progress hidden"><span></span><div><b>正在构建 Skill</b><small>研究、提炼、验证可能由后端异步编排；本页等待最终产物。</small></div></div>
+    <div id="distillResult" class="distill-result hidden"></div>
+    <p class="local-note">GitHub Pages 无权静默写入你的磁盘目录。原型会把 Skill 持久化到浏览器 IndexedDB；你可再显式导出真正的 <code>SKILL.md</code> 到本地。</p>
+    <div class="modal-actions"><span></span><button class="secondary" data-close="distill">取消</button><button id="runDistillBtn" class="primary">继续</button></div>
+  </section>
+</div>
 
-  <main class="app-shell">
-    <section class="hero" aria-labelledby="pageTitle">
-      <div class="hero-copy">
-        <p class="eyebrow">NO QUESTIONNAIRE FEEL</p>
-        <h1 id="pageTitle">聊着聊着，<br><span>看见一个更立体的你。</span></h1>
-        <p class="hero-desc">不是做题，也不在聊天里偷偷复刻量表。系统从自然表达中持续更新“人物印象”，并把不确定性保留下来。</p>
-      </div>
-      <div class="principle-stack" aria-label="设计原则">
-        <div><span>01</span><p><strong>自然聊天</strong><small>不连续追问症状，不展示临床标签。</small></p></div>
-        <div><span>02</span><p><strong>证据可回看</strong><small>每个推断都有支持、反向与缺失信息。</small></p></div>
-        <div><span>03</span><p><strong>双层报告</strong><small>用户只看趣味画像，研究观察仅管理员可见。</small></p></div>
-      </div>
-    </section>
+<div id="adminModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="backdrop" data-close="admin"></div><section class="modal-card admin-modal">
+    <button class="modal-close" data-close="admin">×</button>
+    <div class="admin-head"><div><p class="eyebrow">LONGITUDINAL OBSERVER</p><h2>管理员 · 累积人物画像</h2><p>开放式交互推断，不是正式量表分数或临床诊断。</p></div><button id="refreshObserverBtn" class="secondary">刷新分析</button></div>
+    <div class="admin-grid"><section><h3>Big Five inference</h3><div id="bigFiveGrid" class="metric-stack"></div><small id="observerConfidence"></small></section><section><h3>状态线索 · admin only</h3><div id="clinicalGrid" class="clinical-grid"></div></section></div>
+    <section class="evidence-section"><div class="card-topline"><h3>Evidence stream</h3><span id="evidenceSummary"></span></div><div id="evidenceList" class="evidence-list"></div></section>
+    <div class="guardrail"><b>生产环境必须使用服务端 RBAC。</b><span><code>?admin=1</code> 只用于 GitHub Pages 原型演示。</span></div>
+  </section>
+</div>
 
-    <section class="workspace" aria-label="P004 对话工作区">
-      <section class="chat-panel panel">
-        <div class="panel-head chat-head">
-          <div>
-            <p class="eyebrow">LIVE CONVERSATION</p>
-            <h2>今天想从哪里聊起？</h2>
-          </div>
-          <div class="session-meta">
-            <span id="turnCount">0 turns</span>
-            <button id="resetBtn" class="text-btn" type="button">清除本次画像</button>
-          </div>
-        </div>
-
-        <div id="chatLog" class="chat-log" aria-live="polite"></div>
-
-        <div class="starter-wrap" id="starterWrap">
-          <button class="starter" data-starter="最近让我最有能量的一件事，是……">最近让我最有能量的事</button>
-          <button class="starter" data-starter="最近我脑子里经常反复想的一件事，是……">最近总在想的事</button>
-          <button class="starter" data-starter="如果不用考虑现实限制，我最近最想做的是……">现在最想做的事</button>
-        </div>
-
-        <form id="composer" class="composer">
-          <label for="messageInput" class="sr-only">输入你想说的话</label>
-          <textarea id="messageInput" rows="1" maxlength="1200" placeholder="像平常聊天一样说就好…"></textarea>
-          <div class="composer-foot">
-            <span class="privacy-note">推断与证据仅保留在本标签页 sessionStorage；关闭标签页或点击“清除本次画像”后清除 · 不提供诊断</span>
-            <button id="sendBtn" class="send-btn" type="submit"><span>发送</span><b aria-hidden="true">↗</b></button>
-          </div>
-        </form>
-      </section>
-
-      <aside class="portrait-panel panel" aria-labelledby="portraitTitle">
-        <div class="panel-head portrait-head">
-          <div>
-            <p class="eyebrow">LIVE PORTRAIT</p>
-            <h2 id="portraitTitle">聊天中的人物印象</h2>
-          </div>
-          <span id="portraitStatus" class="soft-badge">刚开始认识</span>
-        </div>
-
-        <div class="portrait-orbit" aria-hidden="true">
-          <div class="orbit-ring orbit-ring-a"></div>
-          <div class="orbit-ring orbit-ring-b"></div>
-          <div class="portrait-core">
-            <span id="portraitMonogram">你</span>
-          </div>
-          <span class="orbit-dot dot-a"></span>
-          <span class="orbit-dot dot-b"></span>
-          <span class="orbit-dot dot-c"></span>
-        </div>
-
-        <div class="type-card">
-          <p>当前印象</p>
-          <h3 id="publicArchetype">正在认识你</h3>
-          <span id="publicSubtitle">先聊几句，画像会慢慢长出来。</span>
-        </div>
-
-        <div class="signal-list" id="publicSignals" aria-label="人物印象维度"></div>
-
-        <div class="portrait-footer">
-          <button id="openReportBtn" class="secondary-btn" type="button">查看我的人物图鉴</button>
-          <button id="adminBtn" class="admin-link hidden" type="button">管理员研究视图</button>
-        </div>
-      </aside>
-    </section>
-  </main>
-
-  <div id="reportModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
-    <div class="modal-backdrop" data-close="report"></div>
-    <section class="modal-card report-card">
-      <button class="modal-close" data-close="report" aria-label="关闭">×</button>
-      <div class="report-hero">
-        <p class="eyebrow">YOUR CHAT PORTRAIT</p>
-        <h2 id="reportTitle">你在聊天里留下的轮廓</h2>
-        <p>这是一张趣味性人物图鉴，不是心理诊断，也不是标准量表结果。</p>
-      </div>
-      <div id="reportContent" class="report-content"></div>
-      <div class="report-actions">
-        <button id="copyReportBtn" class="secondary-btn" type="button">复制摘要</button>
-        <button class="primary-btn" data-close="report" type="button">继续聊天</button>
-      </div>
-    </section>
-  </div>
-
-  <div id="adminModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
-    <div class="modal-backdrop" data-close="admin"></div>
-    <section class="modal-card admin-card">
-      <button class="modal-close" data-close="admin" aria-label="关闭">×</button>
-      <div class="admin-header">
-        <div>
-          <p class="eyebrow">RESEARCH OBSERVER</p>
-          <h2 id="adminTitle">管理员 · 结构化观察</h2>
-          <p>仅展示推断信号，不把对话推断冒充标准化量表分数或临床诊断。</p>
-        </div>
-        <div class="admin-actions">
-          <button id="exportJsonBtn" class="text-btn" type="button">导出 JSON</button>
-          <button id="exportCsvBtn" class="text-btn" type="button">导出 CSV</button>
-        </div>
-      </div>
-
-      <div class="admin-grid">
-        <section class="admin-section">
-          <div class="section-title"><h3>人格推断</h3><span>Big Five + MBTI-like</span></div>
-          <div id="adminPersonality" class="metric-stack"></div>
-        </section>
-        <section class="admin-section">
-          <div class="section-title"><h3>状态线索</h3><span>signal · coverage · evidence strength</span></div>
-          <div id="adminClinical" class="clinical-grid"></div>
-        </section>
-      </div>
-
-      <section class="admin-section evidence-section">
-        <div class="section-title"><h3>证据链</h3><span>仅使用本次会话中用户主动表达的内容</span></div>
-        <div id="evidenceList" class="evidence-list"></div>
-      </section>
-
-      <section class="admin-section guardrail-section">
-        <div class="guardrail-copy">
-          <strong>部署约束</strong>
-          <p>GitHub Pages 只能做到演示级界面隐藏。正式部署必须把管理员数据放在服务端，并用账号、角色权限、审计日志与最小化数据访问控制隔离。</p>
-        </div>
-        <span class="guardrail-chip">RBAC required</span>
-      </section>
-    </section>
-  </div>
-
-  <div id="aboutModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
-    <div class="modal-backdrop" data-close="about"></div>
-    <section class="modal-card about-card">
-      <button class="modal-close" data-close="about" aria-label="关闭">×</button>
-      <p class="eyebrow">P004 DESIGN</p>
-      <h2 id="aboutTitle">聊天，不是变形的量表。</h2>
-      <p>P004 将“对话体验”和“研究观察”拆成两条链路：聊天 Agent 负责自然交流；Observer 只读会话并输出带不确定性的结构化证据。</p>
-      <div class="about-flow">
-        <span>Conversation</span><i>→</i><span>Evidence</span><i>→</i><span>Observer</span><i>→</i><span>Profile</span>
-      </div>
-      <p class="about-note">当前 GitHub Pages 版本默认使用本地启发式 demo。生产版建议把 LLM 调用放到后端代理，并分别配置 conversation / observer / safety 三个职责。</p>
-    </section>
-  </div>
-
-  <script src="../shared/profile.js?v=1"></script>
-  <script src="api-client.js?v=20260915-r2"></script>
-  <script src="app.js?v=20260915-r2"></script>
+<div id="toast" class="toast"></div>
+<script src="../shared/profile.js?v=1"></script>
+<script src="api-client.js?v=20260915-v2"></script>
+<script src="app.js?v=20260915-v2"></script>
 </body>
 </html>
