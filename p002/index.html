@@ -6,13 +6,15 @@
   <meta name="theme-color" content="#f4f1ea">
   <title>P002 · 情绪天气站</title>
   <link rel="stylesheet" href="./styles.css">
+  <script src="../shared/config.js"></script>
+  <script src="../shared/core.js"></script>
 </head>
 <body>
   <div class="ambient ambient-a"></div>
   <div class="ambient ambient-b"></div>
 
   <header class="topbar">
-    <a class="brand" href="../">
+    <a class="brand" href="../portal/">
       <span class="brand-mark">P002</span>
       <span>情绪天气站</span>
     </a>
@@ -31,15 +33,12 @@
         <section class="panel setup-panel">
           <div class="section-head">
             <div>
-              <p class="section-kicker">01 · 身份</p>
-              <h2>本次记录</h2>
+              <p class="section-kicker">01 · 全局身份</p>
+              <h2>沿用项目中心的信息</h2>
             </div>
           </div>
-          <label class="field">
-            <span>Participant ID</span>
-            <input id="participantId" autocomplete="off" placeholder="例如 BJTU-0001">
-          </label>
-          <p class="hint">页面不会自动上传答案。Participant ID 只进入本次导出的研究文件。</p>
+          <div id="profileSummary" class="field"></div>
+          <p class="hint">P001 / P002 / 后续项目共用同一个 participant_id，不需要重复填写基本信息。</p>
         </section>
 
         <section class="panel setup-panel">
@@ -136,7 +135,7 @@
 
   <footer>
     <span>P002 · BJTU Project</span>
-    <span>Prototype only · no automatic upload</span>
+    <span>Prototype · unified local queue / configurable research sync</span>
   </footer>
 
   <script src="./app.js"></script>
