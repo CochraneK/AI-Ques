@@ -411,7 +411,7 @@ $('deleteCharacterBtn').addEventListener('click',deleteCharacter);
 ['charIdentity','charScenario','charFirst'].forEach(id=>$(id).addEventListener('input',e=>{e.target.dataset.manual='1';renderCreatorPreview()}));
 $('apiBtn').addEventListener('click',openApiSettings);
 $('toggleApiKeyBtn').addEventListener('click',()=>{const input=$('apiKeyInput'),show=input.type==='password';input.type=show?'text':'password';$('toggleApiKeyBtn').textContent=show?'隐藏':'显示'});
-document.querySelectorAll('.api-presets .preset').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-presets .preset').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(btn.dataset.apiBase)$('apiBaseUrl').value=btn.dataset.apiBase}));
+document.querySelectorAll('.api-presets .preset').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-presets .preset').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(btn.dataset.apiBase)$('apiBaseUrl').value=btn.dataset.apiBase;if(btn.dataset.apiModel)$('apiModel').value=btn.dataset.apiModel}));
 $('testApiBtn').addEventListener('click',testApi);
 $('saveApiBtn').addEventListener('click',saveApi);
 $('clearApiBtn').addEventListener('click',clearApi);
