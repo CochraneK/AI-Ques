@@ -200,7 +200,7 @@ function renderStoryIntro(scale,ch){
   const choices=['从左边继续','从中间继续','从右边继续'];
   const pub=publicChapter(ch.key);
   $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一条路继续。</p><div class="rush-options">${choices.map((label,i)=>`<button class="rush-option" data-story-choice="${i}">${label}</button>`).join('')}</div></div>`;
-  document.querySelectorAll('[data-story-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=Number(b.dataset.storyChoice);renderStep();});
+  document.querySelectorAll('[data-story-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=true;renderStep();});
 }
 
 function renderRush(){
