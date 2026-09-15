@@ -1,6 +1,6 @@
 # P005 · Future Me / 未来的我
 
-> V0.4: Chinese-first typography, protocol-aware intake, voice I/O, profile-grounded chat, explicit ending, and share card.
+> V0.5: P001 profile reuse, China-first guided intake, no A/B flow, and four share-card styles.
 
 P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的公开研究机制为主线，并把 FutureMe 式时间胶囊降为对话后的可选延伸。
 
@@ -66,7 +66,6 @@ V0.2 按 Future You 的公开研究机制采用顺序式开放问题，覆盖：
 - future daily life;
 - values.
 
-最后保留一个可选 A/B 决策问题，对应当前 Future You “Paths” 的探索方向，但不会替用户判断哪条路正确。
 
 ## Future Memory
 
@@ -82,7 +81,6 @@ P005 支持两层：
 - challenge / struggle memory;
 - unexpected-outcome memory;
 - timeline;
-- optional A/B branch.
 
 它只是架构演示，不等同于论文里的 LLM synthetic memory。
 
@@ -251,7 +249,7 @@ p005/runtime-config.js
 若 `adminApi` 已配置，P005 会发送：
 
 - `session_started`
-- `survey_answered`（每一题，含 A/B）
+- `survey_answered`（每一题）
 - `portrait_added`（只发送文件类型/大小/是否存在，不发送 base64 照片）
 - `future_generated`
 - `future_portrait_generated`
@@ -273,7 +271,7 @@ p005/runtime-config.js
 - 核心一致：name / age / pronouns / location / important people / proud point / low point / turning point / career / financial / family / personal-life future。
 - 来自论文 future-memory prompt 的扩展：life project / future location / daily life。
 - 来自当前 Future You 官网方向的扩展：values / goals。
-- P005 自有、可选扩展：current challenge / A-B decision。
+- P005 自有扩展：current challenge，以及低负担中文版快速画像。
 - 为降低不必要敏感数据收集，P005 **没有照论文 prompt 收集 sexual orientation**。
 
 因此它是 **机制级忠实复刻 + 中文/研究伦理适配**，不是声称逐字复制原版问卷。
@@ -337,3 +335,42 @@ P004 clinical-like inference 不进入 Future Me 用户侧人格事实。
 - Future Me 留下的一句话。
 
 支持保存 PNG；浏览器支持 Web Share + files 时可直接调系统分享面板。
+
+
+## V0.5 · 直接复用 P001 快速画像
+
+P005 的低负担版现在增加两张**矩阵选择页**，只复用 P001 的内容资产，不复刻 P001 的书架、滑卡或球体交互：
+
+- 24 个积极品质：最多选 6 个。
+- 16 个重要价值：最多选 4 个。
+
+如果运行环境已经通过 `window.P00_CONTEXT.p001` 或 `window.P001_PROFILE` 提供 P001 结果，P005 会优先复用这些结果并预填，不要求用户重复选择。
+
+P001 当前项目快照记录的内容依据是：
+- 特质内容：IPIP public-domain content；
+- 价值内容：Miller Personal Values Card Sort。
+
+当前仓库无法直接取得 P001 权威版 24+16 的逐项中文词表，因此 P005 把本地 24+16 定义集中在 `P001_PROFILE_ASSETS_FALLBACK`。一旦 P001 暴露正式 `assets.positiveQualities[24]` 与 `assets.values[16]`，P005 会自动优先使用权威词表，不需要改交互代码。
+
+## V0.5 · 中国背景低负担输入
+
+guided 模式进一步收敛：
+
+- 性别直接为“男 / 女”单选；
+- “现在什么占据大部分时间”改为单一主要身份，覆盖本科、硕士、博士、其他学习、备考、全职、兼职、自由职业、创业、求职、照顾家庭、休学或间隔期、暂无固定安排等；
+- 选项文案不使用斜杠拼接多个概念；
+- “最重要的人”允许多选；
+- 不再收集 A/B 决策题。
+
+replication 模式仍保留论文公开字段的 sequential free-text，不受上述 guided 产品化改写影响。
+
+## V0.5 · 分享卡片
+
+分享页提供四种极简主题，使用同一份研究结果而不改变数据：
+
+- 留白
+- 暖纸
+- 夜航
+- 青简
+
+卡片会优先展示 P001 复用/选择出的积极品质和重要价值，再加入 Future Memory 与 Future Me 的一句话。
