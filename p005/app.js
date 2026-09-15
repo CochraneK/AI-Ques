@@ -4,7 +4,7 @@
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.5.0';
+const MODULE_VERSION = '0.6.0';
 const ADMIN_SETTINGS_KEY = 'bjtu.p005.admin.v1';
 const HORIZON_OPTIONS = ['1y','2y','3y','4y','10y','age60'];
 
@@ -663,6 +663,17 @@ function safeExternalPersona(){
   const allowed=['traits','strengths','values','interests','roles','priorities','selfDescription'];
   return Object.fromEntries(allowed.filter((k)=>candidate[k]).map((k)=>[k,candidate[k]]));
 }
+function p004SafeContext(){
+  const threads=parseJson(localStorage.getItem('bjtu.p004.threads.v2')||'')||{};
+  const memories=parseJson(localStorage.getItem('bjtu.p004.memory.v2')||'')||{};
+  const userTurns=Object.values(threads).flat().filter((m)=>m&&m.role==='user'&&clean(m.text)).map((m)=>clean(m.text)).slice(-40);
+  const continuityMemories=Object.values(memories).flat().filter((m)=>m&&clean(m.text)).map((m)=>clean(m.text)).slice(-24);
+  return {
+    available:Boolean(userTurns.length||continuityMemories.length),
+    recentUserTurns:userTurns,
+    continuityMemories
+  };
+}
 function buildPersonaBrief(){
   const p=state.profile;
   return {
@@ -675,7 +686,8 @@ function buildPersonaBrief(){
       career:p.career||'',finance:p.finance||'',family:p.family||'',personalLife:p.personalLife||'',
       futureLocation:p.futureLocation||'',dailyLife:p.dailyLife||''
     },
-    p001SafeContext:safeExternalPersona()
+    p004SafeContext:p004SafeContext(),
+    optionalCollectionContext:safeExternalPersona()
   };
 }
 
@@ -719,41 +731,65 @@ function buildMemory(){
 }
 
 async function generateMemory(){
+  const payload={
+    module:MODULE_ID,
+    profile:state.profile,
+    structuredAnswers:state.structuredAnswers,
+    personaBrief:buildPersonaBrief(),
+    intakeProtocol:protocolMode(),
+    target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
+    instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return ONLY valid JSON with summary, futureVignette, memories (3 strings), and timeline. Ground it in the user profile and P004 safe context when available. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
+  };
+  if(window.P005_API&&window.P005_API.configured){
+    try{
+      const r=await window.P005_API.chat(Object.assign({},payload,{
+        messages:[{role:'user',text:'根据提供的画像生成 Future Memory。只返回 JSON。'}],
+        userMessage:'根据提供的画像生成 Future Memory。只返回 JSON。'
+      }));
+      const raw=String(r&&r.reply||'').replace(/^\s*```(?:json)?/i,'').replace(/```\s*$/,'').trim();
+      const parsed=parseJson(raw);
+      if(parsed&&parsed.summary&&Array.isArray(parsed.memories))return parsed;
+    }catch(error){console.warn('P005 direct memory generation unavailable',error)}
+  }
   const endpoint=apiConfig('memoryApi');
-  if(!endpoint)return buildMemory();
-  try{
-    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      module:MODULE_ID,
-      profile:state.profile,
-      structuredAnswers:state.structuredAnswers,
-      personaBrief:buildPersonaBrief(),
-      intakeProtocol:protocolMode(),
-      target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
-      instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return JSON with summary, futureVignette, memories[3], and timeline. Ground it in the user profile, including selected positive qualities and important values. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
-    })});
-    if(!response.ok)throw new Error('memory api '+response.status);
-    const result=await response.json();
-    if(result&&result.summary)return result;
-  }catch(error){console.warn('Future memory API unavailable; using local fallback',error)}
+  if(endpoint){
+    try{
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      if(!response.ok)throw new Error('memory api '+response.status);
+      const result=await response.json();
+      if(result&&result.summary)return result;
+    }catch(error){console.warn('Future memory API unavailable; using local fallback',error)}
+  }
   return buildMemory();
 }
 
 async function requestFuturePortrait(){
+  if(!state.currentPortrait)return false;
+  const payload={
+    image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:targetAge(),
+    instruction:'Preserve identity. Create a respectful photorealistic portrait at the configured future age. Apply only natural age progression appropriate to the age difference; do not alter race, gender presentation, or core facial identity.'
+  };
+  if(window.P005_API&&window.P005_API.configured){
+    try{
+      const result=await window.P005_API.image(payload);
+      if(result&&result.imageUrl){
+        state.futurePortrait=result.imageUrl;save();
+        emitSessionEvent('future_portrait_generated',{source:'direct-api'});syncAdmin('future_portrait_generated',{source:'direct-api'});
+        return true;
+      }
+    }catch(error){console.warn('P005 direct image API unavailable',error);showToast('图像 API 调用失败，已保留文字版 Future Me')}
+  }
   const endpoint=apiConfig('imageApi');
-  if(!endpoint||!state.currentPortrait)return false;
+  if(!endpoint)return false;
   try{
-    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:targetAge(),
-      instruction:'Preserve identity. Create a respectful photorealistic portrait at the configured future age. Apply only natural age progression appropriate to the age difference; do not alter race, gender presentation, or core facial identity.'
-    })});
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(!response.ok)throw new Error('image api '+response.status);
     const result=await response.json();
     const imageValue=result.imageUrl||result.url||(result.imageBase64?'data:image/png;base64,'+result.imageBase64:'');
     if(!imageValue)throw new Error('missing image result');
     state.futurePortrait=imageValue;
     save();
-    emitSessionEvent('future_portrait_generated',{});
-    syncAdmin('future_portrait_generated');
+    emitSessionEvent('future_portrait_generated',{source:'backend'});syncAdmin('future_portrait_generated',{source:'backend'});
     return true;
   }catch(error){console.warn('Future portrait unavailable',error);return false}
 }
@@ -812,7 +848,7 @@ function renderReady(){
   $('#chatName').textContent=clean(state.profile.name,'Future Me')+' · '+targetPhrase();
   $('#futureIntro').textContent=state.memory.futureVignette||'一个由你现在的故事延伸出来的可能版本。';
   renderFuturePortrait();
-  $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&apiConfig('imageApi')));
+  $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&((window.P005_API&&window.P005_API.configured)||apiConfig('imageApi'))));
 
   const memories=Array.isArray(state.memory.memories)&&state.memory.memories.length
     ? state.memory.memories.slice(0,3)
@@ -935,20 +971,27 @@ function localFutureReply(input){
 }
 
 async function getFutureReply(input){
-  const endpoint=apiConfig('chatApi');
-  if(endpoint){
-    try{
-      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        module:MODULE_ID,
-        profile:state.profile,
+  const payload={
+    module:MODULE_ID,
+    profile:state.profile,
         structuredAnswers:state.structuredAnswers,
         personaBrief:buildPersonaBrief(),
         syntheticMemory:state.memory,
         messages:state.messages.filter((item)=>item.text!=='…'),
         userMessage:input,
         target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
-        instruction:'Act as one plausible future self at the configured target horizon. Ground every response in the supplied personaBrief, life story, structured answers, and future memory. When relevant, naturally reference one or two concrete user-specific details (values, important people, proud point, turning point, current role, life project, or goals) rather than giving generic advice. Do not mechanically repeat profile fields. Speak autobiographically using continuity cues such as "when I was at your current stage" when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
-      })});
+    instruction:'Act as one plausible future self at the configured target horizon. Ground every response in the supplied personaBrief, life story, structured answers, future memory, and P004 safe context when available. When relevant, naturally reference one or two concrete user-specific details rather than giving generic advice. Never expose P004 clinical/admin inference. Do not mechanically repeat profile fields. Speak autobiographically using continuity cues when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
+  };
+  if(window.P005_API&&window.P005_API.configured){
+    try{
+      const result=await window.P005_API.chat(payload);
+      if(result&&result.reply)return String(result.reply);
+    }catch(error){console.warn('P005 direct chat API unavailable; trying backend/local fallback',error)}
+  }
+  const endpoint=apiConfig('chatApi');
+  if(endpoint){
+    try{
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       if(response.ok){
         const result=await response.json();
         if(result.reply)return String(result.reply);
@@ -987,16 +1030,27 @@ $('#endChatBtn').addEventListener('click',()=>endConversation('user_end_button')
 
 async function speakText(text){
   if(!text)return;
+  const voicePayload={
+    text,
+    voice:(window.P005_API&&window.P005_API.configured?window.P005_API.readDirect().voice:runtimeConfig().voiceId)||'marin',
+    instructions:runtimeConfig().ttsInstructions||'自然、平静、像熟悉自己的真人，不要播音腔。',
+    language:'zh-CN',
+    profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
+  };
+  if(window.P005_API&&window.P005_API.configured){
+    try{
+      const result=await window.P005_API.speak(voicePayload);
+      if(result&&result.audioUrl){
+        const audio=new Audio(result.audioUrl);
+        if(result.revoke)audio.addEventListener('ended',()=>URL.revokeObjectURL(result.audioUrl),{once:true});
+        await audio.play();return;
+      }
+    }catch(error){console.warn('P005 direct TTS unavailable; trying backend/browser fallback',error)}
+  }
   const endpoint=apiConfig('voiceApi');
   if(endpoint){
     try{
-      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        text,
-        voice:runtimeConfig().voiceId||'marin',
-        instructions:runtimeConfig().ttsInstructions||'自然、平静、像熟悉自己的真人，不要播音腔。',
-        language:'zh-CN',
-        profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
-      })});
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(voicePayload)});
       if(response.ok){
         const result=await response.json(),url=result.audioUrl||result.url||'';
         if(url){await new Audio(url).play();return}
@@ -1056,6 +1110,12 @@ function ensureRecognition(){
   return recognition;
 }
 async function transcribeRecordedAudio(blob){
+  if(window.P005_API&&window.P005_API.configured){
+    try{
+      const result=await window.P005_API.transcribe(blob);
+      if(result&&result.text)return String(result.text).trim();
+    }catch(error){console.warn('P005 direct STT unavailable; trying backend fallback',error)}
+  }
   const endpoint=apiConfig('transcribeApi');
   if(!endpoint)return '';
   const form=new FormData();
@@ -1089,7 +1149,7 @@ async function startBackendRecording(){
   setListening(true,'再次点击结束录音');
 }
 $('#micBtn').addEventListener('click',async()=>{
-  if(apiConfig('transcribeApi')&&navigator.mediaDevices&&window.MediaRecorder){
+  if(((window.P005_API&&window.P005_API.configured)||apiConfig('transcribeApi'))&&navigator.mediaDevices&&window.MediaRecorder){
     if(recorder&&recorder.state==='recording'){recorder.stop();return}
     try{await startBackendRecording()}catch(error){console.warn(error);showToast('无法使用麦克风')}
     return;
@@ -1100,12 +1160,87 @@ $('#micBtn').addEventListener('click',async()=>{
 });
 
 function updateChatModeNote(){
+  const direct=Boolean(window.P005_API&&window.P005_API.configured);
   const bits=[targetPhrase()];
-  bits.push(apiConfig('chatApi')?'LLM':'本地原型');
-  if(apiConfig('transcribeApi'))bits.push('语音转文字');
-  if(state.settings.voiceMode)bits.push(apiConfig('voiceApi')?'真人感 TTS':'浏览器朗读');
+  bits.push(direct?'BYOK':apiConfig('chatApi')?'LLM':'本地原型');
+  if(direct||apiConfig('transcribeApi'))bits.push('语音转文字');
+  if(state.settings.voiceMode)bits.push((direct||apiConfig('voiceApi'))?'真人感 TTS':'浏览器朗读');
   $('#chatModeNote').textContent=bits.join(' · ');
 }
+
+function apiCandidate(){
+  return {
+    baseUrl:clean($('#apiBaseUrl').value,''),
+    apiKey:clean($('#apiKeyInput').value,''),
+    chatModel:clean($('#apiChatModel').value,''),
+    imageModel:clean($('#apiImageModel').value,''),
+    ttsModel:clean($('#apiTtsModel').value,''),
+    sttModel:clean($('#apiSttModel').value,''),
+    voice:clean($('#apiVoice').value,'marin')
+  };
+}
+function renderApiRuntime(){
+  const configured=Boolean(window.P005_API&&window.P005_API.configured);
+  const button=$('#apiBtn');
+  if(button)button.classList.toggle('connected',configured);
+  if($('#apiBtnText'))$('#apiBtnText').textContent=configured?'API 已接':'模型';
+  updateChatModeNote();
+  if($('#agePortraitBtn'))$('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(configured||apiConfig('imageApi'))));
+}
+function openApiSettings(){
+  if(!window.P005_API)return;
+  const s=window.P005_API.readDirect();
+  $('#apiBaseUrl').value=s.baseUrl||'https://api.openai.com/v1';
+  $('#apiKeyInput').value=s.apiKey||'';
+  $('#apiChatModel').value=s.chatModel||'gpt-5.6-luna';
+  $('#apiImageModel').value=s.imageModel||'gpt-image-2';
+  $('#apiTtsModel').value=s.ttsModel||'gpt-4o-mini-tts';
+  $('#apiSttModel').value=s.sttModel||'gpt-transcribe';
+  $('#apiVoice').value=s.voice||'marin';
+  $('#apiKeyInput').type='password';$('#toggleApiKeyBtn').textContent='显示';
+  $('#apiTestResult').classList.add('hidden');$('#apiTestResult').classList.remove('error');
+  $('#apiModal').classList.remove('hidden');document.body.style.overflow='hidden';
+}
+function closeApiSettings(){
+  $('#apiModal').classList.add('hidden');document.body.style.overflow='';
+}
+function validateApiCandidate(x){
+  if(!x.baseUrl)return'需要 Base URL';
+  if(!x.apiKey)return'需要 API Key';
+  if(!x.chatModel)return'至少需要文字对话模型';
+  return'';
+}
+async function testApiSettings(){
+  const candidate=apiCandidate(),problem=validateApiCandidate(candidate),box=$('#apiTestResult');
+  if(problem){box.textContent=problem;box.classList.remove('hidden');box.classList.add('error');return}
+  $('#testApiBtn').disabled=true;box.classList.remove('hidden','error');box.textContent='正在测试文字对话接口…';
+  try{
+    const result=await window.P005_API.testDirect(candidate);
+    box.textContent=result.ok?'连接成功 · '+(result.reply||'OK'):'接口已返回，但没有拿到文本';
+    box.classList.toggle('error',!result.ok);
+  }catch(error){
+    box.textContent='连接失败 · '+String(error&&error.message||error).slice(0,180);box.classList.add('error');
+  }finally{$('#testApiBtn').disabled=false}
+}
+function saveApiSettings(){
+  const candidate=apiCandidate(),problem=validateApiCandidate(candidate);
+  if(problem){showToast(problem);return}
+  window.P005_API.saveDirect(candidate);
+  renderApiRuntime();closeApiSettings();showToast('模型设置只保存到当前标签页');
+}
+function clearApiSettings(){
+  window.P005_API.clearDirect();renderApiRuntime();closeApiSettings();showToast('本次会话的模型设置已清除');
+}
+$('#apiBtn').addEventListener('click',openApiSettings);
+$('[data-api-close]').forEach((button)=>button.addEventListener('click',closeApiSettings));
+$('#toggleApiKeyBtn').addEventListener('click',()=>{
+  const input=$('#apiKeyInput'),show=input.type==='password';input.type=show?'text':'password';$('#toggleApiKeyBtn').textContent=show?'隐藏':'显示';
+});
+$('#testApiBtn').addEventListener('click',testApiSettings);
+$('#saveApiBtn').addEventListener('click',saveApiSettings);
+$('#clearApiBtn').addEventListener('click',clearApiSettings);
+window.addEventListener('p005:api-settings-changed',renderApiRuntime);
+document.addEventListener('keydown',(event)=>{if(event.key==='Escape'&&!$('#apiModal').classList.contains('hidden'))closeApiSettings()});
 
 function cardValues(){
   const p=state.profile;
@@ -1286,6 +1421,7 @@ $('#saveCapsuleBtn').addEventListener('click',()=>{
 
 load();
 updateProgress();
+renderApiRuntime();
 updateChatModeNote();
 emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
 syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin',p001ProfileReused:Boolean((state.structuredAnswers.p001Qualities||{}).reusedFromP001||(state.structuredAnswers.p001Values||{}).reusedFromP001)});
