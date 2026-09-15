@@ -21,7 +21,7 @@ assert.equal(byId.P003.path, null);
 
 for (const file of [
   "shared/profile.js",
-  "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
+  "p002/index.html", "p002/app.js", "p002/study-manifest.json",
   "p004/index.html", "p004/app.js", "p004/module-manifest.json",
   "p005/index.html", "p005/app.js", "p005/module-manifest.json",
   "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md"

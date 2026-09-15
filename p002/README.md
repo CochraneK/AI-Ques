@@ -1,25 +1,30 @@
 # P002 · PCL × CAPE Interaction Lab
 
-P002 专注于 **PCL-5** 与 **Current CAPE-P15** 的交互形式研究。当前仓库实现 8 种完成方式，用于比较体验变化与测量变化，不把任何未经验证的改写版本当作正式临床工具。
+P002 专注于 **PCL-5** 与 **Current CAPE-P15** 的交互形式研究。当前前台只保留 **1 个基线 + 3 个当前实现可自洽的交互范式**，避免把自创工程变体当成独立科学范式。
 
 ## 量表边界
 
 - **PCL-5**：原始英文量表为 20 项、0–4 反应格式、过去一个月；官方版本可计算 0–80 总分与 B/C/D/E 聚类。本仓库中文题干是原型转述，因此本页数值仅用于原型内部比较，不直接继承验证版临床解释。
-- **Current CAPE-P15**：15 项、过去 3 个月、三个维度（PI / BE / PA）。当前原型只实现频率层；论文中与体验相关的 distress 信息没有在此版本中实现。
+- **Current CAPE-P15**：15 项、过去 3 个月、三个维度（PI / BE / PA）。保留核心题干的模式使用原始 Current CAPE-15 论文的 0–3 频率编码；频率 ≥ 1（至少“有时”）时追加独立 0–3 困扰度。情景化/SJT 路径仍只输出实验信号，不继承该计分。
 - 当前中文内容均不是仓库所声明的正式验证中文版。
 
-## 8 种交互模式
+## 4 种当前启用的研究条件
 
-1. 直接问卷
-2. VASSIP 式
-3. Emoji Game 式
-4. 逐题情景化
-5. 构念情景化
-6. AI-SJT
-7. PsychoGAT-lite
-8. HEXACO-RUSH 式
+这 4 种不是对“所有可能游戏化方式”的穷尽，而是 P002 当前启用的 **互斥实验条件**；每个参与者一次 session 只进入一个主要机制。
 
-越偏离直接呈现，越不能默认继承原量表的心理测量属性。
+1. **直接问卷（baseline）**：不加入游戏机制，作为测量呈现对照。
+2. **VASSIP 式**：storyfication / immersion / non-evaluable game dynamics；保留核心自陈测量结构。直接论文：Ramos-Villagrasa et al. (2024)。
+3. **Emoji Game 式**：在问卷中加入与计分无关的 Emoji 搜索任务，主要作用是依从性/参与度。直接论文：Kleiman et al. (2025)。
+4. **HEXACO-RUSH / gamified SJT 式**：把测量转为叙事化的情境判断与决策。直接论文：Nikolaou & Katsadoraki (2025)；更一般的 gamified SJT 文献也支持这一范式。
+
+### 已删除的独立玩法
+
+- **逐题情景化**：没有找到直接验证这一具体 P002 玩法的论文；与 SJT / storification 范式重叠，因此不单列。
+- **构念情景化**：SJT 的 construct-level 文献存在，但当前实现是我们自定义的中间态，与 HEXACO-RUSH/SJT 重叠，因此不单列。
+- **AI-SJT**：LLM 生成 SJT 已有论文支持，但“AI”描述的是题目生成方法，不是独立参与者体验机制；因此从前台玩法删除，未来作为 HEXACO-RUSH/SJT 的 **authoring pipeline** 使用。
+- **PsychoGAT 静态版**：PsychoGAT 本身有论文支持，但我们之前的固定节点实现没有 LLM agents、动态生成/控制或 psychometric evaluator，和 SJT 路线高度重叠，因此当前禁用；等真实 agent/API 版本实现后再启用。
+
+因此，P002 的分类按“主要交互/测量机制”分组，而不是按实现技术分组。
 
 ## 研究版本
 
@@ -39,7 +44,7 @@ python -m http.server 8000
 
 访问 `http://localhost:8000/p002/`。
 
-仓库 CI 会检查 JS 语法、2 个量表 × 8 种模式的 smoke path、目录结构和研究边界。
+仓库 CI 会检查 JS 语法、2 个量表 × 4 种模式的 smoke path、目录结构和研究边界。
 
 ## 主要来源
 
@@ -49,7 +54,30 @@ python -m http.server 8000
 - Kleiman et al. (2025), Emoji Game: https://doi.org/10.1037/pas0001371
 - Nikolaou & Katsadoraki (2025), HEXACO-RUSH: https://doi.org/10.1016/j.chb.2024.108467
 - Yang et al. (2024), PsychoGAT: https://doi.org/10.18653/v1/2024.acl-long.779
+- Jiang et al. (2025), LLM-generated SJT authoring: https://doi.org/10.1186/s40359-025-03613-z
+- Personality SJT automatic item generation with LLMs (2026): https://doi.org/10.1016/j.chbr.2026.100964
 
 ## 安全
 
 P002 不是诊断工具、医疗器械或临床筛查服务。正式研究需要伦理审批、知情同意、退出机制、数据治理和风险转介方案。
+
+
+## 参与者呈现边界
+
+直接问卷与 Emoji 等 baseline-like 路径默认不显示 B/C/D/E 或 PI/BE/PA code，也不把英文 source item 放在参与者题面。开发/核对时可使用 `?source=1` 显示 PCL-5 英文 source item。
+
+这不是为了隐藏研究信息，而是为了避免 baseline 条件被构念标签或双语文本额外提示。
+
+
+## 质量审计规则
+
+当前原型增加以下硬约束：
+
+- PCL-5：始终以同一段最困扰的压力经历为参照，并按“过去一个月被困扰的程度”作答；不把 0–4 误写成频率。
+- CAPE-P15：过去 3 个月，0–3 频率；至少“有时”后追加独立 0–3 distress。
+- VASSIP：不计分互动必须与 B/C/D/E 或 PI/BE/PA 构念无关，避免先行 priming。
+- Emoji Game：每个 session 只放置 1 个 Emoji，不在整份问卷中反复出现。
+- HEXACO-RUSH / SJT：情景一次只承载一个主要构念，不把 grounding、沟通技巧等 coping competence 当成症状强度。
+- PsychoGAT：当前不作为参与者条件启用；只有实现论文范式的关键 agent 机制后才可重新进入 mode registry。
+- 默认结果页只显示“完成”，不向参与者显示总分、cluster bars、SJT signal 或风险解释；研究检查可使用 `?research=1`。
+- 正式 mode comparison 应由研究协议分配条件；`?mode=<mode_id>` 可锁定单一条件，避免参与者在正式研究中自选玩法。
