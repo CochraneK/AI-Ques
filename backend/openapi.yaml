@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: AI-Ques Research Event API
+  version: 0.1.0
+  description: Vendor-neutral contract for unified P00x event ingestion and authenticated admin reads.
+paths:
+  /v1/events:
+    post:
+      summary: Ingest one participant research event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '202': { description: Accepted }
+        '400': { description: Invalid event }
+        '401': { description: Unauthorized participant/session context }
+  /v1/admin/events:
+    get:
+      summary: Read research events for authorized administrators
+      security: [{ adminSession: [] }]
+      parameters:
+        - in: query
+          name: project_id
+          schema: { type: string }
+        - in: query
+          name: participant_id
+          schema: { type: string }
+        - in: query
+          name: event_type
+          schema: { type: string }
+      responses:
+        '200':
+          description: Event collection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/Event' }
+        '401': { description: Admin authentication required }
+components:
+  securitySchemes:
+    adminSession:
+      type: apiKey
+      in: cookie
+      name: aiques_admin_session
+  schemas:
+    Event:
+      type: object
+      required: [schema_version,event_id,event_type,occurred_at,project_id,payload]
+      properties:
+        schema_version: { type: integer, enum: [1] }
+        event_id: { type: string }
+        event_type: { type: string }
+        occurred_at: { type: string, format: date-time }
+        participant_id: { type: [string,'null'] }
+        project_id: { type: [string,'null'] }
+        session_id: { type: [string,'null'] }
+        payload: { type: object, additionalProperties: true }
