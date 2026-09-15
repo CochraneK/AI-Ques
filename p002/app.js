@@ -214,7 +214,7 @@ function renderRush(){
   const scenarios=RUSH[state.scale], sc=scenarios[state.index];
   if(!sc) return finishRush();
   progress(state.index,scenarios.length);
-  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">实验性 SJT · ${SCALES[state.scale].name} 构念启发</div><h2>${sc.title}</h2><p class="story">${sc.story}</p><div class="rush-options">${sc.options.map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.index===0?'<p class="mode-note">请选择最接近你的反应。这里没有对错。</p>':''}</div>`;
+  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">情境 ${state.index+1} / ${scenarios.length}</div><h2>${sc.title}</h2><p class="story">${sc.story}</p><div class="rush-options">${sc.options.map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.index===0?'<p class="mode-note">请选择最接近你的反应。这里没有对错。</p>':''}</div>`;
   document.querySelectorAll('.rush-option').forEach(b=>b.onclick=()=>{
     const opt=sc.options[Number(b.dataset.i)];
     state.rushSignals[sc.cluster]=(state.rushSignals[sc.cluster]||0)+opt[1];
