@@ -2,7 +2,7 @@
   "schema_version": 1,
   "module_id": "P005",
   "public_name": "Future Me / 未来的我",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "status": "prototype",
   "updated_at": "2026-09-15",
   "purpose": "Future-self continuity, reflective conversation and time-capsule interaction prototype.",
@@ -11,7 +11,7 @@
       "MIT Future You",
       "FutureMe"
     ],
-    "target_future_age": 60,
+    "target_future_age": null,
     "core_flow": [
       "sequential life-story intake",
       "optional present portrait upload",
@@ -25,7 +25,20 @@
       "optional voice input/output",
       "optional future letter and time capsule"
     ],
-    "chat_finish_threshold_messages": 16
+    "chat_finish_threshold_messages": 16,
+    "target_horizon": {
+      "default": "4y",
+      "allowed": [
+        "1y",
+        "2y",
+        "3y",
+        "4y",
+        "10y",
+        "age60"
+      ],
+      "admin_route": "p005/admin.html",
+      "local_prototype_key": "bjtu.p005.admin.v1"
+    }
   },
   "shared_profile": {
     "adapter": "../shared/profile.js",
@@ -49,13 +62,19 @@
     "image": "P005_FUTURE_ME_CONFIG.imageApi or FUTURE_ME_IMAGE_API",
     "voice": "P005_FUTURE_ME_CONFIG.voiceApi or FUTURE_ME_VOICE_API",
     "admin": "P005_FUTURE_ME_CONFIG.adminApi or P00_ADMIN_API",
-    "memory": "P005_FUTURE_ME_CONFIG.memoryApi or FUTURE_ME_MEMORY_API"
+    "memory": "P005_FUTURE_ME_CONFIG.memoryApi or FUTURE_ME_MEMORY_API",
+    "runtime_config": "p005/runtime-config.js"
   },
   "admin_events": [
+    "session_started",
+    "survey_answered",
+    "portrait_added",
     "future_generated",
     "future_portrait_generated",
     "chat_turn",
-    "capsule_saved"
+    "capsule_saved",
+    "export",
+    "session_reset"
   ],
   "local_storage": {
     "primary_key": "bjtu.p005.state.v1",
@@ -86,5 +105,10 @@
       "advanced features progressively disclosed",
       "avoid decorative AI visual noise"
     ]
+  },
+  "admin_data": {
+    "receives_full_text_snapshot_when_admin_api_configured": true,
+    "portrait_binary_in_event_api": false,
+    "production_requires_server_auth_and_consent": true
   }
 }

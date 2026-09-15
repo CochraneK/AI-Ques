@@ -148,3 +148,33 @@ It must not claim:
 - 2024 paper / arXiv: https://arxiv.org/abs/2405.12514
 - MIT News overview: https://news.mit.edu/2024/ai-simulation-gives-people-glimpse-potential-future-self-1001
 - 2025 multimodal paper / arXiv: https://arxiv.org/abs/2512.06106
+
+
+## 8. P005 horizon adaptation
+
+The original 2024 Future You intervention simulated the participant at **age 60**. P005 intentionally makes this a configurable study parameter.
+
+Default:
+- 4 years in the future.
+
+Admin-selectable:
+- 1 year;
+- 2 years;
+- 3 years;
+- 4 years;
+- 10 years;
+- age 60.
+
+This is a deliberate protocol adaptation and should not be described as identical to the original Future You intervention. Any study comparing outcomes should record the configured horizon as part of the protocol/version.
+
+## 9. Survey fidelity
+
+The paper publicly specifies the survey **domains** and the sequential free-text interaction pattern, but not a complete verbatim list of every survey question.
+
+P005 therefore distinguishes:
+- paper-described core domains;
+- paper-prompt-derived fields;
+- current-site-derived fields;
+- P005 extensions.
+
+The Chinese wording is an adaptation, not an official MIT translation.

@@ -4,7 +4,9 @@
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.2.0';
+const MODULE_VERSION = '0.3.0';
+const ADMIN_SETTINGS_KEY = 'bjtu.p005.admin.v1';
+const HORIZON_OPTIONS = ['1y','2y','3y','4y','10y','age60'];
 
 const SCREENS = ['welcome', 'survey', 'portrait', 'generate', 'ready', 'chat', 'capsule'];
 const STEP_NAMES = {
@@ -19,7 +21,7 @@ const STEP_NAMES = {
 
 const QUESTIONS = [
   { section:'现在的你', key:'name', question:'希望未来的你怎么称呼你？', hint:'用你平时最习惯的称呼。', type:'text', placeholder:'例如：小林', required:true },
-  { section:'现在的你', key:'age', question:'你现在几岁？', hint:'Future Me 会以 60 岁为时间锚点。', type:'number', placeholder:'22', required:true },
+  { section:'现在的你', key:'age', question:'你现在几岁？', hint:'Future Me 会使用管理员设定的未来时间锚点。', type:'number', placeholder:'22', required:true },
   { section:'现在的你', key:'pronouns', question:'你希望未来的自己怎样称呼你？', hint:'可选。用于让未来自我的叙述更自然。', type:'text', placeholder:'例如：TA / 她 / 他' },
   { section:'现在的你', key:'location', question:'你现在生活在哪里？', hint:'城市或一个你认同的地方都可以。', type:'text', placeholder:'例如：北京' },
   { section:'现在的你', key:'currentWork', question:'现在，什么占据了你大部分时间？', hint:'学习、工作、研究、照顾家人，或者一段过渡期。', type:'textarea', placeholder:'说几句你现在的生活状态……' },
@@ -31,10 +33,10 @@ const QUESTIONS = [
   { section:'人生故事', key:'challenge', question:'现在最想跨过去的难题是什么？', hint:'Future Me 会把它当作未来记忆中的一个重要张力。', type:'textarea', placeholder:'例如：害怕失败、职业选择、关系边界……' },
 
   { section:'未来的你', key:'lifeProject', question:'如果有一件事值得投入很多年，会是什么？', hint:'事业、研究、家庭、创作、公益或一种生活方式。', type:'textarea', placeholder:'我希望长期投入……' },
-  { section:'未来的你', key:'career', question:'到 60 岁时，你希望自己做过什么？', hint:'想象职业和成就，但不要只写职位。', type:'textarea', placeholder:'我希望曾经……' },
+  { section:'未来的你', key:'career', question:'到 {future}，你希望自己做过什么？', hint:'想象职业和成就，但不要只写职位。', type:'textarea', placeholder:'我希望曾经……' },
   { section:'未来的你', key:'finance', question:'那时，怎样的财务状态会让你觉得足够？', hint:'不是数字比赛。可以写安全感、自由度或责任。', type:'textarea', placeholder:'我希望钱能让我……' },
   { section:'未来的你', key:'family', question:'那时，你希望亲密关系和家庭是什么样？', hint:'没有标准答案，也可以选择独居或非传统家庭。', type:'textarea', placeholder:'我希望身边……' },
-  { section:'未来的你', key:'futureLocation', question:'60 岁时，你想在哪里生活？', hint:'写地点，也可以写一种环境。', type:'textarea', placeholder:'也许在……' },
+  { section:'未来的你', key:'futureLocation', question:'到 {future}，你想在哪里生活？', hint:'写地点，也可以写一种环境。', type:'textarea', placeholder:'也许在……' },
   { section:'未来的你', key:'dailyLife', question:'想象那时一个很普通的星期二。', hint:'你几点起床？做什么？和谁吃饭？什么让一天值得？', type:'textarea', placeholder:'早上我会……' },
   { section:'未来的你', key:'values', question:'无论未来怎么变，什么最好不要丢？', hint:'这是 Future Me 最重要的连续性线索。', type:'textarea', placeholder:'好奇、自由、关系、创造、诚实……' },
   { section:'可能的分岔', key:'decision', question:'有一个你现在拿不准的 A / B 决定吗？', hint:'可选。当前 Future You 也在探索“两个可能未来”的决策路径。', type:'decision' }
@@ -74,8 +76,15 @@ function hash(value){
 }
 function pick(list,seed){ return list[hash(seed)%list.length] }
 
+function adminSettings(){
+  const local=parseJson(localStorage.getItem(ADMIN_SETTINGS_KEY)||'')||{};
+  return local&&typeof local==='object'?local:{};
+}
+function runtimeConfig(){
+  return Object.assign({targetHorizon:'4y'},window.P005_FUTURE_ME_CONFIG||{},adminSettings());
+}
 function apiConfig(name){
-  const config=window.P005_FUTURE_ME_CONFIG||{};
+  const config=runtimeConfig();
   const direct={
     chatApi:window.FUTURE_ME_API,
     memoryApi:window.FUTURE_ME_MEMORY_API,
@@ -84,6 +93,49 @@ function apiConfig(name){
     adminApi:window.P00_ADMIN_API
   };
   return direct[name]||config[name]||'';
+}
+function horizonMode(){
+  const raw=String(runtimeConfig().targetHorizon||'4y');
+  return HORIZON_OPTIONS.includes(raw)?raw:'4y';
+}
+function horizonYears(){
+  const mode=horizonMode();
+  return mode==='age60'?null:Number(mode.replace('y',''));
+}
+function targetAge(){
+  const current=Number(state.profile.age)||22;
+  const years=horizonYears();
+  return years===null?60:current+years;
+}
+function targetYear(){
+  const years=horizonYears();
+  return years===null?null:new Date().getFullYear()+years;
+}
+function targetPhrase(){
+  const years=horizonYears();
+  if(years===null)return '60 岁时';
+  return years+' 年后';
+}
+function targetLabel(){
+  const years=horizonYears();
+  if(years===null)return '60 岁的你';
+  const year=targetYear();
+  return years+' 年后的你'+(year?' · '+year:'');
+}
+function interpolateQuestion(text){
+  return String(text||'').replaceAll('{future}',targetPhrase());
+}
+function renderTargetLabels(){
+  const values={
+    welcomeTarget:targetPhrase(),
+    pairFuture:targetPhrase(),
+    generateAgeFuture:targetPhrase(),
+    futureTargetLabel:targetPhrase()
+  };
+  Object.entries(values).forEach(([id,value])=>{
+    const node=document.getElementById(id);
+    if(node)node.textContent=value;
+  });
 }
 
 function showToast(message){
@@ -119,7 +171,11 @@ function writeSharedProfile(){
 
 function normalizedScreen(name){
   if(['identity','present','future'].includes(name))return 'survey';
-  if(name==='generate')return state.memory?'ready':'survey';
+  return SCREENS.includes(name)?name:'welcome';
+}
+function normalizedSavedScreen(name){
+  if(['identity','present','future'].includes(name))return 'survey';
+  if(name==='generate')return state.memory?'ready':'portrait';
   return SCREENS.includes(name)?name:'welcome';
 }
 
@@ -131,7 +187,7 @@ function snapshot(includeMedia=false){
     syntheticMemory:state.memory,
     messages:state.messages,
     capsules:state.capsules,
-    settings:state.settings,
+    settings:Object.assign({},state.settings,{targetHorizon:horizonMode(),targetAge:targetAge(),targetYear:targetYear()}),
     screen:state.screen,
     surveyIndex:state.surveyIndex,
     media:{hasCurrentPortrait:Boolean(state.currentPortrait),hasFuturePortrait:Boolean(state.futurePortrait)},
@@ -148,12 +204,18 @@ function emitSessionEvent(type,payload={}){
     window.dispatchEvent(new CustomEvent('p00:session',{detail:{module:MODULE_ID,type,payload,snapshot:snapshot(false)}}));
   }catch(_){}
 }
-async function syncAdmin(type){
+async function syncAdmin(type,payload={}){
   const endpoint=apiConfig('adminApi');
   if(!endpoint)return;
   try{
-    await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      module:MODULE_ID,version:MODULE_VERSION,event:type,occurredAt:new Date().toISOString(),data:snapshot(false)
+    await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({
+      module:MODULE_ID,
+      version:MODULE_VERSION,
+      event:type,
+      occurredAt:new Date().toISOString(),
+      target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear()},
+      payload,
+      data:snapshot(false)
     })});
   }catch(error){console.warn('P005 admin sync unavailable',error)}
 }
@@ -187,7 +249,7 @@ function migrateLegacy(){
       futurePortrait:legacy.futurePortrait||'',
       capsules:legacy.capsules||[],
       settings:Object.assign({},state.settings,legacy.settings||{}),
-      screen:normalizedScreen(legacy.screen),
+      screen:normalizedSavedScreen(legacy.screen),
       surveyIndex:0
     };
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(migrated))}catch(_){}
@@ -206,7 +268,7 @@ function load(){
     state.futurePortrait=saved.futurePortrait||'';
     state.capsules=saved.capsules||[];
     state.settings=Object.assign({},state.settings,saved.settings||{});
-    state.screen=normalizedScreen(saved.screen);
+    state.screen=normalizedSavedScreen(saved.screen);
     state.surveyIndex=Math.max(0,Math.min(QUESTIONS.length-1,Number(saved.surveyIndex)||0));
     state.generated=Boolean(state.memory);
   }
@@ -219,6 +281,7 @@ function load(){
   const hasProgress=Boolean(saved&&(Object.keys(state.profile).length||state.memory||state.messages.length||state.currentPortrait||state.capsules.length));
   if($('#resumeBtn'))$('#resumeBtn').classList.toggle('hidden',!hasProgress);
   if($('#generateAgeNow'))$('#generateAgeNow').textContent=state.profile.age?state.profile.age:'现在';
+  renderTargetLabels();
   state.screen='welcome';
 }
 
@@ -256,8 +319,8 @@ function renderSurvey(){
   if(!q)return;
   $('#surveySection').textContent=q.section;
   $('#surveyCount').textContent=(state.surveyIndex+1)+' / '+QUESTIONS.length;
-  $('#surveyQuestion').textContent=q.question;
-  $('#surveyHint').textContent=q.hint||'';
+  $('#surveyQuestion').textContent=interpolateQuestion(q.question);
+  $('#surveyHint').textContent=interpolateQuestion(q.hint||'');
 
   const root=$('#surveyInput');
   if(q.type==='decision'){
@@ -294,6 +357,9 @@ function captureSurvey(){
     state.profile.optionA=clean($('#decisionA').value,'');
     state.profile.optionB=clean($('#decisionB').value,'');
     save();
+    syncAdmin('survey_answered',{key:'decision',value:{
+      decision:state.profile.decision,optionA:state.profile.optionA,optionB:state.profile.optionB
+    },surveyIndex:state.surveyIndex});
     return true;
   }
   const field=$('#surveyField');
@@ -313,6 +379,7 @@ function captureSurvey(){
   }
   state.profile[q.key]=value;
   save();
+  syncAdmin('survey_answered',{key:q.key,value,surveyIndex:state.surveyIndex});
   return true;
 }
 $('#surveyNextBtn').addEventListener('click',()=>{
@@ -340,6 +407,7 @@ $('#resumeBtn').addEventListener('click',()=>{
 });
 $('#resetBtn').addEventListener('click',()=>{
   if(!confirm('清空 P005 在此浏览器中的回答、照片、对话和时间胶囊？'))return;
+  syncAdmin('session_reset',{});
   localStorage.removeItem(STORAGE_KEY);
   LEGACY_KEYS.forEach((key)=>localStorage.removeItem(key));
   location.reload();
@@ -351,6 +419,7 @@ $('#exportBtn').addEventListener('click',()=>{
   a.href=url;a.download='P005-Future-Me-'+new Date().toISOString().slice(0,10)+'.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),600);
   emitSessionEvent('export',{});
+  syncAdmin('export',{});
   showToast('已导出');
 });
 
@@ -389,12 +458,15 @@ $('#portraitInput').addEventListener('change',async(event)=>{
     restorePortraits();
     save();
     emitSessionEvent('portrait_added',{});
+    syncAdmin('portrait_added',{hasPortrait:true,fileType:file.type,fileSize:file.size});
   }catch(error){console.error(error);showToast('照片读取失败')}
 });
 
 function buildMemory(){
   const p=state.profile;
   const age=Number(p.age)||22;
+  const futureAge=targetAge();
+  const futurePhrase=targetPhrase();
   const values=firstClause(p.values,'好奇、关系与自主');
   const people=firstClause(p.people,'重要的人');
   const career=firstClause(p.career,'找到一种更适合自己的工作方式');
@@ -407,15 +479,15 @@ function buildMemory(){
   const family=firstClause(p.family,'和重要的人保持真实而稳定的关系');
 
   const memories=[
-    '有一年，我突然发现“'+project+'”已经不再只是一个计划。最有满足感的不是结果，而是终于看见长期积累开始有自己的形状。',
+    futurePhrase+'，我回头看“'+project+'”已经不再只是一个计划。最有满足感的不是结果，而是终于看见持续投入开始有自己的形状。',
     '我也经历过“'+challenge+'”反复回来。后来真正帮到我的，是把它变成能重复的小动作，而不是等自己彻底不害怕。',
     '最大的意外，是很多当年以为会决定一生的事后来只是路口；反而是“'+values+'”和与'+people+'的关系，慢慢决定了生活长成什么样。'
   ];
 
   const timeline=[
     {age,tag:'现在',text:'你带着“'+values+'”出发，也已经经历过'+low+'和'+turning+'。'},
-    {age:Math.min(60,age+Math.max(4,Math.round((60-age)*.3))),tag:'变化',text:'你开始围绕“'+project+'”积累作品、能力和关系，职业方向逐渐靠近“'+career+'”。'},
-    {age:60,tag:'Future Me',text:'你生活在'+futureLocation+'。普通的一天是：'+daily+'。关系上，你希望'+family+'。'}
+    {age:Math.round((age+futureAge)/2),tag:'变化',text:'你开始围绕“'+project+'”积累作品、能力和关系，职业方向逐渐靠近“'+career+'”。'},
+    {age:futureAge,tag:'Future Me',text:'到'+futurePhrase+'，你生活在'+futureLocation+'。普通的一天是：'+daily+'。关系上，你希望'+family+'。'}
   ];
 
   let branch=null;
@@ -428,8 +500,8 @@ function buildMemory(){
   }
 
   return {
-    summary:'这是 '+clean(p.name,'你')+' 从 '+age+' 岁走向 60 岁的一种可能版本。它围绕“'+project+'”、'+career+'，以及你不想丢掉的“'+values+'”展开。',
-    futureVignette:'60 岁的你住在'+futureLocation+'。生活没有完全按计划发生，但“'+values+'”仍然能在日常里被看见。',
+    summary:'这是 '+clean(p.name,'你')+' 从现在走向'+futurePhrase+'的一种可能版本。它围绕“'+project+'”、'+career+'，以及你不想丢掉的“'+values+'”展开。',
+    futureVignette:futurePhrase+'的你住在'+futureLocation+'。生活没有完全按计划发生，但“'+values+'”仍然能在日常里被看见。',
     memories,
     timeline,
     branch,
@@ -442,8 +514,10 @@ async function generateMemory(){
   if(!endpoint)return buildMemory();
   try{
     const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      module:MODULE_ID,profile:state.profile,targetAge:60,
-      instruction:'Create one plausible future memory, not a prediction. Return JSON with summary, futureVignette, memories[3], timeline, and optional branch. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
+      module:MODULE_ID,
+      profile:state.profile,
+      target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
+      instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return JSON with summary, futureVignette, memories[3], timeline, and optional branch. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
     })});
     if(!response.ok)throw new Error('memory api '+response.status);
     const result=await response.json();
@@ -457,8 +531,8 @@ async function requestFuturePortrait(){
   if(!endpoint||!state.currentPortrait)return false;
   try{
     const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:60,
-      instruction:'Preserve identity. Create a respectful photorealistic portrait at approximately age 60. Natural aging only; do not alter race, gender presentation, or core facial identity.'
+      image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:targetAge(),
+      instruction:'Preserve identity. Create a respectful photorealistic portrait at the configured future age. Apply only natural age progression appropriate to the age difference; do not alter race, gender presentation, or core facial identity.'
     })});
     if(!response.ok)throw new Error('image api '+response.status);
     const result=await response.json();
@@ -480,6 +554,7 @@ async function generateSequence(){
   $('#generateTitle').textContent='正在连接你的人生线索。';
   $('#generateSub').textContent='把过去、目标与可能经历组织成一段连续的 future memory。';
   $('#generateAgeNow').textContent=clean(state.profile.age,'现在');
+  const end=$('#generateAgeFuture');if(end)end.textContent=targetPhrase();
 
   const lines=['读取现在的你','连接高点、低谷与转折','延伸目标与价值','生成未来记忆'];
   lines.forEach((text,i)=>setTimeout(()=>{
@@ -509,7 +584,7 @@ function renderFuturePortrait(){
   if(!frame||!image||!mono||!status)return;
   mono.textContent=(clean(state.profile.name,'F').charAt(0)||'F').toUpperCase();
   if(state.futurePortrait){
-    frame.classList.add('has-image');image.src=state.futurePortrait;status.textContent='可能的 60 岁头像';
+    frame.classList.add('has-image');image.src=state.futurePortrait;status.textContent='可能的 '+targetPhrase()+'头像';
   }else{
     frame.classList.remove('has-image');image.removeAttribute('src');
     status.textContent=state.currentPortrait?'未连接年龄化结果':'未上传照片';
@@ -519,9 +594,10 @@ function renderFuturePortrait(){
 function renderReady(){
   if(!state.memory)state.memory=buildMemory();
   $('#futureName').textContent=clean(state.profile.name,'你');
+  const targetNode=$('#futureTargetLabel');if(targetNode)targetNode.textContent=targetPhrase();
   $('#futureMonogram').textContent=(clean(state.profile.name,'F').charAt(0)||'F').toUpperCase();
   $('#chatAvatar').textContent=(clean(state.profile.name,'F').charAt(0)||'F').toUpperCase();
-  $('#chatName').textContent=clean(state.profile.name,'Future Me')+' · 60';
+  $('#chatName').textContent=clean(state.profile.name,'Future Me')+' · '+targetPhrase();
   $('#futureIntro').textContent=state.memory.futureVignette||'一个由你现在的故事延伸出来的可能版本。';
   renderFuturePortrait();
   $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&apiConfig('imageApi')));
@@ -560,7 +636,7 @@ function ensureGreeting(){
   const p=state.profile,m=state.memory||buildMemory(),a=m.voiceAnchors||{};
   state.messages.push({
     role:'future',
-    text:'嗨，'+clean(p.name,'年轻的我')+'。我是一个 60 岁的你——先说清楚，这只是可能的未来，人生完全可能走成别的样子。'
+    text:'嗨，'+clean(p.name,'现在的我')+'。我是'+targetPhrase()+'的你——先说清楚，这只是可能的未来，人生完全可能走成别的样子。'
   });
   state.messages.push({
     role:'future',
@@ -568,7 +644,7 @@ function ensureGreeting(){
   });
   state.messages.push({
     role:'future',
-    text:'你知道吗，回头看这几十年，我最珍惜的往往不是某个头衔，而是'+firstClause(p.people,'重要的人')+'和那些慢慢长出来的日常。你现在最想问我什么？'
+    text:'你知道吗，从'+targetPhrase()+'回头看，我最珍惜的往往不是某个头衔，而是'+firstClause(p.people,'重要的人')+'和那些慢慢长出来的日常。你现在最想问我什么？'
   });
   save();
 }
@@ -577,7 +653,7 @@ function renderMessages(){
   const box=$('#messages');
   box.innerHTML=state.messages.map((message)=>{
     const role=message.role==='future'?'future':'user';
-    return '<div class="message '+role+'"><span class="meta">'+(role==='future'?'Future Me · 60':'现在的我')+'</span>'+escapeHtml(message.text)+'</div>';
+    return '<div class="message '+role+'"><span class="meta">'+(role==='future'?'Future Me · '+targetPhrase():'现在的我')+'</span>'+escapeHtml(message.text)+'</div>';
   }).join('');
   box.scrollTop=box.scrollHeight;
   const exchanged=state.messages.filter((m)=>m.text!=='…').length;
@@ -596,7 +672,7 @@ function localFutureReply(input){
 
   const groups={
     happy:[
-      '并不是一直开心。到 60 岁以后，我更在意的不是“幸福有没有到达”，而是生活有没有长期偏离“'+values+'”。',
+      '并不是一直开心。到'+targetPhrase()+'，我更在意的不是“幸福有没有到达”，而是生活有没有长期偏离“'+values+'”。',
       '有快乐，也有很普通甚至很难的几年。真正稳定下来的，是我终于不再要求每个阶段都证明自己走对了。'
     ],
     career:[
@@ -617,7 +693,7 @@ function localFutureReply(input){
     ],
     decision:[
       m.branch
-        ? '关于“'+m.branch.decision+'”，我不会假装从 60 岁知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
+        ? '关于“'+m.branch.decision+'”，我不会假装从'+targetPhrase()+'知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
         : '如果你卡在一个选择里，我会问三个问题：我真正重视什么？哪种代价我愿意承担？哪个下一步能让我获得更多真实信息？'
     ],
     surprise:[
@@ -625,8 +701,8 @@ function localFutureReply(input){
       '未来最常见的不是戏剧性反转，而是一些当时不起眼的选择，几年后突然显出差异。'
     ],
     default:[
-      '当我把这个问题从 60 岁往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
-      '我能给你的不是答案，而是一点时间距离。很多问题放到几十年的尺度里，会从“必须马上选对”变成“先做一次真实尝试”。'
+      '当我从'+targetPhrase()+'往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
+      '我能给你的不是答案，而是一点时间距离。很多问题放到未来的尺度里，会从“必须马上选对”变成“先做一次真实尝试”。'
     ]
   };
 
@@ -659,7 +735,8 @@ async function getFutureReply(input){
         syntheticMemory:state.memory,
         messages:state.messages.filter((item)=>item.text!=='…'),
         userMessage:input,
-        instruction:'Act as one plausible 60-year-old future self grounded in the supplied life story and future memory. Speak autobiographically using continuity cues such as "when I was your age" when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
+        target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
+        instruction:'Act as one plausible future self at the configured target horizon, grounded in the supplied life story and future memory. Speak autobiographically using continuity cues such as "when I was at your current stage" when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
       })});
       if(response.ok){
         const result=await response.json();
@@ -693,7 +770,7 @@ async function speakText(text){
   if(endpoint){
     try{
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        text,voice:'future-self',language:'zh-CN',profile:{name:state.profile.name||'',targetAge:60}
+        text,voice:'future-self',language:'zh-CN',profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
       })});
       if(response.ok){
         const result=await response.json(),url=result.audioUrl||result.url||'';
@@ -753,7 +830,7 @@ $('#micBtn').addEventListener('click',()=>{
 });
 
 function updateChatModeNote(){
-  const bits=['可能未来'];
+  const bits=[targetPhrase()];
   bits.push(apiConfig('chatApi')?'LLM':'本地原型');
   if(state.settings.voiceMode)bits.push('语音');
   $('#chatModeNote').textContent=bits.join(' · ');
@@ -764,7 +841,7 @@ function letterHtml(){
   const latest=state.messages.filter((x)=>x.role==='user').slice(-1)[0];
   const latestQuestion=latest?firstClause(latest.text,'未来会怎样'):'未来会怎样';
   return '<h3>给未来的 '+escapeHtml(clean(p.name,'我'))+'</h3>'+
-    '<p>今天的我还在想“'+escapeHtml(latestQuestion)+'”。刚才我和一个 60 岁的可能版本聊了一会儿。它没有告诉我答案，只是把时间拉长了一点。</p>'+
+    '<p>今天的我还在想“'+escapeHtml(latestQuestion)+'”。刚才我和一个 '+escapeHtml(targetPhrase())+'的可能版本聊了一会儿。它没有告诉我答案，只是把时间拉长了一点。</p>'+
     '<p>我希望以后还记得：别丢掉 <strong>'+escapeHtml(firstClause(p.values,'真正重视的东西'))+'</strong>，也别总等“以后”再照顾 '+escapeHtml(firstClause(p.people,'重要的人'))+'。</p>'+
     '<p>'+(action?'这周我先做：<strong>'+escapeHtml(action)+'</strong>。':'我会给这周的自己留一个足够小、真的能做到的动作。')+'</p>'+
     '<p>未来见。<br><strong>'+escapeHtml(clean(p.name,'现在的我'))+' · '+new Date().toLocaleDateString('zh-CN')+'</strong></p>';
@@ -825,6 +902,7 @@ $('#saveCapsuleBtn').addEventListener('click',()=>{
 load();
 updateProgress();
 updateChatModeNote();
-emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length)});
+emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
+syncAdmin('session_started',{targetHorizon:horizonMode()});
 
 })();
