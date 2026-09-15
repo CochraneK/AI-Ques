@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.6.0-prototype",
+  "study_version": "0.7.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "manifest_date": "2026-09-15",
@@ -38,20 +38,14 @@
       "phase": "phase-1 candidate"
     },
     "vassip": {
-      "public_label": "VASSIP 式",
-      "research_role": "low-transformation experience layer",
+      "public_label": "故事化问卷",
+      "research_role": "gamified self-report; core items/response format preserved",
       "phase": "phase-1 candidate",
       "evidence_doi": "10.1371/journal.pone.0302429"
     },
-    "emoji": {
-      "public_label": "Emoji Game 式",
-      "research_role": "low-transformation engagement layer",
-      "phase": "phase-1 candidate",
-      "evidence_doi": "10.1037/pas0001371"
-    },
     "rush": {
-      "public_label": "HEXACO-RUSH / SJT 式",
-      "research_role": "continuous scenario-decision signal",
+      "public_label": "情境选择",
+      "research_role": "scenario-based/game-based assessment; measurement method transformed",
       "phase": "phase-2",
       "evidence_doi": "10.1016/j.chb.2024.108467"
     }
@@ -85,33 +79,40 @@
     "assigned_mode_query": "?mode=<mode_id>"
   },
   "mode_taxonomy": {
-    "policy": "one baseline plus four evidence-backed primary interaction mechanisms",
+    "policy": "single-axis taxonomy by degree of measurement transformation",
     "user_facing_modes": [
       "original",
       "vassip",
-      "emoji",
       "rush"
     ],
     "removed_as_independent_modes": [
       "itemscene",
       "construct",
       "aisjt",
-      "psychogat_static"
+      "psychogat_static",
+      "emoji"
     ],
     "ai_sjt_role": "authoring_method_for_sjt_not_user_facing_condition",
-    "mece_scope": "mutually exclusive within P002 experimental arms; not claimed exhaustive of all gamified assessment literature",
+    "mece_scope": "MECE within the chosen measurement-transformation axis: no transformation / gamified self-report / transformed scenario-based assessment",
     "planned_paradigms": {
       "psychogat": {
         "status": "disabled_until_faithful_agent_implementation",
         "evidence_doi": "10.18653/v1/2024.acl-long.779",
         "reason": "static fixed-path version lacked defining LLM-agent generation/control/evaluator mechanisms and overlapped the SJT arm"
       }
+    },
+    "engagement_modifiers": {
+      "emoji_game": {
+        "status": "not_a_primary_mode",
+        "evidence_doi": "10.1037/pas0001371",
+        "role": "optional adherence mechanic for future EMA/factorial studies",
+        "reason": "orthogonal engagement mechanic rather than a distinct measurement form"
+      }
     }
   },
   "mode_quality": {
-    "vassip_microtask": "construct-neutral navigation only",
-    "emoji_game": "one emoji placement per session",
-    "rush": "single-construct scenarios; no coping-skill scoring; no item-level signal feedback",
+    "vassip_microtask": "construct-neutral gamified wrapper; core self-report items retained",
+    "rush": "scenario-based transformed assessment; single-construct scenes; no item-level feedback",
     "psychogat": "disabled until a faithful LLM-agent implementation exists"
   }
 }
