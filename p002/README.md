@@ -1,6 +1,6 @@
 # P002 · PCL × CAPE Interaction Lab
 
-P002 专注于 **PCL-5** 与 **Current CAPE-P15** 的交互形式研究。当前仓库实现 8 种完成方式，用于比较体验变化与测量变化，不把任何未经验证的改写版本当作正式临床工具。
+P002 专注于 **PCL-5** 与 **Current CAPE-P15** 的交互形式研究。当前前台只保留 **1 个基线 + 4 个有直接论文先例的交互范式**，避免把自创工程变体当成独立科学范式。
 
 ## 量表边界
 
@@ -8,18 +8,23 @@ P002 专注于 **PCL-5** 与 **Current CAPE-P15** 的交互形式研究。当前
 - **Current CAPE-P15**：15 项、过去 3 个月、三个维度（PI / BE / PA）。保留核心题干的模式使用原始 Current CAPE-15 论文的 0–3 频率编码；频率 ≥ 1（至少“有时”）时追加独立 0–3 困扰度。情景化/SJT 路径仍只输出实验信号，不继承该计分。
 - 当前中文内容均不是仓库所声明的正式验证中文版。
 
-## 8 种交互模式
+## 5 种证据支持的研究条件
 
-1. 直接问卷
-2. VASSIP 式
-3. Emoji Game 式
-4. 逐题情景化
-5. 构念情景化
-6. AI-SJT
-7. PsychoGAT-lite
-8. HEXACO-RUSH 式
+这 5 种不是对“所有可能游戏化方式”的穷尽，而是 P002 当前选择的 **互斥实验条件**；每个参与者一次 session 只进入一个主要机制。
 
-越偏离直接呈现，越不能默认继承原量表的心理测量属性。
+1. **直接问卷（baseline）**：不加入游戏机制，作为测量呈现对照。
+2. **VASSIP 式**：storyfication / immersion / non-evaluable game dynamics；保留核心自陈测量结构。直接论文：Ramos-Villagrasa et al. (2024)。
+3. **Emoji Game 式**：在问卷中加入与计分无关的 Emoji 搜索任务，主要作用是依从性/参与度。直接论文：Kleiman et al. (2025)。
+4. **HEXACO-RUSH / gamified SJT 式**：把测量转为叙事化的情境判断与决策。直接论文：Nikolaou & Katsadoraki (2025)；更一般的 gamified SJT 文献也支持这一范式。
+5. **PsychoGAT 式**：LLM-agent 驱动的连续互动小说心理测量范式。直接论文：Yang et al. (ACL 2024)。当前 Pages 版只是冻结内容的结构原型，不宣称复现论文系统性能。
+
+### 已删除的独立玩法
+
+- **逐题情景化**：没有找到直接验证这一具体 P002 玩法的论文；与 SJT / storification 范式重叠，因此不单列。
+- **构念情景化**：SJT 的 construct-level 文献存在，但当前实现是我们自定义的中间态，与 HEXACO-RUSH/SJT 重叠，因此不单列。
+- **AI-SJT**：LLM 生成 SJT 已有论文支持，但“AI”描述的是题目生成方法，不是独立参与者体验机制；因此从前台玩法删除，未来作为 HEXACO-RUSH/SJT 的 **authoring pipeline** 使用。
+
+因此，P002 的分类按“主要交互/测量机制”分组，而不是按实现技术分组。
 
 ## 研究版本
 
@@ -39,7 +44,7 @@ python -m http.server 8000
 
 访问 `http://localhost:8000/p002/`。
 
-仓库 CI 会检查 JS 语法、2 个量表 × 8 种模式的 smoke path、目录结构和研究边界。
+仓库 CI 会检查 JS 语法、2 个量表 × 5 种模式的 smoke path、目录结构和研究边界。
 
 ## 主要来源
 
@@ -49,6 +54,8 @@ python -m http.server 8000
 - Kleiman et al. (2025), Emoji Game: https://doi.org/10.1037/pas0001371
 - Nikolaou & Katsadoraki (2025), HEXACO-RUSH: https://doi.org/10.1016/j.chb.2024.108467
 - Yang et al. (2024), PsychoGAT: https://doi.org/10.18653/v1/2024.acl-long.779
+- Jiang et al. (2025), LLM-generated SJT authoring: https://doi.org/10.1186/s40359-025-03613-z
+- Personality SJT automatic item generation with LLMs (2026): https://doi.org/10.1016/j.chbr.2026.100964
 
 ## 安全
 
