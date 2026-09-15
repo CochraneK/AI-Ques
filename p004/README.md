@@ -119,3 +119,30 @@ OpenAI 官方仍建议 API Key 不要暴露在浏览器客户端。P004 保留�
 ### BYOK 当前能力
 
 前端 BYOK 当前只负责 **角色聊天**。长期记忆仍由本地逻辑保存，Observer 仍按本地研究原型运行；完整 NVWA 六路调研蒸馏仍需要正式后端。没有 NVWA 后端时，P004 只生成明确标注的 Character Skill 草稿。
+
+
+## NPC 创建的理论分层
+
+P004 将角色创建中的三个概念分开，避免把不同层次混成“性格标签”：
+
+1. **关系**：用户与 NPC 的主要社会角色。当前按亲密、家庭、朋友、同伴、引导、专业、竞争/对立、陌生/未定八类组织。选择后不会自动跳转，用户点击“下一步”确认。
+2. **品质**：使用 P001 同源的 **VIA 24 Character Strengths / 6 Virtues**。VIA 是有理论来源的性格优势分类，但 P004 不把它描述为严格 MECE；优势之间可以相关、共存，并随情境组合表达。
+3. **聊天感觉**：使用 **Interpersonal Circumplex (IPC)**。以两条正交双极轴——Agency（主导↔跟随）与 Communion（温暖↔疏离）——划分八个扇区。P004 只让用户选一个主要感觉，避免原先“温柔/毒舌/浪漫/神秘”等不同层次标签互相重叠。
+
+## FreeLLMAPI 本机直连
+
+P004 API 设置提供 **FreeLLMAPI · 本机** preset：
+
+- Base URL: `http://localhost:3001/v1`
+- Model: `auto`
+- Key: FreeLLMAPI dashboard 中的统一 `freellmapi-...` key
+
+FreeLLMAPI 的浏览器 CORS 默认只允许它自己的 localhost dashboard origins。若从 GitHub Pages 的 P004 直接调用本机 FreeLLMAPI，需要在 FreeLLMAPI 环境中加入当前网页 origin，例如：
+
+```env
+DASHBOARD_ORIGINS=https://cochranek.github.io
+```
+
+然后重启 FreeLLMAPI。Origin 只包含 scheme + host + port，不包含 `/AI-Ques/p004/` 路径。
+
+P004 的“测试连接”在 localhost:3001 出现 network error 时会显示上述 CORS 提示，并继续区分 HTTP、timeout、provider response 与一般网络错误。若 CORS 已放行但浏览器仍阻止访问 localhost，还应检查浏览器的本地网络访问权限。
