@@ -37,10 +37,10 @@
       "slug": "p004",
       "title": "人物画像",
       "subtitle": "Conversational Profile",
-      "route": "#",
-      "status": "building",
+      "route": "../p004/",
+      "status": "active",
       "accent": "violet",
-      "description": "开放式聊天中的趣味画像与管理员研究信号。"
+      "description": "开放式聊天中的趣味人物画像；研究侧保留证据、覆盖率与不确定性。"
     },
     {
       "id": "P005",
