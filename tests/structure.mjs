@@ -62,7 +62,7 @@ assert.equal(p004Manifest.user_experience.nvwa_distillation_optional, true);
 assert.equal(p004Manifest.user_experience.openai_compatible_byok, true);
 assert.equal(p004Manifest.user_experience.playful_character_creator, true);
 const p004Api = read("p004/api-client.js");
-assert.match(p004Api, /chat\\/completions/);
+assert.match(p004Api, /chat\/completions/);
 assert.match(p004Api, /sessionStorage\.setItem\(DIRECT_KEY/);
 assert.match(p004Index, /OPENAI-COMPATIBLE · BYOK/);
 assert.match(p004Index, /CHARACTER STUDIO/);
