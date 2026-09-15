@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="P005 Future Me：基于人生故事、未来记忆与未来自我对话的研究原型。" />
   <title>P005 · Future Me</title>
-  <link rel="stylesheet" href="styles.css?v=20260916-v06" />
+  <link rel="stylesheet" href="styles.css?v=20260916-v061" />
 </head>
 <body>
   <header class="topbar">
@@ -255,37 +255,42 @@
           <small>仅保存到本次会话。不要在共用设备使用长期主密钥。</small>
         </label>
 
-        <label class="api-field">
-          <span>文字对话模型</span>
-          <input id="apiChatModel" spellcheck="false" placeholder="gpt-5.6-luna">
+        <label class="api-field api-field-wide api-primary-model">
+          <span>文字对话模型 <b>必填</b></span>
+          <input id="apiChatModel" spellcheck="false" placeholder="例如 auto、gpt-5.6-luna 或你的模型名">
+          <small>只想用文字 Future Me，填到这里就够了。</small>
         </label>
-        <label class="api-field">
-          <span>图像模型</span>
-          <input id="apiImageModel" spellcheck="false" placeholder="gpt-image-2">
-        </label>
-        <label class="api-field">
-          <span>TTS 模型</span>
-          <input id="apiTtsModel" spellcheck="false" placeholder="gpt-4o-mini-tts">
-        </label>
-        <label class="api-field">
-          <span>语音转文字模型</span>
-          <input id="apiSttModel" spellcheck="false" placeholder="gpt-transcribe">
-        </label>
-        <label class="api-field">
-          <span>声音</span>
-          <select id="apiVoice">
-            <option value="marin">Marin</option>
-            <option value="cedar">Cedar</option>
-            <option value="coral">Coral</option>
-            <option value="verse">Verse</option>
-            <option value="alloy">Alloy</option>
-            <option value="nova">Nova</option>
-          </select>
-        </label>
-        <div class="api-field api-capabilities">
-          <span>启用后</span>
-          <p>文字对话 · 未来头像 · 真人感 TTS · 语音转文字</p>
-        </div>
+
+        <details class="api-advanced api-field-wide">
+          <summary>图像与语音 <span>可选</span></summary>
+          <p class="api-advanced-note">下面都可以留空。只有服务商支持对应端点时才填写；通常可以继续共用上面的 Base URL 与 API Key。</p>
+          <div class="api-advanced-grid">
+            <label class="api-field">
+              <span>未来头像模型</span>
+              <input id="apiImageModel" spellcheck="false" placeholder="留空 = 不启用图像">
+              <small>需要支持“输入照片再编辑”的图像能力。</small>
+            </label>
+            <label class="api-field">
+              <span>TTS 模型</span>
+              <input id="apiTtsModel" spellcheck="false" placeholder="留空 = 使用浏览器朗读">
+            </label>
+            <label class="api-field">
+              <span>语音转文字模型</span>
+              <input id="apiSttModel" spellcheck="false" placeholder="留空 = 使用浏览器听写">
+            </label>
+            <label class="api-field" id="apiVoiceField">
+              <span>声音</span>
+              <select id="apiVoice">
+                <option value="marin">Marin</option>
+                <option value="cedar">Cedar</option>
+                <option value="coral">Coral</option>
+                <option value="verse">Verse</option>
+                <option value="alloy">Alloy</option>
+                <option value="nova">Nova</option>
+              </select>
+            </label>
+          </div>
+        </details>
       </div>
 
       <div id="apiTestResult" class="api-test-result hidden"></div>
@@ -302,7 +307,7 @@
 
   <script src="../shared/profile.js?v=1"></script>
   <script src="runtime-config.js?v=1"></script>
-  <script src="api-client.js?v=1"></script>
-  <script src="app.js?v=20260916-v06"></script>
+  <script src="api-client.js?v=2"></script>
+  <script src="app.js?v=20260916-v061"></script>
 </body>
 </html>
