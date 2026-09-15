@@ -5,7 +5,7 @@ P002 聚焦 PCL-5 与 Current CAPE-P15 的研究型数字测量。
 ## v0.1
 
 - PCL-5：过去 1 个月、20 项、0–4。
-- Current CAPE-P15：过去 3 个月、15 项、频率 1–4。
+- Current CAPE-P15：过去 3 个月、15 项；本原型默认遵循原始 Current CAPE-P15 论文的 0–3 编码。
 - CAPE-P15 在频率至少为“有时”时追问困扰度，并将频率与困扰分开保存。
 - 两套量表共用 participant/session schema。
 - 保存 item-level response、cluster、response time、study version。
@@ -34,3 +34,13 @@ P002 currently supports two low-transformation conditions:
 - `guided`: same item wording, response options and scoring, with dimension cards and visual chapter guidance.
 
 `condition_id` is stored at session and item level so engagement/completion differences can be tested without changing the measurement content.
+
+
+## CAPE-P15 scoring scheme
+
+当前默认 `current-cape-p15-original-0-3`：
+- frequency: 0 never / 1 sometimes / 2 often / 3 nearly always
+- distress: 0 not distressed / 1 a bit / 2 quite / 3 very distressed
+- frequency >= 1 时追问 distress
+
+部分后续研究把相同四档重编码为 1–4 并计算 weighted mean。正式研究必须在 manifest 中冻结 scoring scheme，不能把两套编码混用。
