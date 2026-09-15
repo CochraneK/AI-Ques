@@ -35,6 +35,7 @@ const context = vm.createContext({
   console,
   document,
   window: { scrollTo() {} },
+  location: { search: "" },
   setTimeout,
   clearTimeout,
 });
@@ -57,7 +58,9 @@ assert.equal(evaluate("SCALES.pcl5.items.length"), 20, "PCL-5 prototype should e
 assert.equal(evaluate("SCALES.cape15.items.length"), 15, "CAPE-P15 prototype should expose 15 items");
 assert.equal(evaluate("SCALES.pcl5.choices.length"), 5, "PCL-5 response format should remain 0-4");
 assert.equal(evaluate("SCALES.cape15.choices.length"), 4, "CAPE prototype should remain four frequency choices");
-assert.equal(evaluate("SCALES.cape15.scoreOffset"), 1, "CAPE prototype should remain 1-4 encoded");
+assert.equal(evaluate("SCALES.cape15.scoringScheme"), "current-cape-p15-original-0-3", "CAPE should declare the original 0-3 scoring scheme");
+assert.equal(evaluate("SCALES.cape15.distressChoices.length"), 4, "CAPE should expose four distress choices");
+assert.equal(evaluate("SCALES.cape15.scoreOffset"), undefined, "CAPE should not apply the old +1 score offset");
 
 const expectedModes = [
   "original", "vassip", "emoji", "rush",
