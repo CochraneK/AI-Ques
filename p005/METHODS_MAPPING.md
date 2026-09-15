@@ -104,3 +104,21 @@ Voice is not part of the 2024 core intervention. The 2025 multimodal Future You 
 
 Source:
 - https://arxiv.org/abs/2512.06106
+
+
+## V0.5 guided-profile adaptation
+
+The guided condition now includes two P001-derived rapid-profile matrices:
+
+- 24 positive-quality items, maximum 6 selections;
+- 16 important-value items, maximum 4 selections.
+
+These are **not part of the 2024 Future You intake** and must be reported as a P005/P001 profile-enrichment layer.
+
+The guided Chinese condition also:
+- asks gender as a direct male/female choice;
+- uses one primary current-role category rather than slash-combined labels;
+- allows multiple important-person categories;
+- removes the previous A/B decision item entirely.
+
+The replication condition remains separate and continues to use the paper-aligned free-text fields.
