@@ -79,3 +79,13 @@ For P006+:
 - add a project-specific admin summary only if useful
 - add smoke assertions
 - do not create a second identity store
+
+
+## Figma source
+
+Editable design-system file:
+https://www.figma.com/design/nBFFHwDn3KfZF6gTSbIB4E
+
+File name: AI-Ques UI System · P002 Review
+
+The shared/theme.css token layer and the Figma variable collection should evolve together. Figma is a design review/spec surface; runtime behavior remains source-controlled in GitHub.
