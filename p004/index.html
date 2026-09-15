@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#f4f4f1" />
+  <meta name="description" content="P004 对话式人物理解：通过自然聊天形成趣味人物画像与研究侧结构化观察。" />
+  <title>P004 · 对话式人物理解</title>
+  <link rel="stylesheet" href="styles.css?v=20260915-1" />
+</head>
+<body>
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="../" aria-label="返回 AI-Ques">
+      <span class="brand-mark">04</span>
+      <span class="brand-copy"><strong>P004</strong><small>conversation portrait</small></span>
+    </a>
+    <div class="top-actions">
+      <span class="prototype-pill"><i></i> research prototype</span>
+      <button id="aboutBtn" class="icon-btn" type="button" aria-label="关于 P004">?</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-copy">
+        <p class="eyebrow">NO QUESTIONNAIRE FEEL</p>
+        <h1 id="pageTitle">聊着聊着，<br><span>看见一个更立体的你。</span></h1>
+        <p class="hero-desc">不是做题，也不在聊天里偷偷复刻量表。系统从自然表达中持续更新“人物印象”，并把不确定性保留下来。</p>
+      </div>
+      <div class="principle-stack" aria-label="设计原则">
+        <div><span>01</span><p><strong>自然聊天</strong><small>不连续追问症状，不展示临床标签。</small></p></div>
+        <div><span>02</span><p><strong>证据可回看</strong><small>每个推断都有支持、反向与缺失信息。</small></p></div>
+        <div><span>03</span><p><strong>双层报告</strong><small>用户只看趣味画像，研究观察仅管理员可见。</small></p></div>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="P004 对话工作区">
+      <section class="chat-panel panel">
+        <div class="panel-head chat-head">
+          <div>
+            <p class="eyebrow">LIVE CONVERSATION</p>
+            <h2>今天想从哪里聊起？</h2>
+          </div>
+          <div class="session-meta">
+            <span id="turnCount">0 turns</span>
+            <button id="resetBtn" class="text-btn" type="button">重新开始</button>
+          </div>
+        </div>
+
+        <div id="chatLog" class="chat-log" aria-live="polite"></div>
+
+        <div class="starter-wrap" id="starterWrap">
+          <button class="starter" data-starter="最近让我最有能量的一件事，是……">最近让我最有能量的事</button>
+          <button class="starter" data-starter="最近我脑子里经常反复想的一件事，是……">最近总在想的事</button>
+          <button class="starter" data-starter="如果不用考虑现实限制，我最近最想做的是……">现在最想做的事</button>
+        </div>
+
+        <form id="composer" class="composer">
+          <label for="messageInput" class="sr-only">输入你想说的话</label>
+          <textarea id="messageInput" rows="1" maxlength="1200" placeholder="像平常聊天一样说就好…"></textarea>
+          <div class="composer-foot">
+            <span class="privacy-note">内容仅用于本次原型会话 · 不提供诊断</span>
+            <button id="sendBtn" class="send-btn" type="submit"><span>发送</span><b aria-hidden="true">↗</b></button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="portrait-panel panel" aria-labelledby="portraitTitle">
+        <div class="panel-head portrait-head">
+          <div>
+            <p class="eyebrow">LIVE PORTRAIT</p>
+            <h2 id="portraitTitle">聊天中的人物印象</h2>
+          </div>
+          <span id="portraitStatus" class="soft-badge">刚开始认识</span>
+        </div>
+
+        <div class="portrait-orbit" aria-hidden="true">
+          <div class="orbit-ring orbit-ring-a"></div>
+          <div class="orbit-ring orbit-ring-b"></div>
+          <div class="portrait-core">
+            <span id="portraitMonogram">你</span>
+          </div>
+          <span class="orbit-dot dot-a"></span>
+          <span class="orbit-dot dot-b"></span>
+          <span class="orbit-dot dot-c"></span>
+        </div>
+
+        <div class="type-card">
+          <p>当前印象</p>
+          <h3 id="publicArchetype">正在认识你</h3>
+          <span id="publicSubtitle">先聊几句，画像会慢慢长出来。</span>
+        </div>
+
+        <div class="signal-list" id="publicSignals" aria-label="人物印象维度"></div>
+
+        <div class="portrait-footer">
+          <button id="openReportBtn" class="secondary-btn" type="button">查看我的人物图鉴</button>
+          <button id="adminBtn" class="admin-link hidden" type="button">管理员研究视图</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div id="reportModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="modal-backdrop" data-close="report"></div>
+    <section class="modal-card report-card">
+      <button class="modal-close" data-close="report" aria-label="关闭">×</button>
+      <div class="report-hero">
+        <p class="eyebrow">YOUR CHAT PORTRAIT</p>
+        <h2 id="reportTitle">你在聊天里留下的轮廓</h2>
+        <p>这是一张趣味性人物图鉴，不是心理诊断，也不是标准量表结果。</p>
+      </div>
+      <div id="reportContent" class="report-content"></div>
+      <div class="report-actions">
+        <button id="copyReportBtn" class="secondary-btn" type="button">复制摘要</button>
+        <button class="primary-btn" data-close="report" type="button">继续聊天</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="adminModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <div class="modal-backdrop" data-close="admin"></div>
+    <section class="modal-card admin-card">
+      <button class="modal-close" data-close="admin" aria-label="关闭">×</button>
+      <div class="admin-header">
+        <div>
+          <p class="eyebrow">RESEARCH OBSERVER</p>
+          <h2 id="adminTitle">管理员 · 结构化观察</h2>
+          <p>仅展示推断信号，不把对话推断冒充标准化量表分数或临床诊断。</p>
+        </div>
+        <div class="admin-actions">
+          <button id="exportJsonBtn" class="text-btn" type="button">导出 JSON</button>
+          <button id="exportCsvBtn" class="text-btn" type="button">导出 CSV</button>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <section class="admin-section">
+          <div class="section-title"><h3>人格推断</h3><span>Big Five + MBTI-like</span></div>
+          <div id="adminPersonality" class="metric-stack"></div>
+        </section>
+        <section class="admin-section">
+          <div class="section-title"><h3>状态线索</h3><span>signal · coverage · confidence</span></div>
+          <div id="adminClinical" class="clinical-grid"></div>
+        </section>
+      </div>
+
+      <section class="admin-section evidence-section">
+        <div class="section-title"><h3>证据链</h3><span>仅使用本次会话中用户主动表达的内容</span></div>
+        <div id="evidenceList" class="evidence-list"></div>
+      </section>
+
+      <section class="admin-section guardrail-section">
+        <div class="guardrail-copy">
+          <strong>部署约束</strong>
+          <p>GitHub Pages 只能做到演示级界面隐藏。正式部署必须把管理员数据放在服务端，并用账号、角色权限、审计日志与最小化数据访问控制隔离。</p>
+        </div>
+        <span class="guardrail-chip">RBAC required</span>
+      </section>
+    </section>
+  </div>
+
+  <div id="aboutModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="modal-backdrop" data-close="about"></div>
+    <section class="modal-card about-card">
+      <button class="modal-close" data-close="about" aria-label="关闭">×</button>
+      <p class="eyebrow">P004 DESIGN</p>
+      <h2 id="aboutTitle">聊天，不是变形的量表。</h2>
+      <p>P004 将“对话体验”和“研究观察”拆成两条链路：聊天 Agent 负责自然交流；Observer 只读会话并输出带不确定性的结构化证据。</p>
+      <div class="about-flow">
+        <span>Conversation</span><i>→</i><span>Evidence</span><i>→</i><span>Observer</span><i>→</i><span>Profile</span>
+      </div>
+      <p class="about-note">当前 GitHub Pages 版本默认使用本地启发式 demo。生产版建议把 LLM 调用放到后端代理，并分别配置 conversation / observer / safety 三个职责。</p>
+    </section>
+  </div>
+
+  <script src="api-client.js?v=20260915-1"></script>
+  <script src="app.js?v=20260915-1"></script>
+</body>
+</html>
