@@ -1,6 +1,11 @@
 const VERSION = "p002-0.1.0";
 const nowIso = () => new Date().toISOString();
 
+const CONDITIONS = {
+  standard:{id:"standard",name:"标准呈现",desc:"只呈现时间窗口、题干和原始反应选项，不显示维度提示。"},
+  guided:{id:"guided",name:"轻交互导览",desc:"题干与评分不变，仅增加维度卡片、视觉符号和章节导航。"}
+};
+
 const SCALES = {
   pcl5: {
     id:"pcl5",
@@ -75,6 +80,7 @@ const state = {
   session:null,
   profile:null,
   scaleId:null,
+  conditionId:null,
   index:0,
   startedAt:null,
   itemStartedAt:null,
@@ -89,6 +95,7 @@ const launcher = $("#launcher");
 const assessment = $("#assessment");
 const result = $("#result");
 const scaleChoices = $("#scaleChoices");
+const conditionChoices = $("#conditionChoices");
 const startBtn = $("#startBtn");
 const distressBlock = $("#distressBlock");
 const nextBtn = $("#nextBtn");
@@ -107,8 +114,17 @@ function renderScaleChoices(){
     };
   });
 }
-function updateReady(){startBtn.disabled=!state.scaleId}
+function renderConditionChoices(){
+  conditionChoices.innerHTML=Object.values(CONDITIONS).map(function(x){
+    return '<button class="scale-card '+(state.conditionId===x.id?'active':'')+'" data-condition="'+x.id+'" aria-pressed="'+(state.conditionId===x.id)+'"><h3>'+x.name+'</h3><p>'+x.desc+'</p><span class="tag">'+(x.id==='standard'?'baseline-like':'low-transformation')+'</span></button>';
+  }).join("");
+  conditionChoices.querySelectorAll("[data-condition]").forEach(function(btn){
+    btn.onclick=function(){state.conditionId=btn.dataset.condition;renderConditionChoices();updateReady();};
+  });
+}
+function updateReady(){startBtn.disabled=!(state.scaleId&&state.conditionId)}
 renderScaleChoices();
+renderConditionChoices();
 updateReady();
 
 state.profile=AIQ.ensureProfile({portalUrl:"../portal/",returnTo:location.href});
@@ -126,7 +142,7 @@ startBtn.onclick=function(){
   state.profile=AIQ.getProfile();
   if(!state.profile){AIQ.ensureProfile({portalUrl:"../portal/",returnTo:location.href});return}
   state.participantId=state.profile.participant_id;
-  state.session=AIQ.startSession("P002",VERSION,{scale_id:state.scaleId});
+  state.session=AIQ.startSession("P002",VERSION,{scale_id:state.scaleId,condition_id:state.conditionId});
   state.sessionId=state.session.session_id;
   state.index=0;
   state.rows=[];
@@ -161,6 +177,11 @@ function renderQuestion(){
   state.pendingDistress=null;
 
   const cluster=s.clusters[item.cluster];
+  document.body.dataset.presentation=state.conditionId;
+  const contextCard=$("#contextCard");
+  if(contextCard)contextCard.classList.toggle("hidden",state.conditionId==="standard");
+  const layout=document.querySelector(".question-layout");
+  if(layout)layout.classList.toggle("single",state.conditionId==="standard");
   $("#progressLabel").textContent=(state.index+1) + " / " + s.items.length;
   $("#scaleLabel").textContent=s.name;
   $("#progressBar").style.width=(state.index/s.items.length*100) + "%";
@@ -228,6 +249,7 @@ nextBtn.onclick=function(){
     study_version:VERSION,
     scale_id:s.id,
     scale_name:s.name,
+    condition_id:state.conditionId,
     item_id:item.id,
     cluster:item.cluster,
     frequency_or_severity:state.pendingFrequency,
@@ -293,7 +315,7 @@ function finish(){
   const summary=summarize();
   const cards=$("#resultCards");
   if(state.session){
-    AIQ.completeSession(state.session,{scale_id:s.id,scale_name:s.name,summary:summary,item_count:state.rows.length});
+    AIQ.completeSession(state.session,{scale_id:s.id,scale_name:s.name,condition_id:state.conditionId,summary:summary,item_count:state.rows.length});
   }
 
   if(s.id==="pcl5"){
@@ -337,6 +359,7 @@ function payload(){
     participant_id:state.participantId || null,
     session_id:state.sessionId,
     scale_id:state.scaleId,
+    condition_id:state.conditionId,
     started_at:state.startedAt,
     finished_at:state.finishedAt,
     summary:summarize(),
@@ -364,7 +387,7 @@ $("#downloadJson").onclick=function(){
 };
 
 $("#downloadCsv").onclick=function(){
-  const cols=["participant_id","session_id","study_version","scale_id","scale_name","item_id","cluster","frequency_or_severity","distress","response_ms","answered_at"];
+  const cols=["participant_id","session_id","study_version","scale_id","scale_name","condition_id","item_id","cluster","frequency_or_severity","distress","response_ms","answered_at"];
   const esc=function(v){
     return v==null ? "" : '"' + String(v).replaceAll('"','""') + '"';
   };
