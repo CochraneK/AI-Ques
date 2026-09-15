@@ -22,9 +22,15 @@ jobs:
           node --check app.js
           node --check experiments.js
           node --check future-me/app.js
+          node --check shared/core.js
+          node --check portal/app.js
+          node --check admin/app.js
+          node --check p002/app.js
 
       - name: Run behavior smoke tests
-        run: node tests/smoke.mjs
+        run: |
+          node tests/smoke.mjs
+          node tests/global-p002-smoke.mjs
 
       - name: Run quality sensor
         run: python scripts/quality_sensor.py --strict
