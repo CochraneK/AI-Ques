@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI-Ques · 全局管理员</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="../shared/config.js"></script>
+  <script src="../shared/core.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="kicker">AI-Ques · BJTU</p>
+        <h1>全局管理员面板</h1>
+      </div>
+      <a href="../portal/">返回项目中心</a>
+    </header>
+
+    <section id="modeBanner" class="banner"></section>
+
+    <section class="metrics">
+      <div><span>参与者</span><strong id="metricParticipants">0</strong></div>
+      <div><span>Sessions</span><strong id="metricSessions">0</strong></div>
+      <div><span>事件</span><strong id="metricEvents">0</strong></div>
+      <div><span>待同步</span><strong id="metricPending">0</strong></div>
+    </section>
+
+    <section class="panel controls">
+      <div class="control">
+        <label>项目</label>
+        <select id="projectFilter"><option value="">全部项目</option></select>
+      </div>
+      <div class="control">
+        <label>参与者</label>
+        <input id="participantFilter" placeholder="participant_id">
+      </div>
+      <div class="control">
+        <label>事件类型</label>
+        <select id="eventFilter"><option value="">全部事件</option></select>
+      </div>
+      <div class="actions">
+        <button id="refreshBtn">刷新</button>
+        <button id="exportCsv">导出全部 CSV</button>
+        <button id="exportJson">导出全部 JSON</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="table-head">
+        <div>
+          <p class="kicker">UNIFIED EVENT STORE</p>
+          <h2>所有 P00x 项目数据</h2>
+        </div>
+        <span id="rowCount">0 rows</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th><th>参与者</th><th>项目</th><th>Session</th><th>事件</th><th>摘要</th>
+            </tr>
+          </thead>
+          <tbody id="eventRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
