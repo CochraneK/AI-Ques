@@ -17,6 +17,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check experiments.js
+          node --check future-me/app.js
+
+      - name: Run behavior smoke tests
+        run: node tests/smoke.mjs
+
       - name: Run quality sensor
         run: python scripts/quality_sensor.py --strict
 

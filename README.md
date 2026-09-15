@@ -113,6 +113,20 @@ python -m http.server 8000
 
 修改题干、评分逻辑、模式角色或正式研究协议时，应同步更新 manifest。当前 manifest 明确标记为 **prototype_only**，不能被解释为已批准的正式研究版本。
 
+## 本地质量检查
+
+在提交研究逻辑或模式修改前运行：
+
+```bash
+node --check app.js
+node --check experiments.js
+node tests/smoke.mjs
+python scripts/quality_sensor.py --strict
+python scripts/next_quality_target.py
+```
+
+`tests/smoke.mjs` 会加载真实的 `app.js + experiments.js`，验证 2 个量表、8 种模式、manifest/registry 一致性，以及每个 scale × mode 的开始与结束路径至少能执行而不崩溃。
+
 ## 推荐验证路线
 
 1. **体验层**：完成率、耗时、漏答、主观负担、趣味性、沉浸感。

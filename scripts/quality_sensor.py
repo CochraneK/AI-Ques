@@ -92,10 +92,11 @@ def scan_repo() -> list[dict]:
             "Register experimental renderers through registerMode() and keep core dispatch ownership in app.js.",
         ))
 
-    if not (ROOT / "tests").exists():
+    smoke_test = ROOT / "tests" / "smoke.mjs"
+    if not smoke_test.exists():
         findings.append(finding(
-            "missing-behavior-tests", "P1", "tests/",
-            "No behavior/smoke test directory exists.",
+            "missing-behavior-tests", "P1", "tests/smoke.mjs",
+            "No executable behavior/smoke test exists.",
             "Add tests for mode registration, item counts, score ranges, and complete-run smoke paths.",
         ))
 
