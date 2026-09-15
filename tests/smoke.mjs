@@ -70,7 +70,7 @@ const expectedModes = ["original", "vassip", "emoji", "rush"];
 assert.deepEqual(
   Array.from(evaluate("Object.keys(MODES)")).sort(),
   [...expectedModes].sort(),
-  "P002 runtime registry should expose exactly the five evidence-backed modes"
+  "P002 runtime registry should expose exactly the four active modes"
 );
 
 const manifest = JSON.parse(
@@ -128,3 +128,7 @@ assert.ok(!htmlSource.includes("START AN EXPERIMENT"), "launcher should avoid re
 assert.ok(!htmlSource.includes("正式研究或服务部署前"), "ethics/governance copy belongs in research docs, not repeated participant footer");
 assert.match(appSource,/state\.index===state\.emojiIndex/, "Emoji Game should use one session-level placement");
 assert.match(appSource,/SHOW_RESEARCH/, "raw research scores should be gated behind research view");
+
+assert.ok(!appSource.includes("emoji-counter"), "no persistent Emoji counter should clutter the questionnaire");
+assert.ok(!appSource.includes("构念启发"), "participant SJT screens should not expose construct-language chrome");
+assert.ok(!appSource.includes("item.cluster}</div>"), "participant item labels should not append construct codes");
