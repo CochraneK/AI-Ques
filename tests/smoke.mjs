@@ -62,24 +62,19 @@ assert.equal(evaluate("SCALES.cape15.scoringScheme"), "current-cape-p15-original
 assert.equal(evaluate("SCALES.cape15.distressChoices.length"), 4, "CAPE should expose four distress choices");
 assert.equal(evaluate("SCALES.cape15.scoreOffset"), undefined, "CAPE should not apply the old +1 score offset");
 
-const expectedModes = [
-  "original", "vassip", "emoji", "rush",
-  "itemscene", "construct", "aisjt", "psychogat"
-];
+const expectedModes = ["original", "vassip", "emoji", "rush", "psychogat"];
 
 assert.deepEqual(
   Array.from(evaluate("Object.keys(MODES)")).sort(),
   [...expectedModes].sort(),
-  "P002 runtime registry should expose exactly the documented eight modes"
+  "P002 runtime registry should expose exactly the five evidence-backed modes"
 );
 
-for (const mode of ["itemscene", "construct", "aisjt", "psychogat"]) {
-  assert.equal(
-    evaluate(`typeof MODE_HANDLERS["${mode}"]?.renderStep`),
-    "function",
-    `${mode} should register an explicit renderStep handler`
-  );
-}
+assert.equal(
+  evaluate('typeof MODE_HANDLERS["psychogat"]?.renderStep'),
+  "function",
+  "PsychoGAT should register an explicit renderStep handler"
+);
 
 const manifest = JSON.parse(
   fs.readFileSync(new URL("../p002/study-manifest.json", import.meta.url), "utf8")
@@ -97,9 +92,6 @@ const smokeResult = evaluate(`
   const failures = [];
   const terminalIndex = (scale, mode) => {
     if (mode === "rush") return RUSH[scale].length;
-    if (mode === "itemscene") return SCALES[scale].items.length;
-    if (mode === "construct") return CONSTRUCT_SCENES[scale].length;
-    if (mode === "aisjt") return AI_SJT_BANK[scale].length;
     if (mode === "psychogat") return PSYCHOGAT_NODES[scale].length;
     return SCALES[scale].items.length;
   };
@@ -128,4 +120,4 @@ const smokeResult = evaluate(`
 
 assert.deepEqual(Array.from(smokeResult), [], "all P002 scale × mode start/end smoke paths should execute");
 
-console.log("P002 smoke tests passed: 2 scales × 8 modes, registry + manifest + start/end paths.");
+console.log("P002 smoke tests passed: 2 scales × 5 evidence-backed modes, registry + manifest + start/end paths.");
