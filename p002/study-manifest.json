@@ -20,14 +20,16 @@
     "cape15": {
       "items": 15,
       "window": "past_3_months",
-      "frequency_encoding": "1-4",
-      "distress_encoding": "1-4_conditional_if_frequency_ge_2",
+      "frequency_encoding": "0-3",
+      "distress_encoding": "0-3_conditional_if_frequency_ge_1",
       "clusters": [
         "PI",
         "BE",
         "PA"
       ],
-      "wording_status": "prototype_paraphrase_pending_approved_target_language_freeze"
+      "wording_status": "prototype_paraphrase_pending_approved_target_language_freeze",
+      "scoring_scheme": "current-cape-p15-original-0-3",
+      "note": "Original Current CAPE-P15 paper uses 0=never to 3=nearly always and conditional 0-3 distress. Later studies may recode to 1-4; do not mix schemes."
     }
   },
   "conditions": {
@@ -51,6 +53,7 @@
       "scale_id",
       "condition_id",
       "item_id",
+      "scoring_scheme",
       "cluster",
       "frequency_or_severity",
       "response_ms",
