@@ -7,7 +7,7 @@ P004 is a **conversation-first psychological portrait prototype** for AI-Ques.
 The public experience must feel like ordinary conversation, not a disguised questionnaire.
 
 - User side: only playful, neutral or strengths-oriented portrait language.
-- Admin/research side: exploratory Big Five / MBTI-like / PHQ-like / GAD-like / PCL-like / CAPE-like signals with evidence, coverage and confidence.
+- Admin/research side: exploratory Big Five / MBTI-like / PHQ-like / GAD-like / PCL-like / CAPE-like signals with evidence, coverage and evidence strength.
 - Clinical-style outputs are **not standardized questionnaire scores** and must not be presented as diagnoses.
 - Safety escalation is separate from the normal portrait layer.
 
@@ -25,11 +25,14 @@ Observer layer
   ├─ evidence ledger
   └─ uncertainty / coverage
         ↓
-Global profile adapter
-  └─ localStorage: aiques.global.profile.v1
+Public profile adapter
+  └─ ../shared/profile.js → localStorage: bjtu.p00.profile.v1
+
+P004 private research snapshot
+  └─ sessionStorage: bjtu.p004.session.v1
 ```
 
-The static GitHub Pages build intentionally does **not** accept a raw model API key in the browser. Production deployment should call a backend proxy (for example `/api/p004/chat`, `/api/p004/observe`, `/api/p004/safety`) so credentials and admin-only inference never reach the client.
+The static GitHub Pages build intentionally does **not** accept a raw model API key in the browser. P004 no longer stores clinical-style inference in the public shared profile. The local demo keeps its private research snapshot in sessionStorage and clears it when the tab is closed or the user selects “清除本次画像”. Production deployment should call a backend proxy (for example `/api/p004/chat`, `/api/p004/observe`, `/api/p004/safety`) so credentials and admin-only inference never reach the client.
 
 ## Admin demo
 
