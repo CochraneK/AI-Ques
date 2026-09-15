@@ -40,7 +40,7 @@ const context = vm.createContext({
   clearTimeout,
 });
 
-for (const file of ["../p002/app.js", "../p002/experiments.js"]) {
+for (const file of ["../p002/app.js"]) {
   const source = fs.readFileSync(new URL(file, import.meta.url), "utf8");
   vm.runInContext(source, context, { filename: file });
 }
@@ -65,18 +65,12 @@ assert.match(evaluate("SCALES.pcl5.instruction"), /同一段最困扰的压力�
 assert.match(evaluate("SCALES.pcl5.instruction"), /困扰到你/, "PCL instruction should ask degree of bother, not frequency");
 assert.equal(evaluate("state.emojiIndex"), null, "emoji placement should initialize once per run rather than using many fixed items");
 
-const expectedModes = ["original", "vassip", "emoji", "rush", "psychogat"];
+const expectedModes = ["original", "vassip", "emoji", "rush"];
 
 assert.deepEqual(
   Array.from(evaluate("Object.keys(MODES)")).sort(),
   [...expectedModes].sort(),
   "P002 runtime registry should expose exactly the five evidence-backed modes"
-);
-
-assert.equal(
-  evaluate('typeof MODE_HANDLERS["psychogat"]?.renderStep'),
-  "function",
-  "PsychoGAT should register an explicit renderStep handler"
 );
 
 const manifest = JSON.parse(
@@ -95,7 +89,6 @@ const smokeResult = evaluate(`
   const failures = [];
   const terminalIndex = (scale, mode) => {
     if (mode === "rush") return RUSH[scale].length;
-    if (mode === "psychogat") return PSYCHOGAT_NODES[scale].length;
     return SCALES[scale].items.length;
   };
 
@@ -123,16 +116,14 @@ const smokeResult = evaluate(`
 
 assert.deepEqual(Array.from(smokeResult), [], "all P002 scale × mode start/end smoke paths should execute");
 
-console.log("P002 smoke tests passed: 2 scales × 5 evidence-backed modes, registry + manifest + start/end paths.");
+console.log("P002 smoke tests passed: 2 scales × 4 active modes, registry + manifest + start/end paths.");
 
 
 const appSource = fs.readFileSync(new URL("../p002/app.js", import.meta.url), "utf8");
-const expSource = fs.readFileSync(new URL("../p002/experiments.js", import.meta.url), "utf8");
 const htmlSource = fs.readFileSync(new URL("../p002/index.html", import.meta.url), "utf8");
 
 assert.ok(!appSource.includes("高信号"), "participant-facing source should not contain scoring feedback labels");
 assert.ok(!appSource.includes("中等信号"), "participant-facing source should not contain scoring feedback labels");
-assert.ok(!expSource.includes("Designer → Controller → Critic → Evaluator"), "PsychoGAT methodology should not clutter participant items");
 assert.ok(!htmlSource.includes("START AN EXPERIMENT"), "launcher should avoid redundant research UI chrome");
 assert.ok(!htmlSource.includes("正式研究或服务部署前"), "ethics/governance copy belongs in research docs, not repeated participant footer");
 assert.match(appSource,/state\.index===state\.emojiIndex/, "Emoji Game should use one session-level placement");
