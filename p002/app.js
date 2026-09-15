@@ -35,7 +35,7 @@ const SCALES = {
   cape15: {
     id:'cape15', name:'Current CAPE-P15', subtitle:'近期精神病性样体验 · 15题', window:'过去三个月', publicDomain:false,
     note:'Current CAPE-P15 的公开论文描述为 15 题、三个维度，并可在体验出现后追加困扰度。本仓库不把自译文本冒充正式中文版；以下为基于构念的研究原型转述。',
-    scoreOffset:1, choices:['从未','有时','经常','几乎总是'],
+    scoringScheme:'current-cape-p15-original-0-3', choices:['从未','有时','经常','几乎总是'], distressChoices:['完全不困扰','有一点困扰','比较困扰','非常困扰'],
     chapters:[
       {key:'PI',title:'读空气',desc:'人与人之间的信息有时会显得格外有指向性。',range:[1,5]},
       {key:'BE',title:'边界感',desc:'有些体验涉及思维归属、控制感或现实边界。',range:[6,12]},
@@ -95,8 +95,9 @@ const RUSH = {
   ]
 };
 
-const state={scale:null,mode:null,index:0,answers:[],emojiFound:0,emojiSeen:0,rushSignals:{},lastReflection:'',chapterSeen:{}};
+const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,rushSignals:{},lastReflection:'',chapterSeen:{}};
 const $=s=>document.querySelector(s);
+const SHOW_SOURCE=new URLSearchParams(location.search).get('source')==='1';
 
 function renderLauncher(){
   $('#scaleChoices').innerHTML=Object.values(SCALES).map(s=>`<button class="choice ${state.scale===s.id?'active':''}" data-scale="${s.id}" aria-pressed="${state.scale===s.id}">
@@ -127,6 +128,7 @@ function renderLauncher(){
 function resetRun(){
   state.index=0;
   state.answers=[];
+  state.distress=[];
   state.emojiFound=0;
   state.emojiSeen=0;
   state.rushSignals={};
@@ -147,7 +149,7 @@ function renderStep(){
   if(state.mode==='rush') return renderRush();
   const scale=SCALES[state.scale], item=scale.items[state.index];
   if(!item) return finishStandard();
-  progress(state.index,scale.items.length);
+  progress(state.index+1,scale.items.length);
   const ch=currentChapter(scale,item), chapterStart=state.index===0 || scale.items[state.index-1].cluster!==item.cluster;
   if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
   const emojiActive=state.mode==='emoji' && [1,3,5,7,9,11,13,16,19].includes(state.index);
@@ -162,15 +164,43 @@ function renderStep(){
     <p class="story">${modeStory}</p>
     <div class="question-card">
       ${emojiActive?`<button class="emoji-clue" id="emojiClue" aria-label="找到隐藏表情">${['🪐','🫧','🦊','🌱','🧩','🐳'][state.index%6]}</button>`:''}
-      <div class="question-id">${scale.name} · ${item.id}/${scale.items.length} · ${item.cluster}</div>
+      <div class="question-id">${scale.name} · ${item.id}/${scale.items.length}${state.mode==='vassip'?` · ${item.cluster}`:''}</div>
       <div class="question">${scale.window}，${item.text}</div>
-      ${item.original?`<div class="original">Public-domain source item: ${item.original}</div>`:''}
+      ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
       <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
       ${state.mode==='emoji'?`<div class="emoji-counter">已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分</div>`:''}
     </div>
   </div>`;
-  document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{state.answers.push(Number(b.dataset.score)+(scale.scoreOffset||0));state.index++;renderStep();});
+  document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{
+    const score=Number(b.dataset.score);
+    if(scale.id==='cape15' && score>=1){
+      renderCapeDistress(scale,item,score);
+      return;
+    }
+    state.answers.push(score);
+    state.distress.push(null);
+    state.index++;
+    renderStep();
+  });
   const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';$('.emoji-counter').textContent=`已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分`; } };
+}
+
+function renderCapeDistress(scale,item,frequencyScore){
+  const host=$('.question-card');
+  if(!host)return;
+  host.querySelectorAll('.answer').forEach(x=>{x.disabled=true;});
+  const block=document.createElement('div');
+  block.className='distress-block';
+  block.innerHTML='<div class="distress-kicker">补充 · 只有体验出现时才追问</div><h3>这项体验让你有多困扰？</h3><div class="distress-options">'+
+    scale.distressChoices.map((label,i)=>'<button class="answer distress-answer" data-distress="'+i+'"><span>'+label+'</span><span class="score">'+i+'</span></button>').join('')+
+    '</div>';
+  host.appendChild(block);
+  block.querySelectorAll('[data-distress]').forEach(btn=>btn.onclick=()=>{
+    state.answers.push(frequencyScore);
+    state.distress.push(Number(btn.dataset.distress));
+    state.index++;
+    renderStep();
+  });
 }
 
 function renderVassipIntro(scale,ch){
@@ -210,22 +240,24 @@ function finishStandard(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const s=SCALES[state.scale], total=state.answers.reduce((a,b)=>a+b,0), clusters={};
   s.items.forEach((it,i)=>{clusters[it.cluster]=(clusters[it.cluster]||0)+(state.answers[i]||0)});
-  const max=s.id==='pcl5'?80:60;
-  const interpretation=s.id==='pcl5' ? pclInterpret(total,state.answers) : capeInterpret(total,clusters);
-  $('#result').innerHTML=`<p class="eyebrow">完成 · ${MODES[state.mode].name}</p><h2>${s.name} 原型结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原始频率/严重度总分（本原型） / ${max}</p><p>${interpretation}</p>${state.mode==='emoji'?`<p>Emoji：找到 <strong>${state.emojiFound}</strong> / ${state.emojiSeen}</p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=cnt*4,minc=s.id==='pcl5'?0:cnt,pct=s.id==='pcl5'?v/maxc*100:(v-minc)/(maxc-minc)*100;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>不是诊断结果。</strong> ${s.note}</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
+  const max=s.id==='pcl5'?80:45;
+  const endorsedDistress=state.distress.filter((v,i)=>state.answers[i]>=1 && v!=null);
+  const distressMean=endorsedDistress.length?endorsedDistress.reduce((a,b)=>a+b,0)/endorsedDistress.length:null;
+  const interpretation=s.id==='pcl5' ? pclInterpret(total,state.answers) : capeInterpret(total,clusters,distressMean);
+  $('#result').innerHTML=`<p class="eyebrow">完成 · ${MODES[state.mode].name}</p><h2>${s.name} 原型结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原始频率/严重度总分（本原型） / ${max}</p><p>${interpretation}</p>${s.id==='cape15'?`<p>困扰均值：<strong>${distressMean==null?'—':distressMean.toFixed(2)}</strong>（只对出现过的体验计算）</p>`:''}${state.mode==='emoji'?`<p>Emoji：找到 <strong>${state.emojiFound}</strong> / ${state.emojiSeen}</p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=s.id==='pcl5'?cnt*4:cnt*3,pct=maxc?v/maxc*100:0;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>不是诊断结果。</strong> ${s.note}</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
   window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
 }
 function pclInterpret(total,a){
   const B=a.slice(0,5).filter(x=>x>=2).length,C=a.slice(5,7).filter(x=>x>=2).length,D=a.slice(7,14).filter(x=>x>=2).length,E=a.slice(14,20).filter(x=>x>=2).length;
   return `原始 PCL-5 官方版本可计算 0–80 严重度总分，并可按 ≥2 查看 B/C/D/E 症状条目。本页中文题干属于原型转述，因此这里的数值只用于交互研究内部比较，不应直接继承验证版的临床解释。本次聚类计数：B=${B}、C=${C}、D=${D}、E=${E}。`;
 }
-function capeInterpret(){return 'Current CAPE-P15 在文献中通常按三个维度观察近期精神病性样体验频率（本原型按 1–4 编码，总分 15–60），并可对出现的体验追加困扰度。本原型第一版暂只演示频率层，不设置临床阈值或“高风险”标签。';}
+function capeInterpret(total,clusters,distressMean){return `Current CAPE-P15 原始 Current CAPE-15 论文使用 0–3 频率编码；本原型按 0–3 保存，总分范围 0–45，并在频率至少为“有时”时追加 0–3 困扰度。频率与困扰分开保留；不设置临床阈值或“高风险”标签。当前困扰均值：${distressMean==null?'—':distressMean.toFixed(2)}。`;}
 function finishRush(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const entries=Object.entries(state.rushSignals); const max=Math.max(...entries.map(x=>x[1]),1);
   $('#result').innerHTML=`<p class="eyebrow">完成 · HEXACO-RUSH 式原型</p><h2>情景决策信号图</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>实验性结果，不是 ${SCALES[state.scale].name} 分数。</strong> 这一模式故意把量表构念改造成 SJT 式选择，因此必须通过“同一批参与者完成标准量表 + 情景版”的研究重新建立信度、效度、因子结构与阈值。在完成验证前，不应给出 PTSD、精神病风险或任何诊断性反馈。</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
   window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
 }
-function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，但当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见本模块 p002/README.md 的主要来源。</p></div>`}
+function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，默认不显示 cluster code 或英文 source 文本；当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见本模块 p002/README.md 的主要来源。</p></div>`}
 
 $('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();
