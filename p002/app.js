@@ -117,7 +117,8 @@ function renderLauncher(){
     <p>${s.subtitle}<br>时间窗口：${s.window}</p>
   </button>`).join('');
 
-  $('#modeChoices').innerHTML=Object.entries(MODES).map(([id,m])=>`<button class="choice ${state.mode===id?'active':''}" data-mode="${id}" aria-pressed="${state.mode===id}">
+  const modeEntries=ASSIGNED_MODE&&MODES[ASSIGNED_MODE]?[[ASSIGNED_MODE,MODES[ASSIGNED_MODE]]]:Object.entries(MODES);
+  $('#modeChoices').innerHTML=modeEntries.map(([id,m])=>`<button class="choice ${state.mode===id?'active':''}" data-mode="${id}" aria-pressed="${state.mode===id}">
     <h3>${m.name}</h3>
     <p>${m.desc}</p>
   </button>`).join('');
