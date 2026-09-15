@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.4.0-prototype",
+  "study_version": "0.5.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "manifest_date": "2026-09-15",
@@ -18,7 +18,8 @@
       "response_encoding": "0-4",
       "source_status": "public-domain source instrument; Chinese wording in this repo is prototype paraphrase",
       "distress_layer": null,
-      "formal_baseline": false
+      "formal_baseline": false,
+      "response_instruction": "keep one worst/stressful experience in mind; rate how much each problem bothered the participant in the past month"
     },
     "cape15": {
       "label": "Current CAPE-P15",
@@ -82,7 +83,12 @@
   "presentation_rules": {
     "baseline_construct_codes_visible": false,
     "source_text_visible_by_default": false,
-    "source_debug_query": "?source=1"
+    "source_debug_query": "?source=1",
+    "participant_result_default": "completion_only",
+    "research_detail_query": "?research=1",
+    "no_item_level_score_feedback": true,
+    "no_construct_codes_in_baseline": true,
+    "assigned_mode_query": "?mode=<mode_id>"
   },
   "mode_taxonomy": {
     "policy": "one baseline plus four evidence-backed primary interaction mechanisms",
@@ -100,5 +106,11 @@
     ],
     "ai_sjt_role": "authoring_method_for_sjt_not_user_facing_condition",
     "mece_scope": "mutually exclusive within P002 experimental arms; not claimed exhaustive of all gamified assessment literature"
+  },
+  "mode_quality": {
+    "vassip_microtask": "construct-neutral navigation only",
+    "emoji_game": "one emoji placement per session",
+    "rush": "single-construct scenarios; no coping-skill scoring; no item-level signal feedback",
+    "psychogat": "static continuous-fiction prototype; no LLM-agent equivalence claim in participant UI"
   }
 }
