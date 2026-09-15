@@ -101,10 +101,14 @@ const RUSH = {
 
 const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,emojiIndex:null,rushSignals:{},chapterSeen:{}};
 const $=s=>document.querySelector(s);
-const QUERY=typeof location!=='undefined'?new URLSearchParams(location.search||''):new URLSearchParams();
-const SHOW_SOURCE=QUERY.get('source')==='1';
-const SHOW_RESEARCH=QUERY.get('research')==='1';
-const ASSIGNED_MODE=QUERY.get('mode');
+const SEARCH=typeof location!=='undefined'?String(location.search||''):'';
+function queryParam(name){
+  const match=SEARCH.match(new RegExp('(?:[?&])'+name+'=([^&]*)'));
+  return match?decodeURIComponent(match[1]):null;
+}
+const SHOW_SOURCE=queryParam('source')==='1';
+const SHOW_RESEARCH=queryParam('research')==='1';
+const ASSIGNED_MODE=queryParam('mode');
 
 function renderLauncher(){
   if(ASSIGNED_MODE && MODES[ASSIGNED_MODE]) state.mode=ASSIGNED_MODE;
@@ -268,7 +272,5 @@ function finishRush(){
   const entries=Object.entries(state.rushSignals); const max=Math.max(...entries.map(x=>x[1]),1);
   $('#result').innerHTML=`<p class="eyebrow">Research view · HEXACO-RUSH / SJT 式</p><h2>情境决策信号</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>研究检查视图。</strong> 这些是实验性构念信号，不是 ${SCALES[state.scale].name} 得分。</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
 }
-
-function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，默认不显示 cluster code 或英文 source 文本；当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见本模块 p002/README.md 的主要来源。</p></div>`}
 
 $('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();
