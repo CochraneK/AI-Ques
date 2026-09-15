@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "module_id": "P004",
+  "public_name": "Conversational Portrait / 对话式人物理解",
+  "version": "0.2.0",
+  "status": "prototype",
+  "storage": {
+    "shared_profile": {
+      "adapter": "../shared/profile.js",
+      "key": "bjtu.p00.profile.v1",
+      "contains_clinical_inference": false
+    },
+    "private_session": {
+      "type": "sessionStorage",
+      "key": "bjtu.p004.session.v1",
+      "contains": [
+        "personality inference",
+        "clinical-like exploratory signals",
+        "evidence quotes",
+        "safety state"
+      ]
+    }
+  },
+  "user_surface": {
+    "clinical_labels_visible": false,
+    "diagnostic_claims": false
+  },
+  "admin_surface": {
+    "demo_only": true,
+    "server_side_rbac_required_for_production": true
+  },
+  "inference": {
+    "standardized_scores": false,
+    "confidence_metric": false,
+    "evidence_strength_is_heuristic": true
+  },
+  "safety": {
+    "diagnostic_use": false,
+    "treatment_use": false
+  }
+}
