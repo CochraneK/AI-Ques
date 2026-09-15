@@ -24,7 +24,7 @@ for (const file of [
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
   "p004/index.html", "p004/app.js", "p004/module-manifest.json",
   "p005/index.html", "p005/app.js", "p005/module-manifest.json",
-  "docs/ARCHITECTURE.md"
+  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
 }
@@ -55,6 +55,10 @@ const p005 = read("p005/app.js");
 assert.match(p005, /bjtu\.p005\.state\.v1/);
 assert.match(p005, /BJTU_PROFILE/);
 assert.doesNotMatch(p005, /const SHARED_KEYS/);
+assert.match(p005, /const QUESTIONS = \[/);
+assert.match(p005, /surveyIndex/);
+assert.match(p005, /exchanged<16/);
+assert.match(read("docs/DESIGN_PRINCIPLES.md"), /Less is more/);
 
 const legacyFuture = fs.readdirSync(path.join(root, "future-me")).sort();
 assert.deepEqual(legacyFuture, ["index.html"], "future-me must be redirect-only");
