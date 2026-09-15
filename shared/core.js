@@ -2,7 +2,7 @@
   "use strict";
 
   const PROFILE_KEY="aiques_global_profile_v1";
-  const LEGACY_PROFILE_KEYS=["aiques.global.profile.v1"];
+  const LEGACY_PROFILE_KEYS=["aiques.global.profile.v1","bjtu_p00_profile_v1","bjtu_profile_v1","aiques_shared_profile_v1"];
   const EVENTS_KEY="aiques_local_events_v1";
   const QUEUE_KEY="aiques_event_queue_v1";
   const CONFIG=global.AIQUES_CONFIG||{};
