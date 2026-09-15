@@ -1,41 +1,30 @@
 {
-  "schema_version": 1,
-  "module_id": "P004",
-  "public_name": "Conversational Portrait / 对话式人物理解",
-  "version": "0.2.0",
-  "status": "prototype",
-  "storage": {
-    "shared_profile": {
-      "adapter": "../shared/profile.js",
-      "key": "bjtu.p00.profile.v1",
-      "contains_clinical_inference": false
-    },
-    "private_session": {
-      "type": "sessionStorage",
-      "key": "bjtu.p004.session.v1",
-      "contains": [
-        "personality inference",
-        "clinical-like exploratory signals",
-        "evidence quotes",
-        "safety state"
-      ]
-    }
-  },
-  "user_surface": {
+  "module": "P004",
+  "version": "2.0.0",
+  "name": "角色世界 / Character Conversations",
+  "status": "prototype_only",
+  "purpose": "NPC/character text conversations with optional NVWA distillation, local skill artifacts, long-term memory and administrator-only longitudinal personality inference.",
+  "user_experience": {
+    "questionnaire_feel": false,
     "clinical_labels_visible": false,
-    "diagnostic_claims": false
+    "character_cards": true,
+    "custom_npc": true,
+    "long_term_memory": true,
+    "nvwa_distillation_optional": true
   },
-  "admin_surface": {
-    "demo_only": true,
-    "server_side_rbac_required_for_production": true
+  "evidence_sources": ["P004", "P005"],
+  "storage": {
+    "characters": "localStorage",
+    "threads": "localStorage",
+    "memory": "localStorage",
+    "skills": "IndexedDB",
+    "production_recommendation": "server-side encrypted storage + authenticated access controls"
   },
-  "inference": {
-    "standardized_scores": false,
-    "confidence_metric": false,
-    "evidence_strength_is_heuristic": true
-  },
+  "api_contract": ["chat", "distill", "memory", "observe", "adminSnapshot"],
+  "research_boundary": "Open-ended conversational inference is experimental and must not be represented as validated scale scoring or clinical diagnosis.",
+  "nvwa_reference": "https://github.com/xmg2024/nvwa-skill",
   "safety": {
-    "diagnostic_use": false,
-    "treatment_use": false
+    "roleplay_yields_to_immediate_safety": true,
+    "admin_only_clinical_signals": true
   }
 }
