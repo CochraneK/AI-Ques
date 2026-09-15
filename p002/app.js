@@ -99,7 +99,7 @@ const RUSH = {
   ]
 };
 
-const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,rushSignals:{},chapterSeen:{}};
+const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,emojiIndex:null,rushSignals:{},chapterSeen:{}};
 const $=s=>document.querySelector(s);
 const QUERY=typeof location!=='undefined'?new URLSearchParams(location.search||''):new URLSearchParams();
 const SHOW_SOURCE=QUERY.get('source')==='1';
@@ -137,6 +137,7 @@ function resetRun(){
   state.distress=[];
   state.emojiFound=0;
   state.emojiSeen=0;
+  state.emojiIndex=state.scale?Math.floor(Math.random()*SCALES[state.scale].items.length):null;
   state.rushSignals={};
   state.chapterSeen={};
   state.expSignals={};
@@ -168,8 +169,8 @@ function renderStep(){
   progress(state.index+1,scale.items.length);
   const ch=currentChapter(scale,item), chapterStart=state.index===0 || scale.items[state.index-1].cluster!==item.cluster;
   if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
-  const emojiActive=state.mode==='emoji' && [1,3,5,7,9,11,13,16,19].includes(state.index);
-  if(emojiActive) state.emojiSeen++;
+  const emojiActive=state.mode==='emoji' && state.index===state.emojiIndex;
+  if(emojiActive && state.emojiSeen===0) state.emojiSeen=1;
   const pub=publicChapter(item.cluster);
   const firstItem=state.index===0;
   $('#gameBody').innerHTML=`<div class="scene">
@@ -218,23 +219,10 @@ function renderCapeDistress(scale,item,frequencyScore){
 
 function renderVassipIntro(scale,ch){
   progress(state.index,scale.items.length);
-  const choices={
-    B:['沿着有光的墙面走','戴上耳机再往前','先看一眼出口在哪里'],
-    C:['走最短的路','绕一小段再过去','先站在原地观察一下'],
-    D:['翻开桌上的记录本','看向窗外','先整理散落的卡片'],
-    E:['调暗灯光','坐到靠门的位置','把桌面清空'],
-    PI:['从人多的主路走','选安静的小路','先看看校园地图'],
-    BE:['触碰控制台','先读说明书','观察屏幕变化'],
-    PA:['戴上耳机','打开一盏小灯','先确认周围环境']
-  }[ch.key] || ['继续向前','先观察一下','换一条路'];
+  const choices=['从左边继续','从中间继续','从右边继续'];
   const pub=publicChapter(ch.key);
-  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一个此刻更想做的小动作。</p><div class="rush-options">${choices.map((c,i)=>`<button class="rush-option" data-vassip-choice="${i}">${c}</button>`).join('')}</div></div>`;
+  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一条路继续。</p><div class="rush-options">${choices.map((label,i)=>`<button class="rush-option" data-vassip-choice="${i}">${label}</button>`).join('')}</div></div>`;
   document.querySelectorAll('[data-vassip-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=Number(b.dataset.vassipChoice);renderStep();});
-}
-
-function storyLine(scale,item){
-  const lines={B:'你走进一条由记忆构成的长廊。这里没有正确答案，只需要如实描述最近的体验。',C:'前方出现几条不同的路。我们不要求你面对任何不想面对的内容，只记录你通常如何应对。',D:'墙上的文字慢慢变成关于自己、他人和世界的感受。继续按最近真实情况作答。',E:'最后一段关注身体、注意力与警觉。',PI:'校园里的信息很多，有些清晰，有些模糊。只描述过去三个月你真实经历的频率。',BE:'这一章节关注思维边界与控制感。原型不对任何单项体验做诊断解释。',PA:'最后几题关注听觉或视觉体验。请选择最接近实际频率的选项。'};
-  return lines[item.cluster]||'';
 }
 
 function renderRush(){
@@ -273,10 +261,14 @@ function pclInterpret(total,a){
 function capeInterpret(total,clusters,distressMean){return `Current CAPE-P15 原始 Current CAPE-15 论文使用 0–3 频率编码；本原型按 0–3 保存，总分范围 0–45，并在频率至少为“有时”时追加 0–3 困扰度。频率与困扰分开保留；不设置临床阈值或“高风险”标签。当前困扰均值：${distressMean==null?'—':distressMean.toFixed(2)}。`;}
 function finishRush(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
+  if(!SHOW_RESEARCH){
+    $('#result').innerHTML=participantCompletion();
+    return;
+  }
   const entries=Object.entries(state.rushSignals); const max=Math.max(...entries.map(x=>x[1]),1);
-  $('#result').innerHTML=`<p class="eyebrow">完成 · HEXACO-RUSH 式原型</p><h2>情景决策信号图</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>实验性结果，不是 ${SCALES[state.scale].name} 分数。</strong> 这一模式故意把量表构念改造成 SJT 式选择，因此必须通过“同一批参与者完成标准量表 + 情景版”的研究重新建立信度、效度、因子结构与阈值。在完成验证前，不应给出 PTSD、精神病风险或任何诊断性反馈。</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
-  window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
+  $('#result').innerHTML=`<p class="eyebrow">Research view · HEXACO-RUSH / SJT 式</p><h2>情境决策信号</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>研究检查视图。</strong> 这些是实验性构念信号，不是 ${SCALES[state.scale].name} 得分。</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
 }
+
 function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，默认不显示 cluster code 或英文 source 文本；当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见本模块 p002/README.md 的主要来源。</p></div>`}
 
 $('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();
