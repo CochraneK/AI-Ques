@@ -17,7 +17,7 @@ P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的�
   ↓
 Future / Synthetic Memory
   ↓
-60 岁可能未来自我揭示
+管理员设定时间点的可能未来自我揭示
   ↓
 文本对话
   ↓
@@ -98,7 +98,7 @@ window.P005_FUTURE_ME_CONFIG = {
 };
 ```
 
-Memory API 请求包含 `profile`、`targetAge: 60` 与生成约束。建议返回：
+Memory API 请求包含 `profile`、管理员设定的 `target`（1/2/3/4/10 年后或 60 岁时）与生成约束。默认是 **4 年后**。建议返回：
 
 ```json
 {
@@ -195,3 +195,83 @@ python scripts/quality_sensor.py --strict
 - Current Future You: https://futureyou.media.mit.edu/
 - Future You 2024 paper: https://arxiv.org/abs/2405.12514
 - Future You 2025 multimodal paper: https://arxiv.org/abs/2512.06106
+
+
+## Future horizon / 管理员设置
+
+默认 Future Me = **4 年后的自己**。
+
+允许的管理员选项：
+
+```text
+1y / 2y / 3y / 4y / 10y / age60
+```
+
+静态原型的管理员入口：
+
+```text
+/p005/admin.html
+```
+
+它会写入：
+
+```text
+localStorage["bjtu.p005.admin.v1"]
+```
+
+正式部署不应依赖用户浏览器作为管理员权限来源；应由服务端或部署环境注入同名配置。
+
+公开运行时配置在：
+
+```text
+p005/runtime-config.js
+```
+
+这里只放**后端 URL 和非敏感配置**，绝不能放模型厂商 API Key。
+
+## API 最小集合
+
+真实复刻建议至少提供 4 类后端能力：
+
+1. **memoryApi**：把 life-story + goals 生成结构化 future memory。
+2. **chatApi**：让 Future Me 基于 memory 持续对话。
+3. **imageApi**：把当前照片自然年龄变化到目标年龄。
+4. **adminApi**：接收完整文字填写记录、future memory、聊天与时间胶囊事件。
+
+可选：
+
+5. **voiceApi**：TTS / 实时语音；不接时浏览器可做基础朗读与听写。
+
+前端不会直接保存 OpenAI、Anthropic 或其他模型提供商的 secret key。所有 provider key 必须只存在后端。
+
+## 管理员数据
+
+若 `adminApi` 已配置，P005 会发送：
+
+- `session_started`
+- `survey_answered`（每一题，含 A/B）
+- `portrait_added`（只发送文件类型/大小/是否存在，不发送 base64 照片）
+- `future_generated`
+- `future_portrait_generated`
+- `chat_turn`
+- `capsule_saved`
+- `export`
+- `session_reset`
+
+每个事件都附带当前 snapshot，因此服务端可以重建该 session 的全部**文字填写与对话记录**。
+
+照片原文件如需管理员留存，应另做受保护的 media upload endpoint、知情同意、删除与保留策略；不要塞进通用事件 API。
+
+## 与 MIT Future You 问题的一致性
+
+**不是逐字 1:1。**
+
+公开论文明确给出了问题类别和部分 prompt，但没有公开完整逐字 survey 文案。当前 P005 的题目按下列方式处理：
+
+- 核心一致：name / age / pronouns / location / important people / proud point / low point / turning point / career / financial / family / personal-life future。
+- 来自论文 future-memory prompt 的扩展：life project / future location / daily life。
+- 来自当前 Future You 官网方向的扩展：values / goals。
+- P005 自有、可选扩展：current challenge / A-B decision。
+- 为降低不必要敏感数据收集，P005 **没有照论文 prompt 收集 sexual orientation**。
+
+因此它是 **机制级忠实复刻 + 中文/研究伦理适配**，不是声称逐字复制原版问卷。
