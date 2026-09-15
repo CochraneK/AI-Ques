@@ -1,6 +1,6 @@
 # P005 · Future Me / 未来的我
 
-> V0.5: P001 profile reuse, China-first guided intake, no A/B flow, and four share-card styles.
+> V0.6: in-product multimodal API settings, P004↔P005 continuity bridge, and standalone-ready boundaries.
 
 P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的公开研究机制为主线，并把 FutureMe 式时间胶囊降为对话后的可选延伸。
 
@@ -23,7 +23,7 @@ Future / Synthetic Memory
   ↓
 文本对话
   ↓
-语音 / A-B 分支 / 时间胶囊（增强层）
+语音 / 分享卡 / 时间胶囊（增强层）
 ```
 
 这对应 Future You 论文公开描述的四个核心模块：
@@ -242,7 +242,7 @@ p005/runtime-config.js
 
 5. **voiceApi**：TTS / 实时语音；不接时浏览器可做基础朗读与听写。
 
-前端不会直接保存 OpenAI、Anthropic 或其他模型提供商的 secret key。所有 provider key 必须只存在后端。
+正式研究仍推荐所有 provider key 只存在后端。为了 P004/P005 未来可独立演示，V0.6 另外提供 **BYOK 原型模式**：用户可在“模型”对话框中手动输入 OpenAI-compatible Base URL / Key / 模型名；Key 只写入当前标签页的 `sessionStorage`，关闭标签页即清除，不进入 P005 localStorage、导出文件或管理员 snapshot。
 
 ## 管理员数据
 
@@ -374,3 +374,41 @@ replication 模式仍保留论文公开字段的 sequential free-text，不受�
 - 青简
 
 卡片会优先展示 P001 复用/选择出的积极品质和重要价值，再加入 Future Memory 与 Future Me 的一句话。
+
+
+## V0.6 · 页面内模型设置
+
+P005 顶栏新增“模型”按钮。可在当前标签页内配置：
+
+- Base URL
+- API Key
+- 文字对话模型
+- 图像编辑/生成年龄化模型
+- TTS 模型
+- 语音转文字模型
+- TTS voice
+
+BYOK 使用 `p005/api-client.js`，目前按 OpenAI-compatible 路径调用：
+
+- `/chat/completions`
+- `/images/edits`
+- `/audio/speech`
+- `/audio/transcriptions`
+
+默认示例模型只是 UI 默认值，不是研究协议的一部分。生产环境应优先改用服务端代理。
+
+当 BYOK 可用时，同一个文字对话模型也会优先用于 Future Memory 的 JSON 生成；失败后再降级到部署方 memory API 或本地 deterministic fallback。
+
+## V0.6 · P004 ↔ P005
+
+领导已决定 P004 与 P005 后续要能够**单独拿出去用**。
+
+因此：
+
+- P005 不得把 P001/P002/P003 当作必需前置条件；
+- P001 的 24+16 复用仅是当前合集里的可选便利，P005 永远保留自己的矩阵 fallback；
+- 如果先做过 P004，P005 可以读取 P004 的**用户本人发言**与**长期记忆文本**作为 Future Me continuity context；
+- P005 明确不读取 `bjtu.p004.observer.v2`，也不把 P004 的 PHQ/GAD/PCL/CAPE 或其他管理员推断当作用户事实；
+- 如果先做 P005，P004 已经可以导入 P005 的用户开放回答与对话作为自身 Observer 的证据来源。
+
+也就是说，P004/P005 是双向可互用，但两者都可以独立启动。
