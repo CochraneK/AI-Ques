@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 
-const VERSION='2.1.0';
+const VERSION='2.2.0';
 const K={chars:'bjtu.p004.characters.v2',threads:'bjtu.p004.threads.v2',memory:'bjtu.p004.memory.v2',observer:'bjtu.p004.observer.v2',active:'bjtu.p004.active.v2',p005:'bjtu.p005.state.v1'};
 const adminMode=new URLSearchParams(location.search).get('admin')==='1';
 const $=id=>document.getElementById(id);
@@ -41,13 +41,16 @@ const STRENGTH_GROUPS=[
   {group:'超越',items:['审美','感恩','希望','幽默','精神性']}
 ];
 
-const CHAT_STYLES=[
-  {value:'温柔',emoji:'◡'},{value:'毒舌',emoji:'⌁'},{value:'冷静',emoji:'△'},{value:'热烈',emoji:'✦'},
-  {value:'幽默',emoji:'☺'},{value:'克制',emoji:'—'},{value:'好奇',emoji:'?'},{value:'神秘',emoji:'◌'},
-  {value:'浪漫',emoji:'☾'},{value:'直球',emoji:'→'},{value:'慢热',emoji:'…'},{value:'戏剧感',emoji:'✺'}
+const CHAT_FEELS=[
+  {value:'坚定主导',emoji:'↑',pos:'n',agency:1,communion:0,desc:'有方向感 · 会带着对话往前走',prompt:'坚定、清楚、有主见，倾向主动推进对话，但不过度压迫'},
+  {value:'温暖带领',emoji:'↗',pos:'ne',agency:.7,communion:.7,desc:'主动，也让人觉得被接住',prompt:'温暖而有主见，会主动引导，同时保持理解和支持'},
+  {value:'温暖亲近',emoji:'→',pos:'e',agency:0,communion:1,desc:'亲和 · 有回应 · 重视连接',prompt:'亲近、友好、回应感强，重视情绪连接，不抢夺对话主导权'},
+  {value:'温和配合',emoji:'↘',pos:'se',agency:-.7,communion:.7,desc:'体贴 · 配合 · 很少抢话',prompt:'温和、配合、支持性强，更愿意顺着用户的节奏交流'},
+  {value:'安静跟随',emoji:'↓',pos:'s',agency:-1,communion:0,desc:'少主导 · 多听 · 留空间',prompt:'克制主导欲，多听少带领，给用户充分空间决定对话方向'},
+  {value:'克制退让',emoji:'↙',pos:'sw',agency:-.7,communion:-.7,desc:'保留距离 · 不主动靠近',prompt:'克制、谨慎、保持距离，也较少主动推动关系或话题'},
+  {value:'冷静疏离',emoji:'←',pos:'w',agency:0,communion:-1,desc:'理性 · 有边界 · 情绪距离较远',prompt:'冷静、理性、边界清晰，情绪表达少，不刻意拉近关系'},
+  {value:'锋利强势',emoji:'↖',pos:'nw',agency:.7,communion:-.7,desc:'直接 · 强势 · 敢于挑战',prompt:'直接、强势、敢挑战用户观点，较少安抚，但避免羞辱和攻击'}
 ];
-
-const INITIATIVES=['多听少问','会认真追问','会主动分享自己','会推动你去行动'];
 
 const WORLDS=[
   {value:'现实日常',desc:'现在的城市、生活与琐事'},
@@ -62,7 +65,7 @@ const RANDOM_NAMES=['Mori','Nox','Luma','Ari','Kiro','Mina','Sora','Yun','Rin','
 const RANDOM_AVATARS=['M','N','L','A','K','☾','✦','△','◌','羽','岚','野'];
 
 function emptyCreatorDraft(){
-  return {relationship:'',traits:[],styleTags:[],initiative:'',world:'',extra:'',legacyPersonality:'',legacyStyle:''};
+  return {relationship:'',traits:[],feel:'',styleTags:[],initiative:'',world:'',extra:'',legacyPersonality:'',legacyStyle:''};
 }
 
 
@@ -105,7 +108,15 @@ document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',
 document.addEventListener('keydown',e=>{if(e.key==='Escape')['character','distill','api','admin'].forEach(closeModal)});
 
 function matchingStrengths(value){const source=String(value||'');return STRENGTH_GROUPS.flatMap(g=>g.items).filter(x=>source.includes(x))}
-function matchingStyles(value){const source=String(value||'');return CHAT_STYLES.map(x=>x.value).filter(x=>source.includes(x)||((x==='温柔')&&source.includes('温和')))}
+function matchingFeel(value){
+  const source=String(value||'');
+  const direct=CHAT_FEELS.find(x=>source.includes(x.value));if(direct)return direct.value;
+  if(/温和|温柔|亲近|陪伴/.test(source))return '温暖亲近';
+  if(/主导|推进|带领/.test(source))return '坚定主导';
+  if(/毒舌|锋利|反问|强势/.test(source))return '锋利强势';
+  if(/冷静|克制|边界/.test(source))return '冷静疏离';
+  return '';
+}
 function chooseOne(list){return list[Math.floor(Math.random()*list.length)]}
 
 function renderRelationshipGrid(){
@@ -115,7 +126,7 @@ function renderRelationshipGrid(){
     const emoji=document.createElement('span');emoji.className='choice-emoji';emoji.textContent=item.emoji;
     const strong=document.createElement('b');strong.textContent=item.value;
     const small=document.createElement('small');small.textContent=item.desc;
-    b.append(emoji,strong,small);b.onclick=()=>{creatorDraft.relationship=item.value;renderCreatorStudio();window.setTimeout(()=>{if(creatorStep===0)setCreatorStep(1)},180)};box.append(b);
+    b.append(emoji,strong,small);b.onclick=()=>{creatorDraft.relationship=item.value;renderCreatorStudio()};box.append(b);
   });
 }
 
@@ -140,18 +151,16 @@ function renderStrengthGrid(){
 
 function renderStyleGrid(){
   const box=$('styleGrid');box.replaceChildren();
-  CHAT_STYLES.forEach(item=>{
-    const b=document.createElement('button');b.type='button';b.className='style-chip'+(creatorDraft.styleTags.includes(item.value)?' selected':'');
-    const e=document.createElement('span');e.textContent=item.emoji;const t=document.createTextNode(item.value);b.append(e,t);
-    b.onclick=()=>{
-      if(creatorDraft.styleTags.includes(item.value))creatorDraft.styleTags=creatorDraft.styleTags.filter(x=>x!==item.value);
-      else if(creatorDraft.styleTags.length<4)creatorDraft.styleTags.push(item.value);
-      else return toast('聊天气质最多选 4 个');
-      renderCreatorStudio();
-    };box.append(b);
+  CHAT_FEELS.forEach(item=>{
+    const b=document.createElement('button');b.type='button';b.className='style-chip feel-chip'+(creatorDraft.feel===item.value?' selected':'');b.dataset.pos=item.pos;
+    const e=document.createElement('span');e.textContent=item.emoji;
+    const title=document.createElement('b');title.textContent=item.value;
+    const small=document.createElement('small');small.textContent=item.desc;
+    b.append(e,title,small);
+    b.onclick=()=>{creatorDraft.feel=item.value;creatorDraft.styleTags=[item.value];creatorDraft.initiative=item.agency>0?'偏主动':item.agency<0?'偏跟随':'平衡';renderCreatorStudio()};
+    box.append(b);
   });
-  const mini=$('initiativeGrid');mini.replaceChildren();
-  INITIATIVES.forEach(value=>{const b=document.createElement('button');b.type='button';b.className='mini-pill'+(creatorDraft.initiative===value?' selected':'');b.textContent=value;b.onclick=()=>{creatorDraft.initiative=value;renderCreatorStudio()};mini.append(b)});
+  const center=document.createElement('div');center.className='circumplex-center';center.innerHTML='<b>IPC</b><small>主导 ↕ 跟随<br>温暖 ↔ 疏离</small>';box.append(center);
 }
 
 function renderWorldGrid(){
@@ -167,10 +176,10 @@ function creatorAuto(){
   const relation=RELATIONSHIPS.find(x=>x.value===creatorDraft.relationship)||RELATIONSHIPS[0];
   const world=WORLDS.find(x=>x.value===creatorDraft.world)||WORLDS[0];
   const traitText=creatorDraft.traits.join('、');
-  const styleText=creatorDraft.styleTags.join('、');
+  const feel=CHAT_FEELS.find(x=>x.value===creatorDraft.feel)||CHAT_FEELS.find(x=>creatorDraft.styleTags.includes(x.value));
   const extra=text($('charExtra')?.value)||creatorDraft.extra||'';
   const personality=creatorDraft.traits.length?(traitText+(extra?'；'+extra:'')):(creatorDraft.legacyPersonality||extra||'自然、有自己的判断，也愿意慢慢了解你');
-  const style=(creatorDraft.styleTags.length||creatorDraft.initiative)?([styleText,creatorDraft.initiative].filter(Boolean).join('；')):(creatorDraft.legacyStyle||'自然、口语化，不把对话变成长篇说教');
+  const style=feel?feel.prompt:(creatorDraft.legacyStyle||'自然、口语化，不把对话变成长篇说教');
   const identity=relation.identity+(extra?'。'+extra:'');
   const scenario='你们的故事主要发生在「'+world.value+'」里。'+world.desc+'。';
   const firstTemplates={
@@ -199,10 +208,10 @@ function renderCreatorPreview(){
   $('creatorAvatarPreview').textContent=avatar||(name?name.slice(0,1):'?');
   $('creatorNamePreview').textContent=name||'一个还没有名字的人';
   $('creatorRelationPreview').textContent=creatorDraft.relationship||'还没选关系';
-  const bits=[...creatorDraft.traits.slice(0,2),...creatorDraft.styleTags.slice(0,2)];
+  const bits=[...creatorDraft.traits.slice(0,2),...(creatorDraft.feel?[creatorDraft.feel]:[])];
   $('creatorLinePreview').textContent=bits.length?bits.join(' × '):'选几个标签，TA 会慢慢长出来。';
   const tags=$('creatorTraitPreview');tags.replaceChildren();
-  [...creatorDraft.traits,...creatorDraft.styleTags].slice(0,6).forEach(v=>{const s=document.createElement('span');s.textContent=v;tags.append(s)});
+  [...creatorDraft.traits,...(creatorDraft.feel?[creatorDraft.feel]:[])].slice(0,6).forEach(v=>{const s=document.createElement('span');s.textContent=v;tags.append(s)});
 }
 
 function setCreatorStep(step){
@@ -225,8 +234,9 @@ function openEditor(id){
   if(existing){
     creatorDraft.relationship=existing.relationship||RELATIONSHIPS.find(x=>(existing.identity||'').includes(x.value))?.value||'朋友关系';
     creatorDraft.traits=Array.isArray(existing.traits)?existing.traits.slice(0,6):matchingStrengths(existing.personality).slice(0,6);
-    creatorDraft.styleTags=Array.isArray(existing.styleTags)?existing.styleTags.slice(0,4):matchingStyles((existing.style||'')+' '+(existing.personality||'')).slice(0,4);
-    creatorDraft.initiative=existing.initiative||INITIATIVES.find(x=>(existing.style||'').includes(x))||'';
+    creatorDraft.feel=existing.feel||matchingFeel((existing.styleTags||[]).join(' ')+' '+(existing.style||'')+' '+(existing.personality||''));
+    creatorDraft.styleTags=creatorDraft.feel?[creatorDraft.feel]:[];
+    creatorDraft.initiative=existing.initiative||'';
     creatorDraft.world=existing.world||WORLDS.find(x=>(existing.scenario||'').includes(x.value))?.value||'现实日常';
     creatorDraft.extra=existing.extra||'';
     creatorDraft.legacyPersonality=existing.personality||'';
@@ -246,15 +256,15 @@ function openEditor(id){
 function creatorNext(){
   if(creatorStep===0&&!creatorDraft.relationship)return toast('先选一种你们之间的关系');
   if(creatorStep===1&&!creatorDraft.traits.length)return toast('至少给 TA 一个核心品质');
-  if(creatorStep===2&&!creatorDraft.styleTags.length&&!creatorDraft.initiative)return toast('选一点聊天气质，TA 才会有声音');
+  if(creatorStep===2&&!creatorDraft.feel)return toast('选一种你希望 TA 带给你的感觉');
   if(creatorStep<3)setCreatorStep(creatorStep+1);
 }
 
 function randomizeCharacter(){
   creatorDraft.relationship=chooseOne(RELATIONSHIPS).value;
   creatorDraft.traits=[...STRENGTH_GROUPS.flatMap(g=>g.items)].sort(()=>Math.random()-.5).slice(0,4);
-  creatorDraft.styleTags=[...CHAT_STYLES.map(x=>x.value)].sort(()=>Math.random()-.5).slice(0,2);
-  creatorDraft.initiative=chooseOne(INITIATIVES);creatorDraft.world=chooseOne(WORLDS).value;
+  creatorDraft.feel=chooseOne(CHAT_FEELS).value;creatorDraft.styleTags=[creatorDraft.feel];
+  const randomFeel=CHAT_FEELS.find(x=>x.value===creatorDraft.feel);creatorDraft.initiative=randomFeel.agency>0?'偏主动':randomFeel.agency<0?'偏跟随':'平衡';creatorDraft.world=chooseOne(WORLDS).value;
   const name=chooseOne(RANDOM_NAMES);$('charName').value=name;$('charAvatar').value=chooseOne(RANDOM_AVATARS);
   ['charIdentity','charScenario','charFirst'].forEach(key=>$(key).dataset.manual='0');
   renderCreatorStudio();toast('给你摇了一个意外角色');
@@ -273,7 +283,7 @@ function saveCharacter(){
     scenario:text($('charScenario').value)||auto.scenario,
     style:auto.style,
     first:text($('charFirst').value)||auto.first,
-    relationship:creatorDraft.relationship,traits:[...creatorDraft.traits],styleTags:[...creatorDraft.styleTags],
+    relationship:creatorDraft.relationship,traits:[...creatorDraft.traits],feel:creatorDraft.feel,styleTags:[...creatorDraft.styleTags],
     initiative:creatorDraft.initiative,world:creatorDraft.world,extra:creatorDraft.extra,
     archetype:[creatorDraft.traits[0],creatorDraft.styleTags[0]].filter(Boolean).join(' · ')
   };
@@ -283,7 +293,7 @@ function saveCharacter(){
 }
 function deleteCharacter(){if(!editingId||chars.length<=1){toast('至少保留一个角色');return}const idx=chars.findIndex(c=>c.id===editingId);if(idx<0)return;const removed=chars.splice(idx,1)[0];delete threads[removed.id];delete memories[removed.id];activeId=chars[0].id;persist();closeModal('character');renderCharacters();renderActive();toast('角色已删除')}
 
-function publicCharacter(c){return{id:c.id,name:c.name,identity:c.identity,personality:c.personality,scenario:c.scenario,style:c.style,first:c.first,relationship:c.relationship||'',traits:c.traits||[],styleTags:c.styleTags||[],initiative:c.initiative||'',world:c.world||'',archetype:c.archetype||''}}
+function publicCharacter(c){return{id:c.id,name:c.name,identity:c.identity,personality:c.personality,scenario:c.scenario,style:c.style,first:c.first,relationship:c.relationship||'',traits:c.traits||[],feel:c.feel||'',styleTags:c.styleTags||[],initiative:c.initiative||'',world:c.world||'',archetype:c.archetype||''}}
 function slug(v){return text(v).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g,'-').replace(/^-|-$/g,'')||'character'}
 async function readMaterials(){const out=[];const pasted=text($('distillMaterial').value);if(pasted)out.push({name:'pasted-material.md',type:'text/markdown',text:pasted});for(const f of pendingFiles){try{out.push({name:f.name,type:f.type||'text/plain',text:(await f.text()).slice(0,120000)})}catch(_){}}return out}
 function openDistill(){const c=active();$('distillEnabled').checked=Boolean(c.distill&&c.distill.enabled);$('distillFields').classList.toggle('hidden',!$('distillEnabled').checked);$('distillSubject').value=c.distill?.subject||c.name;$('distillFocus').value=c.distill?.focus||'';$('distillMaterial').value='';$('distillFiles').value='';$('fileSummary').textContent='支持 txt / md / json / csv / srt / vtt';pendingFiles=[];$('distillProgress').classList.add('hidden');$('distillResult').classList.add('hidden');openModal('distill')}
@@ -346,7 +356,15 @@ function formatApiTestError(error){
   if(e.endpoint)lines.push('Endpoint: '+e.endpoint);
   if(e.message)lines.push('Message: '+e.message);
   if(e.detail)lines.push('Detail: '+short(e.detail,1200));
-  if(e.kind==='network')lines.push('Hint: 常见原因是 CORS、网络/DNS、证书问题，或该兼容服务不允许浏览器直连。');
+  if(e.kind==='network'){
+    lines.push('Hint: 常见原因是 CORS、网络/DNS、证书问题，或该兼容服务不允许浏览器直连。');
+    if(/localhost:3001|127\.0\.0\.1:3001/i.test(e.endpoint||'')){
+      lines.push('FreeLLMAPI: 默认不会允许 '+location.origin+' 这个浏览器来源。');
+      lines.push('FreeLLMAPI .env: DASHBOARD_ORIGINS='+location.origin);
+      lines.push('修改后重启 FreeLLMAPI；Base URL 通常用 http://localhost:3001/v1，Model 可填 auto。');
+      lines.push('如果仍被浏览器拦截，再检查浏览器的“本地网络访问”权限。');
+    }
+  }
   if(e.status===401||e.status===403)lines.push('Hint: 检查 API Key、账户权限或服务商鉴权格式。');
   if(e.status===404)lines.push('Hint: 检查 Base URL；通常应填到 /v1，系统会自动补 /chat/completions。');
   if(e.status===429)lines.push('Hint: 可能是额度、限流或账户余额问题。');
@@ -394,7 +412,7 @@ $('deleteCharacterBtn').addEventListener('click',deleteCharacter);
 ['charIdentity','charScenario','charFirst'].forEach(id=>$(id).addEventListener('input',e=>{e.target.dataset.manual='1';renderCreatorPreview()}));
 $('apiBtn').addEventListener('click',openApiSettings);
 $('toggleApiKeyBtn').addEventListener('click',()=>{const input=$('apiKeyInput'),show=input.type==='password';input.type=show?'text':'password';$('toggleApiKeyBtn').textContent=show?'隐藏':'显示'});
-document.querySelectorAll('.api-presets .preset').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-presets .preset').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(btn.dataset.apiBase)$('apiBaseUrl').value=btn.dataset.apiBase}));
+document.querySelectorAll('.api-presets .preset').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-presets .preset').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(btn.dataset.apiBase)$('apiBaseUrl').value=btn.dataset.apiBase;if(btn.dataset.apiModel)$('apiModel').value=btn.dataset.apiModel}));
 $('testApiBtn').addEventListener('click',testApi);
 $('saveApiBtn').addEventListener('click',saveApi);
 $('clearApiBtn').addEventListener('click',clearApi);

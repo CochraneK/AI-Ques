@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f3f2ed">
   <meta name="description" content="P004 角色世界：可设定 NPC、可选 NVWA 蒸馏、长期记忆与后台人物画像。">
   <title>P004 · 角色世界</title>
-  <link rel="stylesheet" href="styles.css?v=20260916-mece">
+  <link rel="stylesheet" href="styles.css?v=20260916-theory">
 </head>
 <body>
 <header class="topbar">
@@ -69,23 +69,23 @@
         <section class="creator-page active" data-step="0">
           <span class="step-no">01</span>
           <h3>TA 和你最主要是什么关系？</h3>
-          <p class="creator-help">按主要社会角色分组，尽量互斥且覆盖常见关系。点选后会自动进入下一步。</p>
+          <p class="creator-help">按主要社会角色分组，尽量互斥且覆盖常见关系。选好后由你点击“下一步”。</p>
           <div id="relationshipGrid" class="choice-cards relation-grid"></div>
         </section>
 
         <section class="creator-page" data-step="1">
           <span class="step-no">02</span>
           <h3>给 TA 几个真正重要的品质。</h3>
-          <p class="creator-help">与 P001 的积极品质体系同源。最多选 6 个，不用每个都解释。</p>
+          <p class="creator-help">基于 VIA 24 Character Strengths / 6 Virtues。它是理论分类，不宣称严格 MECE；最多选 6 个。</p>
           <div id="strengthGrid" class="trait-groups"></div>
         </section>
 
         <section class="creator-page" data-step="2">
           <span class="step-no">03</span>
-          <h3>聊天要是什么味道？</h3>
-          <p class="creator-help">最多选 4 个。可以互相矛盾——真实的人本来就有张力。</p>
-          <div id="styleGrid" class="style-cloud"></div>
-          <div class="micro-section"><span>TA 更常怎么推进对话？</span><div id="initiativeGrid" class="mini-choice"></div></div>
+          <h3>聊天时，TA 给你什么感觉？</h3>
+          <p class="creator-help">基于 Interpersonal Circumplex：主导 ↔ 跟随 × 温暖 ↔ 疏离，两条正交轴切成 8 个扇区。选一个最主要的感觉。</p>
+          <div class="circumplex-note"><span>Agency · 主导 ↕ 跟随</span><span>Communion · 温暖 ↔ 疏离</span></div>
+          <div id="styleGrid" class="style-cloud feel-cloud"></div>
         </section>
 
         <section class="creator-page" data-step="3">
@@ -147,6 +147,7 @@
     <p class="modal-lead">支持常见 OpenAI-compatible <code>/chat/completions</code>。配置只保存在当前标签页的 <code>sessionStorage</code>，不会写进 GitHub，也不会进入管理员画像。</p>
     <div class="api-presets">
       <button type="button" class="preset active" data-api-base="https://api.openai.com/v1">OpenAI</button>
+      <button type="button" class="preset" data-api-base="http://localhost:3001/v1" data-api-model="auto">FreeLLMAPI · 本机</button>
       <button type="button" class="preset" data-api-base="">自定义兼容服务</button>
     </div>
     <div class="api-form">
@@ -154,7 +155,7 @@
       <label><span>API Key</span><div class="secret-field"><input id="apiKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... / 兼容服务密钥"><button id="toggleApiKeyBtn" type="button">显示</button></div><small>前端直连意味着页面脚本理论上可访问密钥。建议使用限额、可撤销的个人 Key。</small></label>
       <label><span>Model</span><input id="apiModel" list="modelSuggestions" spellcheck="false" placeholder="gpt-5.6 / 你的模型名"><datalist id="modelSuggestions"><option value="gpt-5.6"></option><option value="gpt-5.6-luna"></option><option value="gpt-4o-mini"></option></datalist></label>
     </div>
-    <div class="cors-note"><i></i><span>兼容服务需要允许浏览器 CORS。若浏览器阻止跨域请求，需改用支持 CORS 的网关或后端。</span></div>
+    <div class="cors-note"><i></i><span>兼容服务需要允许浏览器 CORS。FreeLLMAPI 本机模式通常还需要把当前网页来源加入它的 <code>DASHBOARD_ORIGINS</code>；“测试连接”会给出具体提示。</span></div>
     <pre id="apiTestResult" class="api-test-result hidden" aria-live="polite"></pre>
     <div class="modal-actions"><button id="clearApiBtn" class="danger" type="button">清除</button><span></span><button id="testApiBtn" class="secondary" type="button">测试连接</button><button id="saveApiBtn" class="primary" type="button">保存到本次会话</button></div>
   </section>
@@ -172,7 +173,7 @@
 
 <div id="toast" class="toast"></div>
 <script src="../shared/profile.js?v=1"></script>
-<script src="api-client.js?v=20260916-mece"></script>
-<script src="app.js?v=20260916-mece"></script>
+<script src="api-client.js?v=20260916-theory"></script>
+<script src="app.js?v=20260916-theory"></script>
 </body>
 </html>
