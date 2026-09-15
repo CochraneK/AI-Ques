@@ -10,7 +10,7 @@ AI-Ques is the static P00 hub for multiple psychology-informed interaction proto
 - **P004** owns Character Cards, NPC conversation, optional NVWA Skill artifacts, relationship memory and private research-side longitudinal inference.
 - **P005** owns future-self narrative, media hooks, conversation and time capsules.
 
-Modules should not silently read another module's private storage. P004 is the explicit cross-module Observer exception: its UI discloses that user-authored P005 / Future You open responses may contribute to the same research evidence pool. Production must move this aggregation behind consent-aware authenticated APIs.
+Modules should not silently read another module's private storage. P004 and P005 are the only explicit bilateral interoperability pair: P004 may use user-authored P005 responses/conversation as research evidence, and P005 may use user-authored P004 conversation/memory as non-clinical continuity context. P004 private clinical/admin inference must never be exposed to P005 as user-visible facts. Production must move this aggregation behind consent-aware authenticated APIs.
 
 ## 3. Public shared profile
 
@@ -56,3 +56,20 @@ P004 clinical-like signals must remain admin/research-side. P005 must not reinte
 P001–P005 share a standing product-design constraint: **Less is more**.
 
 The canonical UI principles are documented in `docs/DESIGN_PRINCIPLES.md`. Feature growth must not automatically increase visible interface density. Prefer one-task-per-screen flows, progressive disclosure, whitespace, typography, and semantic motion over additional cards, gradients, badges, and decorative AI motifs.
+
+
+## 9. P004 / P005 future standalone decision
+
+Leadership has decided that **P004 and P005 are expected to be distributable as standalone products later**.
+
+Architectural consequences:
+
+- P004 must not require P001, P002 or P003 to function.
+- P005 must not require P001, P002 or P003 to function.
+- Current monorepo reuse of P001 content/assets is an optional compatibility convenience only; P005 must always provide its own fallback intake.
+- P004 and P005 may reuse each other's already-created user data when both are present.
+- The direction is order-dependent: if P004 was completed first, P005 may use safe P004 user-authored context; if P005 was completed first, P004 may use safe P005 user-authored context.
+- P004 clinical/admin-only observer signals are not part of the bilateral public bridge.
+- Future extraction should preserve stable module-scoped storage/API contracts so either module can be moved without rewriting its core flow.
+
+This is a standing architecture constraint, not a temporary UI preference.

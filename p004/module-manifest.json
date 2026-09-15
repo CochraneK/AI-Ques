@@ -39,5 +39,13 @@
   "safety": {
     "roleplay_yields_to_immediate_safety": true,
     "admin_only_clinical_signals": true
+  },
+  "interoperability": {
+    "standalone_future": true,
+    "required_predecessors": [],
+    "bilateral_peer": "P005",
+    "may_import_user_authored_p005_data": true,
+    "p004_admin_clinical_signals_never_exported_to_p005": true,
+    "order_independent": true
   }
 }

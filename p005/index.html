@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="P005 Future Me：基于人生故事、未来记忆与未来自我对话的研究原型。" />
   <title>P005 · Future Me</title>
-  <link rel="stylesheet" href="styles.css?v=20260915-v05" />
+  <link rel="stylesheet" href="styles.css?v=20260916-v06" />
 </head>
 <body>
   <header class="topbar">
@@ -21,6 +21,7 @@
     </div>
 
     <div class="top-actions">
+      <button id="apiBtn" class="quiet-action api-status-button" type="button"><i></i><span id="apiBtnText">模型</span></button>
       <button id="exportBtn" class="quiet-action" type="button">导出</button>
       <button id="resetBtn" class="quiet-action" type="button">清除</button>
     </div>
@@ -225,10 +226,83 @@
     </section>
   </main>
 
+  <div id="apiModal" class="api-modal hidden" role="dialog" aria-modal="true" aria-labelledby="apiModalTitle">
+    <button class="api-backdrop" data-api-close type="button" aria-label="关闭模型设置"></button>
+    <section class="api-panel">
+      <div class="api-panel-head">
+        <div>
+          <p class="kicker">MODEL SETTINGS · BYOK</p>
+          <h2 id="apiModalTitle">模型设置</h2>
+        </div>
+        <button class="quiet-action" data-api-close type="button">关闭</button>
+      </div>
+
+      <p class="api-intro">可以直接连接 OpenAI-compatible 接口。API Key 只保存在当前浏览器标签页的 sessionStorage，关闭标签页即清除；正式研究仍建议走服务端代理。</p>
+
+      <div class="api-form">
+        <label class="api-field api-field-wide">
+          <span>Base URL</span>
+          <input id="apiBaseUrl" type="url" spellcheck="false" placeholder="https://api.openai.com/v1">
+          <small>兼容接口根地址。P005 会分别调用 chat、image edit、speech、transcription 端点。</small>
+        </label>
+
+        <label class="api-field api-field-wide">
+          <span>API Key</span>
+          <div class="secret-field">
+            <input id="apiKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="sk-...">
+            <button id="toggleApiKeyBtn" type="button">显示</button>
+          </div>
+          <small>仅保存到本次会话。不要在共用设备使用长期主密钥。</small>
+        </label>
+
+        <label class="api-field">
+          <span>文字对话模型</span>
+          <input id="apiChatModel" spellcheck="false" placeholder="gpt-5.6-luna">
+        </label>
+        <label class="api-field">
+          <span>图像模型</span>
+          <input id="apiImageModel" spellcheck="false" placeholder="gpt-image-2">
+        </label>
+        <label class="api-field">
+          <span>TTS 模型</span>
+          <input id="apiTtsModel" spellcheck="false" placeholder="gpt-4o-mini-tts">
+        </label>
+        <label class="api-field">
+          <span>语音转文字模型</span>
+          <input id="apiSttModel" spellcheck="false" placeholder="gpt-transcribe">
+        </label>
+        <label class="api-field">
+          <span>声音</span>
+          <select id="apiVoice">
+            <option value="marin">Marin</option>
+            <option value="cedar">Cedar</option>
+            <option value="coral">Coral</option>
+            <option value="verse">Verse</option>
+            <option value="alloy">Alloy</option>
+            <option value="nova">Nova</option>
+          </select>
+        </label>
+        <div class="api-field api-capabilities">
+          <span>启用后</span>
+          <p>文字对话 · 未来头像 · 真人感 TTS · 语音转文字</p>
+        </div>
+      </div>
+
+      <div id="apiTestResult" class="api-test-result hidden"></div>
+      <div class="api-actions">
+        <button id="clearApiBtn" class="text-button danger-text" type="button">清除</button>
+        <span></span>
+        <button id="testApiBtn" class="secondary" type="button">测试对话</button>
+        <button id="saveApiBtn" class="primary" type="button">保存到本次会话</button>
+      </div>
+    </section>
+  </div>
+
   <div class="toast" id="toast" role="status"></div>
 
   <script src="../shared/profile.js?v=1"></script>
   <script src="runtime-config.js?v=1"></script>
-  <script src="app.js?v=20260915-v05"></script>
+  <script src="api-client.js?v=1"></script>
+  <script src="app.js?v=20260916-v06"></script>
 </body>
 </html>

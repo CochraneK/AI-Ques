@@ -24,7 +24,7 @@ for (const file of [
   "p001/index.html", "p001/report.js", "p001/static-api.js", "p001/study-manifest.json", "p001/app-loader.js",
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
   "p004/index.html", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
-  "p005/index.html", "p005/app.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
+  "p005/index.html", "p005/app.js", "p005/api-client.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
   "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
@@ -105,6 +105,16 @@ assert.match(p005, /minimal:\{/);
 assert.match(p005, /warm:\{/);
 assert.match(p005, /night:\{/);
 assert.match(p005, /mint:\{/);
+assert.match(p005, /bjtu\.p004\.threads\.v2/);
+assert.match(p005, /bjtu\.p004\.memory\.v2/);
+assert.doesNotMatch(p005, /bjtu\.p004\.observer\.v2/);
+const p005Api = read("p005/api-client.js");
+assert.match(p005Api, /chat\/completions/);
+assert.match(p005Api, /images\/edits/);
+assert.match(p005Api, /audio\/speech/);
+assert.match(p005Api, /audio\/transcriptions/);
+assert.match(p005Api, /sessionStorage\.setItem\(DIRECT_KEY/);
+assert.match(read("p005/index.html"), /MODEL SETTINGS · BYOK/);
 assert.match(p005, /HORIZON_OPTIONS = \['1y','2y','3y','4y','10y','age60'\]/);
 assert.doesNotMatch(p005, /if\(name==='generate'\).*survey/);
 assert.match(read("p005/runtime-config.js"), /targetHorizon: "4y"/);
@@ -113,6 +123,9 @@ assert.match(read("p005/admin.html"), /研究复刻版/);
 assert.match(read("p005/runtime-config.js"), /transcribeApi/);
 assert.match(read("p005/METHODS_MAPPING.md"), /sequential, one question per screen/);
 assert.match(read("docs/DESIGN_PRINCIPLES.md"), /Less is more/);
+assert.match(read("docs/ARCHITECTURE.md"), /P004 \/ P005 future standalone decision/);
+assert.equal(JSON.parse(read("p005/module-manifest.json")).interoperability.required_predecessors.length, 0);
+assert.equal(JSON.parse(read("p004/module-manifest.json")).interoperability.bilateral_peer, "P005");
 
 const legacyFuture = fs.readdirSync(path.join(root, "future-me")).sort();
 assert.deepEqual(legacyFuture, ["index.html"], "future-me must be redirect-only");
