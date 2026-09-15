@@ -42,7 +42,6 @@ def scan_repo() -> list[dict]:
         "shared/profile.js",
         "p002/index.html",
         "p002/app.js",
-        "p002/experiments.js",
         "p002/study-manifest.json",
         "p004/index.html",
         "p004/app.js",
@@ -156,6 +155,39 @@ def scan_repo() -> list[dict]:
             "p002-missing-study-state", "P0", "p002/study-manifest.json",
             "P002 study manifest lacks formal data collection state.",
             "Keep explicit prototype/research governance flags.",
+        ))
+
+    p002_manifest = read("p002/study-manifest.json")
+    p002_index = read("p002/index.html")
+    for needle, code, message in [
+        ("scoreOffset:1", "p002-cape-old-encoding", "P002 still applies the obsolete CAPE +1 score offset."),
+        ("高信号", "p002-item-feedback-priming", "P002 participant flow contains item-level signal feedback."),
+        ("中等信号", "p002-item-feedback-priming", "P002 participant flow contains item-level signal feedback."),
+        ("构念启发", "p002-construct-cue", "P002 participant flow exposes construct-language cues."),
+        ("emoji-counter", "p002-emoji-counter", "P002 still exposes a persistent Emoji counter."),
+    ]:
+        if needle in p002_app:
+            findings.append(finding(
+                code, "P0", "p002/app.js", message,
+                "Keep participant-facing assessment UI construct-neutral and low-noise.",
+            ))
+    if "current-cape-p15-original-0-3" not in p002_app or "conditional 0-3 distress" not in p002_manifest:
+        findings.append(finding(
+            "p002-cape-scoring-contract", "P0", "p002/",
+            "P002 CAPE scoring/distress contract is not frozen to the audited 0-3 scheme.",
+            "Keep original 0-3 frequency plus conditional 0-3 distress in app and manifest.",
+        ))
+    if "同一段最困扰的压力经历" not in p002_app or "困扰到你" not in p002_app:
+        findings.append(finding(
+            "p002-pcl-anchor", "P0", "p002/app.js",
+            "PCL participant instructions do not preserve the single-event bother anchor.",
+            "Keep one stressful-event anchor and rate how much each problem bothered the participant in the past month.",
+        ))
+    if "START AN EXPERIMENT" in p002_index or "最适合第一版" in p002_app or "成本最低" in p002_app:
+        findings.append(finding(
+            "p002-ui-noise", "P1", "p002/",
+            "P002 participant UI contains researcher/product-manager chrome.",
+            "Keep participant copy limited to task context, instructions and required safety language.",
         ))
 
     if "aiques.global.profile.v1" in p004_app:
