@@ -67,3 +67,17 @@ P002 不是诊断工具、医疗器械或临床筛查服务。正式研究需要
 直接问卷与 Emoji 等 baseline-like 路径默认不显示 B/C/D/E 或 PI/BE/PA code，也不把英文 source item 放在参与者题面。开发/核对时可使用 `?source=1` 显示 PCL-5 英文 source item。
 
 这不是为了隐藏研究信息，而是为了避免 baseline 条件被构念标签或双语文本额外提示。
+
+
+## 质量审计规则
+
+当前原型增加以下硬约束：
+
+- PCL-5：始终以同一段最困扰的压力经历为参照，并按“过去一个月被困扰的程度”作答；不把 0–4 误写成频率。
+- CAPE-P15：过去 3 个月，0–3 频率；至少“有时”后追加独立 0–3 distress。
+- VASSIP：不计分互动必须与 B/C/D/E 或 PI/BE/PA 构念无关，避免先行 priming。
+- Emoji Game：每个 session 只放置 1 个 Emoji，不在整份问卷中反复出现。
+- HEXACO-RUSH / SJT：情景一次只承载一个主要构念，不把 grounding、沟通技巧等 coping competence 当成症状强度。
+- PsychoGAT：当前是静态连续小说原型，不在参与者界面展示 agent 架构、构念 code 或隐藏评分逻辑。
+- 默认结果页只显示“完成”，不向参与者显示总分、cluster bars、SJT signal 或风险解释；研究检查可使用 `?research=1`。
+- 正式 mode comparison 应由研究协议分配条件；`?mode=<mode_id>` 可锁定单一条件，避免参与者在正式研究中自选玩法。
