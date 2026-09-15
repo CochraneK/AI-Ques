@@ -89,3 +89,12 @@ window.P004_CONFIG = {
 ```
 
 所有 API key 都应只保存在后端。
+
+## Design references
+
+- SillyTavern: Character Cards, Personas and context-specific World Info / Lorebooks.
+- AI Town: conversation summaries, memory retrieval and extensible agent runtime.
+- Second Me: local-first identity/memory and role switching.
+- NVWA Skill: research-driven distillation of thinking patterns rather than a shallow persona prompt.
+
+P004 borrows these interaction patterns selectively; it is not a 1:1 clone of any one product.
