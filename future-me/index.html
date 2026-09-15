@@ -12,7 +12,7 @@
     <header class="topbar">
       <a class="brand" href="../">AI-Ques</a>
       <div class="step-dots" id="stepDots" aria-label="进度"></div>
-      <button class="text-btn" id="resetBtn">重新开始</button>
+      <button class="text-btn" id="resetBtn">清除本地数据</button>
     </header>
 
     <section class="screen active" id="screen-welcome">
@@ -23,10 +23,10 @@
         <div class="principles">
           <div><b>不是预测</b><span>只生成一种合理但不确定的未来。</span></div>
           <div><b>不是治疗</b><span>目标是自我反思与长期思考。</span></div>
-          <div><b>本地优先</b><span>当前 Demo 默认只在浏览器本地保存。</span></div>
+          <div><b>本地保存</b><span>当前 Demo 默认写入此浏览器；关闭页面后仍会保留。</span></div>
         </div>
         <button class="primary" data-next="identity">开始认识未来的我 →</button>
-        <p class="tiny">灵感来自 MIT Future You 研究；本 Demo 与 MIT 无官方隶属关系，也不复制其品牌与照片老化模块。</p>
+        <p class="tiny"><strong>隐私提示：</strong>人生故事与对话会保存在当前浏览器的 localStorage；共用设备请在结束后点击右上角“清除本地数据”。当前公开 Demo 不会自动上传到模型。<br>灵感来自 MIT Future You 研究；本 Demo 与 MIT 无官方隶属关系，也不复制其品牌与照片老化模块。</p>
       </div>
       <div class="future-card" aria-hidden="true">
         <div class="time-ring"><span>NOW</span><strong>→</strong><span>60</span></div>

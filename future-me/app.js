@@ -64,7 +64,20 @@ function generateSequence(){
 }
 $('#meetBtn').onclick=()=>show('ready');
 
-function renderReady(){if(!state.memory)state.memory=buildMemory();const p=state.profile;const initial=(clean(p.name,'F')[0]||'F').toUpperCase();$('#futureAvatar').textContent=initial;$('#chatAvatar').textContent=initial;$('#futureName').textContent=clean(p.name,'你');$('#chatName').textContent=`${clean(p.name,'Future Me')} · 60`;$('#memorySummary').innerHTML=`<p>${state.memory.summary}</p><div class="timeline">${state.memory.timeline.map(x=>`<div class="milestone"><b>${x.age} 岁 · ${x.tag}</b><p>${x.text}</p></div>`).join('')}</div><p><strong>可能学到的几件事</strong></p><ul>${state.memory.lessons.map(x=>`<li>${x}</li>`).join('')}</ul>`;save();}
+function renderReady(){
+  if(!state.memory)state.memory=buildMemory();
+  const p=state.profile;
+  const initial=(clean(p.name,'F')[0]||'F').toUpperCase();
+  $('#futureAvatar').textContent=initial;
+  $('#chatAvatar').textContent=initial;
+  $('#futureName').textContent=clean(p.name,'你');
+  $('#chatName').textContent=`${clean(p.name,'Future Me')} · 60`;
+  const summary=escapeHtml(state.memory.summary);
+  const timeline=state.memory.timeline.map(x=>`<div class="milestone"><b>${escapeHtml(x.age)} 岁 · ${escapeHtml(x.tag)}</b><p>${escapeHtml(x.text)}</p></div>`).join('');
+  const lessons=state.memory.lessons.map(x=>`<li>${escapeHtml(x)}</li>`).join('');
+  $('#memorySummary').innerHTML=`<p>${summary}</p><div class="timeline">${timeline}</div><p><strong>可能学到的几件事</strong></p><ul>${lessons}</ul>`;
+  save();
+}
 
 function ensureGreeting(){if(state.messages.length)return;const p=state.profile;state.messages.push({role:'future',text:`嗨，${clean(p.name,'年轻的我')}。我是 60 岁的你。先说清楚：我不是“真正发生过的未来”，只是你刚才那些目标、关系和经历长出来的一种可能版本。\n\n但如果你愿意，我可以从这个时间点回头，和你聊聊工作、家人、后悔、意外，或者你现在最难做的决定。`});save();}
 function startChat(){ensureGreeting();renderMessages();}

@@ -1,11 +1,11 @@
-// Scenario-based experimental modes for AI-Uni.
+// Scenario-based experimental modes for AI-Ques.
 // These are research prototypes. They are intentionally kept separate from validated scale scoring.
 
 const LEGACY_MODES = {...MODES};
 Object.keys(MODES).forEach(k => delete MODES[k]);
 Object.assign(MODES, {
   original: LEGACY_MODES.original,
-  itemscene: {name:'原题逐题情景化', desc:'每一道原题对应一个生活情景，仍保留一题一映射，便于和原题逐题比较。', tag:'一题 ↔ 一情景'},
+  itemscene: {name:'逐题情景化', desc:'每一道当前问卷题对应一个生活情景，仍保留一题一映射，便于和直接问卷条件逐题比较。', tag:'一题 ↔ 一情景'},
   construct: {name:'构念情景化', desc:'不追求逐题对应，围绕 B/C/D/E 或 PI/BE/PA 构念设计多个独立决策情境。', tag:'构念级 SJT'},
   aisjt: {name:'AI-SJT', desc:'用 AI 生成思路制作多个校园 SJT 变体；当前 Pages 版使用预生成题库，不调用在线模型。', tag:'低成本 AI 题库'},
   psychogat: {name:'PsychoGAT-lite', desc:'把量表节点串成连续互动小说：故事会记住你的选择，下一幕继续推进。', tag:'LLM Agent 范式'},
@@ -136,7 +136,7 @@ renderStep = function(){
 
 function renderItemScene(){
   const scale=SCALES[state.scale], item=scale.items[state.index];
-  if(!item) return finishMappedExperiment('原题逐题情景化');
+  if(!item) return finishMappedExperiment('逐题情景化');
   progress(state.index, scale.items.length);
   const scene=ITEM_SCENES[state.scale][state.index];
   $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">逐题映射 · ${scale.name} #${item.id}</div><h2>把这一题放进一个具体时刻</h2><p class="story">${scene}</p><div class="question-card"><div class="question-id">对应构念：${item.cluster} · 与原题一一映射</div><div class="question">回看 ${scale.window}，这种情形与你的真实体验有多接近？</div><div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i+(scale.scoreOffset||0)}</span></button>`).join('')}</div><div class="safe-note">这一版改变了题目呈现，因此这里的映射分数只用于与原题做研究比较，不能直接宣称等同于正式量表分数。</div></div></div>`;

@@ -62,7 +62,7 @@ const SCALES = {
 };
 
 const MODES = {
-  original:{name:'原题',desc:'不加故事、不加 Emoji、不做情景改写；直接完成标准题目，作为对照组。',tag:'对照基线'},
+  original:{name:'直接问卷',desc:'不加故事、不加 Emoji、不做情景改写；直接按当前原型题干作答。用于界面对照，不视为验证版心理测量金标准。',tag:'直接呈现条件'},
   vassip:{name:'VASSIP 式',desc:'故事化 + 沉浸 + 不计分小游戏；核心题目和评分不改变。',tag:'最适合第一版'},
   emoji:{name:'Emoji Game 式',desc:'量表保持原样，只加入“找 Emoji”任务，提高完成过程的轻松感。',tag:'成本最低'},
   rush:{name:'HEXACO-RUSH 式',desc:'把构念改写成连续情景决策；输出实验性行为画像，不冒充标准量表分数。',tag:'创新最高 / 需验证'}
@@ -131,9 +131,9 @@ function renderStep(){
   if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
   const emojiActive=state.mode==='emoji' && [1,3,5,7,9,11,13,16,19].includes(state.index);
   if(emojiActive) state.emojiSeen++;
-  const modeKicker=state.mode==='original'?'原题模式':state.mode==='vassip'?'故事中的真实量表题':'Emoji Check-in';
-  const modeTitle=state.mode==='original'?'按原题直接作答':state.mode==='vassip'?ch.title:'找到小表情，也完成一次自我观察';
-  const modeStory=state.mode==='original'?'不添加任何游戏化元素，直接按照量表时间窗口与题目内容作答。':state.mode==='vassip'?storyLine(scale,item):'题目与评分逻辑保持不变；Emoji 只是额外的寻找任务，不影响答案。';
+  const modeKicker=state.mode==='original'?'直接问卷':state.mode==='vassip'?'故事中的直接问卷题':'Emoji Check-in';
+  const modeTitle=state.mode==='original'?'直接按题干作答':state.mode==='vassip'?ch.title:'找到小表情，也完成一次自我观察';
+  const modeStory=state.mode==='original'?'不添加任何游戏化元素，直接按照当前原型题干与时间窗口作答；该条件用于交互比较，不代表验证版量表基线。':state.mode==='vassip'?storyLine(scale,item):'题目与评分逻辑保持不变；Emoji 只是额外的寻找任务，不影响答案。';
   $('#gameBody').innerHTML=`<div class="scene">
     ${chapterStart && state.mode==='vassip'?`<div class="chapter-card"><span class="scene-kicker">${ch.key} · ${scale.window}</span><h2>${ch.title}</h2><p>${ch.desc}</p></div>`:''}
     <div class="scene-kicker">${modeKicker} · ${scale.name}</div>
