@@ -769,7 +769,8 @@ async function requestFuturePortrait(){
     image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:targetAge(),
     instruction:'Preserve identity. Create a respectful photorealistic portrait at the configured future age. Apply only natural age progression appropriate to the age difference; do not alter race, gender presentation, or core facial identity.'
   };
-  if(window.P005_API&&window.P005_API.configured){
+  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  if(directCaps.image){
     try{
       const result=await window.P005_API.image(payload);
       if(result&&result.imageUrl){
@@ -848,7 +849,8 @@ function renderReady(){
   $('#chatName').textContent=clean(state.profile.name,'Future Me')+' · '+targetPhrase();
   $('#futureIntro').textContent=state.memory.futureVignette||'一个由你现在的故事延伸出来的可能版本。';
   renderFuturePortrait();
-  $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&((window.P005_API&&window.P005_API.configured)||apiConfig('imageApi'))));
+  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(caps.image||apiConfig('imageApi'))));
 
   const memories=Array.isArray(state.memory.memories)&&state.memory.memories.length
     ? state.memory.memories.slice(0,3)
@@ -863,7 +865,8 @@ function renderReady(){
 
 $('#agePortraitBtn').addEventListener('click',async()=>{
   if(!state.currentPortrait){showToast('先加入一张现在的照片');show('portrait');return}
-  if(!((window.P005_API&&window.P005_API.configured)||apiConfig('imageApi'))){showToast('尚未连接年龄化图像 API');return}
+  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  if(!(caps.image||apiConfig('imageApi'))){showToast('尚未配置可用的图像编辑模型');return}
   const button=$('#agePortraitBtn'),old=button.textContent;
   button.disabled=true;button.textContent='生成中…';
   const ok=await requestFuturePortrait();
@@ -1037,7 +1040,8 @@ async function speakText(text){
     language:'zh-CN',
     profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
   };
-  if(window.P005_API&&window.P005_API.configured){
+  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  if(directCaps.tts){
     try{
       const result=await window.P005_API.speak(voicePayload);
       if(result&&result.audioUrl){
@@ -1110,7 +1114,8 @@ function ensureRecognition(){
   return recognition;
 }
 async function transcribeRecordedAudio(blob){
-  if(window.P005_API&&window.P005_API.configured){
+  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  if(directCaps.stt){
     try{
       const result=await window.P005_API.transcribe(blob);
       if(result&&result.text)return String(result.text).trim();
@@ -1149,7 +1154,8 @@ async function startBackendRecording(){
   setListening(true,'再次点击结束录音');
 }
 $('#micBtn').addEventListener('click',async()=>{
-  if(((window.P005_API&&window.P005_API.configured)||apiConfig('transcribeApi'))&&navigator.mediaDevices&&window.MediaRecorder){
+  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  if((caps.stt||apiConfig('transcribeApi'))&&navigator.mediaDevices&&window.MediaRecorder){
     if(recorder&&recorder.state==='recording'){recorder.stop();return}
     try{await startBackendRecording()}catch(error){console.warn(error);showToast('无法使用麦克风')}
     return;
@@ -1160,11 +1166,11 @@ $('#micBtn').addEventListener('click',async()=>{
 });
 
 function updateChatModeNote(){
-  const direct=Boolean(window.P005_API&&window.P005_API.configured);
+  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
   const bits=[targetPhrase()];
-  bits.push(direct?'BYOK':apiConfig('chatApi')?'LLM':'本地原型');
-  if(direct||apiConfig('transcribeApi'))bits.push('语音转文字');
-  if(state.settings.voiceMode)bits.push((direct||apiConfig('voiceApi'))?'真人感 TTS':'浏览器朗读');
+  bits.push(caps.chat?'BYOK':apiConfig('chatApi')?'LLM':'本地原型');
+  if(caps.stt||apiConfig('transcribeApi'))bits.push('语音转文字');
+  if(state.settings.voiceMode)bits.push((caps.tts||apiConfig('voiceApi'))?'真人感 TTS':'浏览器朗读');
   $('#chatModeNote').textContent=bits.join(' · ');
 }
 
@@ -1185,17 +1191,18 @@ function renderApiRuntime(){
   if(button)button.classList.toggle('connected',configured);
   if($('#apiBtnText'))$('#apiBtnText').textContent=configured?'API 已接':'模型';
   updateChatModeNote();
-  if($('#agePortraitBtn'))$('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(configured||apiConfig('imageApi'))));
+  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  if($('#agePortraitBtn'))$('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(caps.image||apiConfig('imageApi'))));
 }
 function openApiSettings(){
   if(!window.P005_API)return;
   const s=window.P005_API.readDirect();
   $('#apiBaseUrl').value=s.baseUrl||'https://api.openai.com/v1';
   $('#apiKeyInput').value=s.apiKey||'';
-  $('#apiChatModel').value=s.chatModel||'gpt-5.6-luna';
-  $('#apiImageModel').value=s.imageModel||'gpt-image-2';
-  $('#apiTtsModel').value=s.ttsModel||'gpt-4o-mini-tts';
-  $('#apiSttModel').value=s.sttModel||'gpt-transcribe';
+  $('#apiChatModel').value=s.chatModel||'';
+  $('#apiImageModel').value=s.imageModel||'';
+  $('#apiTtsModel').value=s.ttsModel||'';
+  $('#apiSttModel').value=s.sttModel||'';
   $('#apiVoice').value=s.voice||'marin';
   $('#apiKeyInput').type='password';$('#toggleApiKeyBtn').textContent='显示';
   $('#apiTestResult').classList.add('hidden');$('#apiTestResult').classList.remove('error');
@@ -1219,7 +1226,11 @@ async function testApiSettings(){
     box.textContent=result.ok?'连接成功 · '+(result.reply||'OK'):'接口已返回，但没有拿到文本';
     box.classList.toggle('error',!result.ok);
   }catch(error){
-    box.textContent='连接失败 · '+String(error&&error.message||error).slice(0,180);box.classList.add('error');
+    const raw=String(error&&error.message||error);
+    const friendly=/Failed to fetch|NetworkError|Load failed|AbortError/i.test(raw)
+      ? '连接失败 · 浏览器无法访问该地址。请检查 Base URL、CORS、HTTPS/HTTP 或本地服务是否启动。'
+      : '连接失败 · '+raw.slice(0,180);
+    box.textContent=friendly;box.classList.add('error');
   }finally{$('#testApiBtn').disabled=false}
 }
 function saveApiSettings(){
