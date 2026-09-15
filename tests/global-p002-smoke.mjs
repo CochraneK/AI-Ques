@@ -30,6 +30,8 @@ assert.match(p2,/\[\["从未",0\],\["有时",1\],\["经常",2\],\["几乎总是"
 assert.match(p2,/state\.pendingFrequency>=1/);
 assert.match(p2,/AIQ\.recordEvent\("item_response"/);
 assert.match(p2,/AIQ\.completeSession/);
+assert.match(p2,/session_abandoned/);
+assert.match(p2,/\(state\.index\+1\)\/s\.items\.length/);
 assert.match(p2,/state\.conditionId==="guided" \? item\.cluster : "neutral"/);
 assert.match(p2,/state\.conditionId==="guided" \? " · " \+ item\.cluster : ""/);
 
