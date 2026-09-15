@@ -211,9 +211,8 @@ def scan_repo() -> list[dict]:
 
     if "$('#memorySummary').innerHTML" in p005_app:
         safe_tokens = [
-            "escapeHtml(state.memory.summary)",
-            "escapeHtml(x.tag)",
-            "escapeHtml(x.text)",
+            "escapeHtml(state.memory.summary",
+            "memories.map((x)=>'<p>'+escapeHtml(x)",
         ]
         if not all(token in p005_app for token in safe_tokens):
             findings.append(finding(
@@ -221,6 +220,28 @@ def scan_repo() -> list[dict]:
                 "Dynamic Future Me content reaches innerHTML without the expected escaping.",
                 "Escape every dynamic field or build DOM nodes with textContent.",
             ))
+
+    design_principles = read("docs/DESIGN_PRINCIPLES.md")
+    if "Less is more" not in design_principles:
+        findings.append(finding(
+            "missing-design-principle", "P1", "docs/DESIGN_PRINCIPLES.md",
+            "The repository no longer records the standing minimalist UI constraint.",
+            "Keep Less is more as the default P001–P005 design rule.",
+        ))
+
+    if "const QUESTIONS = [" not in p005_app or "surveyIndex" not in p005_app:
+        findings.append(finding(
+            "p005-nonsequential-intake", "P1", "p005/app.js",
+            "P005 no longer implements the Future You-style sequential intake.",
+            "Keep life-story intake one question at a time unless the research protocol intentionally changes.",
+        ))
+
+    if "exchanged<16" not in p005_app:
+        findings.append(finding(
+            "p005-chat-finish-threshold", "P1", "p005/app.js",
+            "P005 no longer mirrors the non-intrusive chat finish threshold.",
+            "Keep the finish control hidden until 16 effective exchanged messages, or document a deliberate protocol change.",
+        ))
 
     p004_readme = read("p004/README.md")
     if "P004" not in p004_readme:
