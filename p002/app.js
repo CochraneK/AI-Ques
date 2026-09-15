@@ -197,7 +197,7 @@ function renderQuestion(){
   $("#conditionLabel").textContent=CONDITIONS[state.conditionId].name;
   $("#clusterCode").textContent=item.cluster;
   $("#sessionChip").textContent=state.sessionId||"";
-  $("#progressBar").style.width=(state.index/s.items.length*100) + "%";
+  $("#progressBar").style.width=((state.index+1)/s.items.length*100) + "%";
   $("#weatherGlyph").textContent=cluster.glyph;
   $("#clusterTitle").textContent=cluster.title;
   $("#clusterDesc").textContent=cluster.desc;
@@ -448,3 +448,15 @@ document.addEventListener("keydown",function(e){
   }
   if(e.key==="Enter" && !nextBtn.disabled)nextBtn.click();
 });
+
+
+window.addEventListener("pagehide",function(){
+  if(!state.session || state.completed)return;
+  AIQ.recordEvent("session_abandoned",{
+    scale_id:state.scaleId,
+    condition_id:state.conditionId,
+    answered_items:state.rows.length,
+    total_items:state.scaleId&&SCALES[state.scaleId]?SCALES[state.scaleId].items.length:null,
+    last_item_index:state.index
+  },{project_id:"P002",session_id:state.sessionId});
+},{once:true});
