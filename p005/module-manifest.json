@@ -7,7 +7,10 @@
   "updated_at": "2026-09-15",
   "purpose": "Future-self continuity, reflective conversation and time-capsule interaction prototype.",
   "experience": {
-    "inspiration": ["MIT Future You", "FutureMe"],
+    "inspiration": [
+      "MIT Future You",
+      "FutureMe"
+    ],
     "target_future_age": 60,
     "modes": [
       "life-story intake",
@@ -20,14 +23,20 @@
     ]
   },
   "shared_profile": {
+    "adapter": "../shared/profile.js",
+    "canonical_key": "bjtu.p00.profile.v1",
     "reads": [
-      "window.P00_CONTEXT",
-      "localStorage:bjtu_p00_profile_v1",
-      "localStorage:bjtu_profile_v1",
-      "localStorage:aiques_shared_profile_v1"
+      "window.BJTU_PROFILE",
+      "window.P00_CONTEXT.profile"
     ],
-    "writes": ["localStorage:aiques_shared_profile_v1"],
-    "auto_reuse_fields": ["name", "age", "origin", "location", "currentWork", "values"],
+    "auto_reuse_fields": [
+      "name",
+      "age",
+      "origin",
+      "location",
+      "currentWork",
+      "values"
+    ],
     "clinical_admin_fields_exposed_to_user": false
   },
   "api_hooks": {
@@ -43,12 +52,15 @@
     "capsule_saved"
   ],
   "local_storage": {
-    "primary_key": "bjtu_p005_future_me_v2",
-    "legacy_key": "aiques_future_me_v1",
+    "primary_key": "bjtu.p005.state.v1",
     "contains_user_generated_content": true,
     "may_contain_images": true,
     "clear_control_available": true,
-    "export_control_available": true
+    "export_control_available": true,
+    "legacy_keys": [
+      "bjtu_p005_future_me_v2",
+      "aiques_future_me_v1"
+    ]
   },
   "safety": {
     "predictive_claims": false,
