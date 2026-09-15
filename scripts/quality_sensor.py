@@ -99,12 +99,40 @@ def scan_repo() -> list[dict]:
             "Add tests for mode registration, item counts, score ranges, and complete-run smoke paths.",
         ))
 
-    if not list(ROOT.rglob("study-manifest.json")):
+    manifest_path = ROOT / "study-manifest.json"
+    if not manifest_path.exists():
         findings.append(finding(
             "missing-study-manifest", "P1", "study-manifest.json",
             "No frozen study/version manifest exists.",
             "Record study, scale, language, mode and item-bank versions before research data collection.",
         ))
+    else:
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            required = {
+                "schema_version", "study_id", "study_version", "status",
+                "formal_data_collection_authorized", "language", "scales",
+                "modes", "versioning_policy", "safety",
+            }
+            missing = sorted(required - manifest.keys())
+            if missing:
+                findings.append(finding(
+                    "invalid-study-manifest", "P1", "study-manifest.json",
+                    f"Study manifest is missing required keys: {missing}",
+                    "Complete the manifest before treating the study version as frozen.",
+                ))
+            elif manifest.get("status") == "prototype_only" and manifest.get("formal_data_collection_authorized") is not False:
+                findings.append(finding(
+                    "unsafe-study-manifest-state", "P0", "study-manifest.json",
+                    "Prototype-only manifest must not authorize formal data collection.",
+                    "Keep formal_data_collection_authorized=false until research governance and version freezing are complete.",
+                ))
+        except json.JSONDecodeError as exc:
+            findings.append(finding(
+                "invalid-study-manifest-json", "P1", "study-manifest.json",
+                f"Study manifest is not valid JSON: {exc}",
+                "Fix the JSON so the manifest can be audited deterministically.",
+            ))
 
     if (ROOT / "future-me").exists():
         findings.append(finding(

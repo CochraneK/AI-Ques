@@ -102,6 +102,17 @@ python -m http.server 8000
 
 线上 Demo：<https://cochranek.github.io/AI-Ques/>
 
+## 研究版本清单
+
+当前研究/原型边界由 `study-manifest.json` 明确记录，包括：
+
+- 当前量表题数、编码与语言版本状态；
+- 8 种模式的研究角色和 Phase 1 / Phase 2 定位；
+- `formal_data_collection_authorized: false`；
+- 正式收数前必须冻结的版本字段与治理条件。
+
+修改题干、评分逻辑、模式角色或正式研究协议时，应同步更新 manifest。当前 manifest 明确标记为 **prototype_only**，不能被解释为已批准的正式研究版本。
+
 ## 推荐验证路线
 
 1. **体验层**：完成率、耗时、漏答、主观负担、趣味性、沉浸感。
