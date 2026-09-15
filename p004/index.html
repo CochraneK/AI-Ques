@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f3f2ed">
   <meta name="description" content="P004 角色世界：可设定 NPC、可选 NVWA 蒸馏、长期记忆与后台人物画像。">
   <title>P004 · 角色世界</title>
-  <link rel="stylesheet" href="styles.css?v=20260916-byok">
+  <link rel="stylesheet" href="styles.css?v=20260916-mece">
 </head>
 <body>
 <header class="topbar">
@@ -68,8 +68,8 @@
       <div class="creator-flow">
         <section class="creator-page active" data-step="0">
           <span class="step-no">01</span>
-          <h3>TA 和你是什么关系？</h3>
-          <p class="creator-help">关系会改变距离感、主动程度和说话边界。</p>
+          <h3>TA 和你最主要是什么关系？</h3>
+          <p class="creator-help">按主要社会角色分组，尽量互斥且覆盖常见关系。点选后会自动进入下一步。</p>
           <div id="relationshipGrid" class="choice-cards relation-grid"></div>
         </section>
 
@@ -155,7 +155,7 @@
       <label><span>Model</span><input id="apiModel" list="modelSuggestions" spellcheck="false" placeholder="gpt-5.6 / 你的模型名"><datalist id="modelSuggestions"><option value="gpt-5.6"></option><option value="gpt-5.6-luna"></option><option value="gpt-4o-mini"></option></datalist></label>
     </div>
     <div class="cors-note"><i></i><span>兼容服务需要允许浏览器 CORS。若浏览器阻止跨域请求，需改用支持 CORS 的网关或后端。</span></div>
-    <div id="apiTestResult" class="api-test-result hidden"></div>
+    <pre id="apiTestResult" class="api-test-result hidden" aria-live="polite"></pre>
     <div class="modal-actions"><button id="clearApiBtn" class="danger" type="button">清除</button><span></span><button id="testApiBtn" class="secondary" type="button">测试连接</button><button id="saveApiBtn" class="primary" type="button">保存到本次会话</button></div>
   </section>
 </div>
@@ -172,7 +172,7 @@
 
 <div id="toast" class="toast"></div>
 <script src="../shared/profile.js?v=1"></script>
-<script src="api-client.js?v=20260916-byok"></script>
-<script src="app.js?v=20260916-byok"></script>
+<script src="api-client.js?v=20260916-mece"></script>
+<script src="app.js?v=20260916-mece"></script>
 </body>
 </html>
