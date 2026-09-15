@@ -37,7 +37,7 @@ jobs:
 
           cp p002/index.html p002/app.js p002/experiments.js p002/styles.css _site/p002/
           cp p004/index.html p004/app.js p004/api-client.js p004/styles.css _site/p004/
-          cp p005/index.html p005/app.js p005/styles.css p005/runtime-config.js p005/admin.html p005/admin.js p005/admin.css _site/p005/
+          cp p005/index.html p005/app.js p005/api-client.js p005/styles.css p005/runtime-config.js p005/admin.html p005/admin.js p005/admin.css _site/p005/
           cp future-me/index.html _site/future-me/
 
           touch _site/.nojekyll
