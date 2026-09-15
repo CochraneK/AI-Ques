@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#f3f2ed">
   <meta name="description" content="P004 角色世界：可设定 NPC、可选 NVWA 蒸馏、长期记忆与后台人物画像。">
   <title>P004 · 角色世界</title>
-  <link rel="stylesheet" href="styles.css?v=20260915-v2">
+  <link rel="stylesheet" href="styles.css?v=20260916-byok">
 </head>
 <body>
 <header class="topbar">
   <a class="brand" href="../"><span class="brand-mark">04</span><span><b>角色世界</b><small>P004 · character conversations</small></span></a>
-  <div class="top-actions"><span id="runtimeBadge" class="runtime"><i></i> local first</span><button id="newCharacterBtn" class="quiet">＋ 新角色</button><button id="adminBtn" class="quiet hidden">研究视图</button></div>
+  <div class="top-actions"><span id="runtimeBadge" class="runtime"><i></i> local first</span><button id="apiBtn" class="api-pill"><i></i><span id="apiBtnText">接入 API</span></button><button id="newCharacterBtn" class="quiet">＋ 新角色</button><button id="adminBtn" class="quiet hidden">研究视图</button></div>
 </header>
 
 <main class="workspace">
@@ -47,25 +47,83 @@
 </main>
 
 <div id="characterModal" class="modal hidden" role="dialog" aria-modal="true">
-  <div class="backdrop" data-close="character"></div><section class="modal-card editor-modal">
-  <button class="modal-close" data-close="character">×</button><p class="eyebrow">CHARACTER BUILDER</p><h2 id="characterModalTitle">创建一个角色</h2>
-  <div class="form-grid">
-    <label><span>名字</span><input id="charName" maxlength="48" placeholder="例如 Mori"></label>
-    <label><span>头像符号</span><input id="charAvatar" maxlength="4" placeholder="M / 🌙"></label>
-    <label class="wide"><span>一句话身份</span><input id="charIdentity" maxlength="180" placeholder="TA 是谁？与你是什么关系？"></label>
-    <label class="wide"><span>人格</span><textarea id="charPersonality" rows="3" maxlength="1200" placeholder="性格、价值观、边界、偏好…"></textarea></label>
-    <label class="wide"><span>场景</span><textarea id="charScenario" rows="3" maxlength="1200" placeholder="你们在哪里、关系背景、正在发生什么…"></textarea></label>
-    <label class="wide"><span>说话方式</span><textarea id="charStyle" rows="3" maxlength="1200" placeholder="语气、句长、幽默、是否主动追问…"></textarea></label>
-    <label class="wide"><span>第一句话</span><textarea id="charFirst" rows="3" maxlength="1400" placeholder="新对话开始时 TA 会说什么？"></textarea></label>
-  </div>
-  <div class="modal-actions"><button id="deleteCharacterBtn" class="danger hidden">删除角色</button><span></span><button class="secondary" data-close="character">取消</button><button id="saveCharacterBtn" class="primary">保存角色</button></div>
+  <div class="backdrop" data-close="character"></div>
+  <section class="modal-card creator-modal">
+    <button class="modal-close" data-close="character">×</button>
+    <div class="creator-heading">
+      <div><p class="eyebrow">CHARACTER STUDIO</p><h2 id="characterModalTitle">捏一个会和你长期聊天的人。</h2><p>不写人物小传。点几下，把 TA 的灵魂拼出来。</p></div>
+      <div id="creatorSteps" class="creator-steps"><i class="active"></i><i></i><i></i><i></i></div>
+    </div>
+
+    <div class="creator-shell">
+      <aside class="creator-preview">
+        <div class="preview-orbit"><span></span><div id="creatorAvatarPreview" class="creator-avatar">?</div></div>
+        <span id="creatorRelationPreview" class="preview-relation">还没选关系</span>
+        <h3 id="creatorNamePreview">一个还没有名字的人</h3>
+        <p id="creatorLinePreview">选几个标签，TA 会慢慢长出来。</p>
+        <div id="creatorTraitPreview" class="preview-tags"></div>
+        <button id="randomizeNpcBtn" class="shuffle-btn" type="button">↻ 给我一个意外角色</button>
+      </aside>
+
+      <div class="creator-flow">
+        <section class="creator-page active" data-step="0">
+          <span class="step-no">01</span>
+          <h3>TA 和你是什么关系？</h3>
+          <p class="creator-help">关系会改变距离感、主动程度和说话边界。</p>
+          <div id="relationshipGrid" class="choice-cards relation-grid"></div>
+        </section>
+
+        <section class="creator-page" data-step="1">
+          <span class="step-no">02</span>
+          <h3>给 TA 几个真正重要的品质。</h3>
+          <p class="creator-help">与 P001 的积极品质体系同源。最多选 6 个，不用每个都解释。</p>
+          <div id="strengthGrid" class="trait-groups"></div>
+        </section>
+
+        <section class="creator-page" data-step="2">
+          <span class="step-no">03</span>
+          <h3>聊天要是什么味道？</h3>
+          <p class="creator-help">最多选 4 个。可以互相矛盾——真实的人本来就有张力。</p>
+          <div id="styleGrid" class="style-cloud"></div>
+          <div class="micro-section"><span>TA 更常怎么推进对话？</span><div id="initiativeGrid" class="mini-choice"></div></div>
+        </section>
+
+        <section class="creator-page" data-step="3">
+          <span class="step-no">04</span>
+          <h3>最后，让 TA 落到一个世界里。</h3>
+          <p class="creator-help">名字是唯一建议你手动填的内容，其他都能点选。</p>
+          <div class="name-row">
+            <label><span>名字</span><input id="charName" maxlength="48" placeholder="例如：Mori"></label>
+            <label class="avatar-field"><span>符号</span><input id="charAvatar" maxlength="4" placeholder="M / 🌙"></label>
+          </div>
+          <div id="worldGrid" class="world-grid"></div>
+          <label class="optional-line"><span>再加一句只有你知道的设定（可选）</span><textarea id="charExtra" rows="2" maxlength="260" placeholder="例如：TA 总记得我随口提过的小事。"></textarea></label>
+          <details class="advanced-character">
+            <summary>高级微调 <small>想自己写时再展开</small></summary>
+            <div class="advanced-grid">
+              <label><span>身份 / 关系描述</span><textarea id="charIdentity" rows="2" maxlength="900"></textarea></label>
+              <label><span>场景</span><textarea id="charScenario" rows="2" maxlength="900"></textarea></label>
+              <label><span>第一句话</span><textarea id="charFirst" rows="2" maxlength="1000"></textarea></label>
+            </div>
+          </details>
+        </section>
+      </div>
+    </div>
+
+    <div class="creator-actions">
+      <button id="deleteCharacterBtn" class="danger hidden" type="button">删除</button>
+      <span></span>
+      <button id="creatorBackBtn" class="secondary hidden" type="button">← 上一步</button>
+      <button id="creatorNextBtn" class="primary" type="button">下一步 →</button>
+      <button id="saveCharacterBtn" class="primary hidden" type="button">让 TA 出现</button>
+    </div>
   </section>
 </div>
 
 <div id="distillModal" class="modal hidden" role="dialog" aria-modal="true">
   <div class="backdrop" data-close="distill"></div><section class="modal-card distill-modal">
     <button class="modal-close" data-close="distill">×</button><p class="eyebrow">NVWA · OPTIONAL</p><h2>把“设定”蒸馏成可运行的思维 Skill。</h2>
-    <p class="modal-lead">不开启时，P004 直接使用 Character Card。开启后，后端按 NVWA 的研究→提炼→验证路线生成 <code>SKILL.md</code>，保存在本地 Skill Vault，并在之后的对话中作为角色思维层调用。</p>
+    <p class="modal-lead">不开启时，P004 直接使用 Character Card。若配置正式 NVWA 后端，会按研究→提炼→验证路线生成 <code>SKILL.md</code>；只有前端 BYOK 时，聊天会调用你的模型，但蒸馏仍生成明确标注的本地 Character Skill 草稿。</p>
     <label class="switch-row"><span><b>启用 NVWA 蒸馏</b><small>表达 DNA · 心智模型 · 决策启发式 · 反模式 · 诚实边界</small></span><input id="distillEnabled" type="checkbox"><i></i></label>
     <div id="distillFields" class="distill-fields hidden">
       <label><span>蒸馏对象 / 主题</span><input id="distillSubject" maxlength="100" placeholder="人物、你创建的 NPC 原型，或某种主题视角"></label>
@@ -77,6 +135,28 @@
     <div id="distillResult" class="distill-result hidden"></div>
     <p class="local-note">GitHub Pages 无权静默写入你的磁盘目录。原型会把 Skill 持久化到浏览器 IndexedDB；你可再显式导出真正的 <code>SKILL.md</code> 到本地。</p>
     <div class="modal-actions"><span></span><button class="secondary" data-close="distill">取消</button><button id="runDistillBtn" class="primary">继续</button></div>
+  </section>
+</div>
+
+<div id="apiModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="backdrop" data-close="api"></div>
+  <section class="modal-card api-modal">
+    <button class="modal-close" data-close="api">×</button>
+    <p class="eyebrow">OPENAI-COMPATIBLE · BYOK</p>
+    <h2>把你的模型接进来。</h2>
+    <p class="modal-lead">支持常见 OpenAI-compatible <code>/chat/completions</code>。配置只保存在当前标签页的 <code>sessionStorage</code>，不会写进 GitHub，也不会进入管理员画像。</p>
+    <div class="api-presets">
+      <button type="button" class="preset active" data-api-base="https://api.openai.com/v1">OpenAI</button>
+      <button type="button" class="preset" data-api-base="">自定义兼容服务</button>
+    </div>
+    <div class="api-form">
+      <label><span>Base URL</span><input id="apiBaseUrl" type="url" spellcheck="false" placeholder="https://api.openai.com/v1"><small>可填到 <code>/v1</code>，也可直接填完整 <code>/chat/completions</code>。</small></label>
+      <label><span>API Key</span><div class="secret-field"><input id="apiKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... / 兼容服务密钥"><button id="toggleApiKeyBtn" type="button">显示</button></div><small>前端直连意味着页面脚本理论上可访问密钥。建议使用限额、可撤销的个人 Key。</small></label>
+      <label><span>Model</span><input id="apiModel" list="modelSuggestions" spellcheck="false" placeholder="gpt-5.6 / 你的模型名"><datalist id="modelSuggestions"><option value="gpt-5.6"></option><option value="gpt-5.6-luna"></option><option value="gpt-4o-mini"></option></datalist></label>
+    </div>
+    <div class="cors-note"><i></i><span>兼容服务需要允许浏览器 CORS。若浏览器阻止跨域请求，需改用支持 CORS 的网关或后端。</span></div>
+    <div id="apiTestResult" class="api-test-result hidden"></div>
+    <div class="modal-actions"><button id="clearApiBtn" class="danger" type="button">清除</button><span></span><button id="testApiBtn" class="secondary" type="button">测试连接</button><button id="saveApiBtn" class="primary" type="button">保存到本次会话</button></div>
   </section>
 </div>
 
@@ -92,7 +172,7 @@
 
 <div id="toast" class="toast"></div>
 <script src="../shared/profile.js?v=1"></script>
-<script src="api-client.js?v=20260915-v2"></script>
-<script src="app.js?v=20260915-v2"></script>
+<script src="api-client.js?v=20260916-byok"></script>
+<script src="app.js?v=20260916-byok"></script>
 </body>
 </html>

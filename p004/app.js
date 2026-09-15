@@ -21,6 +21,49 @@ const DEFAULTS=[
 {id:'luma',name:'Luma',avatar:'L',tagline:'故事型 NPC，把现实问题换一个世界看。',identity:'擅长叙事和隐喻的旅伴，喜欢把抽象困境变成可探索的场景。',personality:'活泼、敏感、浪漫但不悬浮，尊重现实约束。',scenario:'你们像在共同写一部长篇故事，现实经验逐渐变成世界观素材。',style:'画面感强，偶尔隐喻，避免长篇独白；会把选择写成小场景。',first:'今天我们不分析。给我一个最近让你卡住的瞬间，我把它改写成一幕故事给你看。',distill:{enabled:false,status:'off'}}
 ];
 
+const RELATIONSHIPS=[
+  {value:'老朋友',emoji:'☕',desc:'有默契，也敢说真话',identity:'认识你很久的老朋友'},
+  {value:'亦师亦友',emoji:'↗',desc:'会给判断，但不居高临下',identity:'比你多走过一点路的亦师亦友'},
+  {value:'欢喜冤家',emoji:'⚡',desc:'会抬杠，也会护着你',identity:'和你针锋相对却很有默契的欢喜冤家'},
+  {value:'长期搭档',emoji:'◫',desc:'一起做事，也一起复盘',identity:'与你长期并肩做事的搭档'},
+  {value:'神秘陌生人',emoji:'◌',desc:'保留距离，也保留未知',identity:'偶然进入你生活、仍带着未知感的陌生人'},
+  {value:'远方笔友',emoji:'✉',desc:'不必天天出现，但总能聊深',identity:'与你保持长期文字往来的远方笔友'}
+];
+
+const STRENGTH_GROUPS=[
+  {group:'智慧',items:['好奇心','创造力','判断力','热爱学习','洞察力']},
+  {group:'勇气',items:['勇敢','坚毅','诚实','热情']},
+  {group:'仁爱',items:['爱','善良','社交智慧']},
+  {group:'正义',items:['团队精神','公平','领导力']},
+  {group:'节制',items:['宽恕','谦逊','审慎','自我调节']},
+  {group:'超越',items:['审美','感恩','希望','幽默','精神性']}
+];
+
+const CHAT_STYLES=[
+  {value:'温柔',emoji:'◡'},{value:'毒舌',emoji:'⌁'},{value:'冷静',emoji:'△'},{value:'热烈',emoji:'✦'},
+  {value:'幽默',emoji:'☺'},{value:'克制',emoji:'—'},{value:'好奇',emoji:'?'},{value:'神秘',emoji:'◌'},
+  {value:'浪漫',emoji:'☾'},{value:'直球',emoji:'→'},{value:'慢热',emoji:'…'},{value:'戏剧感',emoji:'✺'}
+];
+
+const INITIATIVES=['多听少问','会认真追问','会主动分享自己','会推动你去行动'];
+
+const WORLDS=[
+  {value:'现实日常',desc:'现在的城市、生活与琐事'},
+  {value:'大学校园',desc:'课、社团、夜路与食堂'},
+  {value:'工作世界',desc:'项目、野心、关系与选择'},
+  {value:'漫长旅途',desc:'火车、陌生城市与偶遇'},
+  {value:'近未来',desc:'一点科技，一点未知'},
+  {value:'架空世界',desc:'规则可以由你们慢慢发现'}
+];
+
+const RANDOM_NAMES=['Mori','Nox','Luma','Ari','Kiro','Mina','Sora','Yun','Rin','Noa','小满','长风','阿岚','迟野','弥生'];
+const RANDOM_AVATARS=['M','N','L','A','K','☾','✦','△','◌','羽','岚','野'];
+
+function emptyCreatorDraft(){
+  return {relationship:'',traits:[],styleTags:[],initiative:'',world:'',extra:'',legacyPersonality:'',legacyStyle:''};
+}
+
+
 function freshObserver(){return{version:2,big:{openness:50,conscientiousness:50,extraversion:50,agreeableness:50,sensitivity:50},clinical:{phqLike:0,gadLike:0,pclLike:0,capeLike:0},evidence:[],imports:{},safety:[],updatedAt:null}}
 let chars=read(K.chars,null)||DEFAULTS;
 let threads=read(K.threads,{})||{};
@@ -29,6 +72,8 @@ let observer=read(K.observer,null)||freshObserver();
 let activeId=localStorage.getItem(K.active)||chars[0]?.id;
 let editingId=null;
 let pendingFiles=[];
+let creatorStep=0;
+let creatorDraft=emptyCreatorDraft();
 const skillCache=new Map();
 
 function active(){return chars.find(c=>c.id===activeId)||chars[0]}
@@ -55,13 +100,186 @@ async function switchCharacter(id){activeId=id;persist();renderCharacters();awai
 function openModal(name){$(name+'Modal').classList.remove('hidden');document.body.style.overflow='hidden'}
 function closeModal(name){$(name+'Modal').classList.add('hidden');document.body.style.overflow=''}
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>closeModal(x.dataset.close)));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['character','distill','admin'].forEach(closeModal)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['character','distill','api','admin'].forEach(closeModal)});
 
-function openEditor(id){editingId=id||null;const c=id?chars.find(x=>x.id===id):{name:'',avatar:'',identity:'',personality:'',scenario:'',style:'',first:''};$('characterModalTitle').textContent=id?'编辑角色':'创建一个角色';$('charName').value=c.name||'';$('charAvatar').value=c.avatar||'';$('charIdentity').value=c.identity||'';$('charPersonality').value=c.personality||'';$('charScenario').value=c.scenario||'';$('charStyle').value=c.style||'';$('charFirst').value=c.first||'';$('deleteCharacterBtn').classList.toggle('hidden',!id);openModal('character')}
-function saveCharacter(){const name=text($('charName').value);if(!name){toast('先给角色一个名字');return}const patch={name,avatar:text($('charAvatar').value)||name.slice(0,1),identity:text($('charIdentity').value),personality:text($('charPersonality').value),scenario:text($('charScenario').value),style:text($('charStyle').value),first:text($('charFirst').value)};if(editingId){const c=chars.find(x=>x.id===editingId);Object.assign(c,patch);c.tagline=short(c.identity||c.personality,52)}else{patch.id=uid('npc');patch.tagline=short(patch.identity||patch.personality||'自定义角色',52);patch.distill={enabled:false,status:'off'};chars.push(patch);activeId=patch.id}persist();closeModal('character');renderCharacters();renderActive();toast('角色已保存')}
+function matchingStrengths(value){const source=String(value||'');return STRENGTH_GROUPS.flatMap(g=>g.items).filter(x=>source.includes(x))}
+function matchingStyles(value){const source=String(value||'');return CHAT_STYLES.map(x=>x.value).filter(x=>source.includes(x)||((x==='温柔')&&source.includes('温和')))}
+function chooseOne(list){return list[Math.floor(Math.random()*list.length)]}
+
+function renderRelationshipGrid(){
+  const box=$('relationshipGrid');box.replaceChildren();
+  RELATIONSHIPS.forEach(item=>{
+    const b=document.createElement('button');b.type='button';b.className='choice-card'+(creatorDraft.relationship===item.value?' selected':'');
+    const emoji=document.createElement('span');emoji.className='choice-emoji';emoji.textContent=item.emoji;
+    const strong=document.createElement('b');strong.textContent=item.value;
+    const small=document.createElement('small');small.textContent=item.desc;
+    b.append(emoji,strong,small);b.onclick=()=>{creatorDraft.relationship=item.value;renderCreatorStudio()};box.append(b);
+  });
+}
+
+function renderStrengthGrid(){
+  const box=$('strengthGrid');box.replaceChildren();
+  STRENGTH_GROUPS.forEach(group=>{
+    const row=document.createElement('div');row.className='trait-group';
+    const name=document.createElement('div');name.className='trait-group-name';name.textContent=group.group;
+    const cloud=document.createElement('div');cloud.className='trait-cloud';
+    group.items.forEach(value=>{
+      const b=document.createElement('button');b.type='button';b.className='trait-chip'+(creatorDraft.traits.includes(value)?' selected':'');b.dataset.group=group.group;b.textContent=value;
+      b.onclick=()=>{
+        if(creatorDraft.traits.includes(value))creatorDraft.traits=creatorDraft.traits.filter(x=>x!==value);
+        else if(creatorDraft.traits.length<6)creatorDraft.traits.push(value);
+        else return toast('最多选 6 个核心品质');
+        renderCreatorStudio();
+      };cloud.append(b);
+    });
+    row.append(name,cloud);box.append(row);
+  });
+}
+
+function renderStyleGrid(){
+  const box=$('styleGrid');box.replaceChildren();
+  CHAT_STYLES.forEach(item=>{
+    const b=document.createElement('button');b.type='button';b.className='style-chip'+(creatorDraft.styleTags.includes(item.value)?' selected':'');
+    const e=document.createElement('span');e.textContent=item.emoji;const t=document.createTextNode(item.value);b.append(e,t);
+    b.onclick=()=>{
+      if(creatorDraft.styleTags.includes(item.value))creatorDraft.styleTags=creatorDraft.styleTags.filter(x=>x!==item.value);
+      else if(creatorDraft.styleTags.length<4)creatorDraft.styleTags.push(item.value);
+      else return toast('聊天气质最多选 4 个');
+      renderCreatorStudio();
+    };box.append(b);
+  });
+  const mini=$('initiativeGrid');mini.replaceChildren();
+  INITIATIVES.forEach(value=>{const b=document.createElement('button');b.type='button';b.className='mini-pill'+(creatorDraft.initiative===value?' selected':'');b.textContent=value;b.onclick=()=>{creatorDraft.initiative=value;renderCreatorStudio()};mini.append(b)});
+}
+
+function renderWorldGrid(){
+  const box=$('worldGrid');box.replaceChildren();
+  WORLDS.forEach(item=>{
+    const b=document.createElement('button');b.type='button';b.className='world-card'+(creatorDraft.world===item.value?' selected':'');
+    const strong=document.createElement('b');strong.textContent=item.value;const small=document.createElement('small');small.textContent=item.desc;b.append(strong,small);
+    b.onclick=()=>{creatorDraft.world=item.value;renderCreatorStudio()};box.append(b);
+  });
+}
+
+function creatorAuto(){
+  const relation=RELATIONSHIPS.find(x=>x.value===creatorDraft.relationship)||RELATIONSHIPS[0];
+  const world=WORLDS.find(x=>x.value===creatorDraft.world)||WORLDS[0];
+  const traitText=creatorDraft.traits.join('、');
+  const styleText=creatorDraft.styleTags.join('、');
+  const extra=text($('charExtra')?.value)||creatorDraft.extra||'';
+  const personality=creatorDraft.traits.length?(traitText+(extra?'；'+extra:'')):(creatorDraft.legacyPersonality||extra||'自然、有自己的判断，也愿意慢慢了解你');
+  const style=(creatorDraft.styleTags.length||creatorDraft.initiative)?([styleText,creatorDraft.initiative].filter(Boolean).join('；')):(creatorDraft.legacyStyle||'自然、口语化，不把对话变成长篇说教');
+  const identity=relation.identity+(extra?'。'+extra:'');
+  const scenario='你们的故事主要发生在「'+world.value+'」里。'+world.desc+'。';
+  const firstTemplates={
+    '老朋友':'你来了。今天想从哪件小事开始？',
+    '亦师亦友':'先别急着给自己答案。最近哪件事最值得我们认真想一遍？',
+    '欢喜冤家':'终于出现了。说吧，这次又有什么结论想让我拆？',
+    '长期搭档':'来，对一下近况。最近哪件事最需要我们一起往前推？',
+    '神秘陌生人':'我们好像还不算认识。那就从一件你平时不会随便告诉别人的小事开始？',
+    '远方笔友':'信收到了。最近你的生活里，有哪一幕值得写下来？'
+  };
+  return {personality,style,identity,scenario,first:firstTemplates[relation.value]||'嗨。今天想聊什么？',world:world.value,relationship:relation.value};
+}
+
+function syncCreatorAutoFields(){
+  const auto=creatorAuto();
+  ['charIdentity','charScenario','charFirst'].forEach(id=>{
+    const el=$(id);if(el&&el.dataset.manual!=='1')el.value=id==='charIdentity'?auto.identity:id==='charScenario'?auto.scenario:auto.first;
+  });
+  return auto;
+}
+
+function renderCreatorPreview(){
+  const auto=syncCreatorAutoFields(),name=text($('charName').value),avatar=text($('charAvatar').value);
+  $('creatorAvatarPreview').textContent=avatar||(name?name.slice(0,1):'?');
+  $('creatorNamePreview').textContent=name||'一个还没有名字的人';
+  $('creatorRelationPreview').textContent=creatorDraft.relationship||'还没选关系';
+  const bits=[...creatorDraft.traits.slice(0,2),...creatorDraft.styleTags.slice(0,2)];
+  $('creatorLinePreview').textContent=bits.length?bits.join(' × '):'选几个标签，TA 会慢慢长出来。';
+  const tags=$('creatorTraitPreview');tags.replaceChildren();
+  [...creatorDraft.traits,...creatorDraft.styleTags].slice(0,6).forEach(v=>{const s=document.createElement('span');s.textContent=v;tags.append(s)});
+}
+
+function setCreatorStep(step){
+  creatorStep=Math.max(0,Math.min(3,step));
+  document.querySelectorAll('.creator-page').forEach((p,i)=>p.classList.toggle('active',i===creatorStep));
+  document.querySelectorAll('#creatorSteps i').forEach((d,i)=>d.classList.toggle('active',i<=creatorStep));
+  $('creatorBackBtn').classList.toggle('hidden',creatorStep===0);
+  $('creatorNextBtn').classList.toggle('hidden',creatorStep===3);
+  $('saveCharacterBtn').classList.toggle('hidden',creatorStep!==3);
+}
+
+function renderCreatorStudio(){
+  renderRelationshipGrid();renderStrengthGrid();renderStyleGrid();renderWorldGrid();renderCreatorPreview();setCreatorStep(creatorStep);
+}
+
+function openEditor(id){
+  editingId=id||null;
+  const existing=id?chars.find(x=>x.id===id):null;
+  creatorDraft=emptyCreatorDraft();
+  if(existing){
+    creatorDraft.relationship=existing.relationship||RELATIONSHIPS.find(x=>(existing.identity||'').includes(x.value))?.value||'老朋友';
+    creatorDraft.traits=Array.isArray(existing.traits)?existing.traits.slice(0,6):matchingStrengths(existing.personality).slice(0,6);
+    creatorDraft.styleTags=Array.isArray(existing.styleTags)?existing.styleTags.slice(0,4):matchingStyles((existing.style||'')+' '+(existing.personality||'')).slice(0,4);
+    creatorDraft.initiative=existing.initiative||INITIATIVES.find(x=>(existing.style||'').includes(x))||'';
+    creatorDraft.world=existing.world||WORLDS.find(x=>(existing.scenario||'').includes(x.value))?.value||'现实日常';
+    creatorDraft.extra=existing.extra||'';
+    creatorDraft.legacyPersonality=existing.personality||'';
+    creatorDraft.legacyStyle=existing.style||'';
+  }
+  creatorStep=0;
+  $('characterModalTitle').textContent=id?'重新捏一捏 '+(existing?.name||'这个角色'):'捏一个会和你长期聊天的人。';
+  $('charName').value=existing?.name||'';
+  $('charAvatar').value=existing?.avatar||'';
+  $('charExtra').value=existing?.extra||'';
+  $('charIdentity').value=existing?.identity||'';$('charScenario').value=existing?.scenario||'';$('charFirst').value=existing?.first||'';
+  ['charIdentity','charScenario','charFirst'].forEach(key=>$(key).dataset.manual=existing?'1':'0');
+  $('deleteCharacterBtn').classList.toggle('hidden',!id);
+  renderCreatorStudio();openModal('character');
+}
+
+function creatorNext(){
+  if(creatorStep===0&&!creatorDraft.relationship)return toast('先选一种你们之间的关系');
+  if(creatorStep===1&&!creatorDraft.traits.length)return toast('至少给 TA 一个核心品质');
+  if(creatorStep===2&&!creatorDraft.styleTags.length&&!creatorDraft.initiative)return toast('选一点聊天气质，TA 才会有声音');
+  if(creatorStep<3)setCreatorStep(creatorStep+1);
+}
+
+function randomizeCharacter(){
+  creatorDraft.relationship=chooseOne(RELATIONSHIPS).value;
+  creatorDraft.traits=[...STRENGTH_GROUPS.flatMap(g=>g.items)].sort(()=>Math.random()-.5).slice(0,4);
+  creatorDraft.styleTags=[...CHAT_STYLES.map(x=>x.value)].sort(()=>Math.random()-.5).slice(0,2);
+  creatorDraft.initiative=chooseOne(INITIATIVES);creatorDraft.world=chooseOne(WORLDS).value;
+  const name=chooseOne(RANDOM_NAMES);$('charName').value=name;$('charAvatar').value=chooseOne(RANDOM_AVATARS);
+  ['charIdentity','charScenario','charFirst'].forEach(key=>$(key).dataset.manual='0');
+  renderCreatorStudio();toast('给你摇了一个意外角色');
+}
+
+function saveCharacter(){
+  const name=text($('charName').value);if(!name){setCreatorStep(3);toast('最后给 TA 一个名字');return}
+  if(!creatorDraft.relationship)creatorDraft.relationship='老朋友';
+  if(!creatorDraft.world)creatorDraft.world='现实日常';
+  creatorDraft.extra=text($('charExtra').value);
+  const auto=creatorAuto();
+  const patch={
+    name,avatar:text($('charAvatar').value)||name.slice(0,1),
+    identity:text($('charIdentity').value)||auto.identity,
+    personality:auto.personality,
+    scenario:text($('charScenario').value)||auto.scenario,
+    style:auto.style,
+    first:text($('charFirst').value)||auto.first,
+    relationship:creatorDraft.relationship,traits:[...creatorDraft.traits],styleTags:[...creatorDraft.styleTags],
+    initiative:creatorDraft.initiative,world:creatorDraft.world,extra:creatorDraft.extra,
+    archetype:[creatorDraft.traits[0],creatorDraft.styleTags[0]].filter(Boolean).join(' · ')
+  };
+  if(editingId){const target=chars.find(x=>x.id===editingId);Object.assign(target,patch);target.tagline=[patch.relationship,...patch.traits.slice(0,2)].join(' · ')}
+  else{patch.id=uid('npc');patch.tagline=[patch.relationship,...patch.traits.slice(0,2)].join(' · ');patch.distill={enabled:false,status:'off'};chars.push(patch);activeId=patch.id}
+  persist();closeModal('character');renderCharacters();renderActive();toast(editingId?'角色已经变了一点':'TA 出现了');
+}
 function deleteCharacter(){if(!editingId||chars.length<=1){toast('至少保留一个角色');return}const idx=chars.findIndex(c=>c.id===editingId);if(idx<0)return;const removed=chars.splice(idx,1)[0];delete threads[removed.id];delete memories[removed.id];activeId=chars[0].id;persist();closeModal('character');renderCharacters();renderActive();toast('角色已删除')}
 
-function publicCharacter(c){return{id:c.id,name:c.name,identity:c.identity,personality:c.personality,scenario:c.scenario,style:c.style,first:c.first}}
+function publicCharacter(c){return{id:c.id,name:c.name,identity:c.identity,personality:c.personality,scenario:c.scenario,style:c.style,first:c.first,relationship:c.relationship||'',traits:c.traits||[],styleTags:c.styleTags||[],initiative:c.initiative||'',world:c.world||'',archetype:c.archetype||''}}
 function slug(v){return text(v).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g,'-').replace(/^-|-$/g,'')||'character'}
 async function readMaterials(){const out=[];const pasted=text($('distillMaterial').value);if(pasted)out.push({name:'pasted-material.md',type:'text/markdown',text:pasted});for(const f of pendingFiles){try{out.push({name:f.name,type:f.type||'text/plain',text:(await f.text()).slice(0,120000)})}catch(_){}}return out}
 function openDistill(){const c=active();$('distillEnabled').checked=Boolean(c.distill&&c.distill.enabled);$('distillFields').classList.toggle('hidden',!$('distillEnabled').checked);$('distillSubject').value=c.distill?.subject||c.name;$('distillFocus').value=c.distill?.focus||'';$('distillMaterial').value='';$('distillFiles').value='';$('fileSummary').textContent='支持 txt / md / json / csv / srt / vtt';pendingFiles=[];$('distillProgress').classList.add('hidden');$('distillResult').classList.add('hidden');openModal('distill')}
@@ -89,10 +307,49 @@ function collectP005(){const raw=read(K.p005,null);if(!raw)return[];const out=[]
 function mergeObserver(p){if(p.big)Object.keys(observer.big).forEach(k=>{if(Number.isFinite(Number(p.big[k])))observer.big[k]=clamp(Number(p.big[k]))});if(p.clinical)Object.keys(observer.clinical).forEach(k=>{if(Number.isFinite(Number(p.clinical[k])))observer.clinical[k]=clamp(Number(p.clinical[k]))});if(Array.isArray(p.evidence))p.evidence.slice(-120).forEach(e=>observer.evidence.push({id:uid('ev'),source:e.source||'API',context:e.context||'observer',dimension:e.dimension||'unknown',quote:short(e.quote||''),at:e.at||Date.now(),strength:e.strength||.5}));observer.updatedAt=new Date().toISOString()}
 async function backgroundObserve(){importP005();if(!(window.P004_API&&window.P004_API.enabled))return;try{const r=await window.P004_API.observe({sources:{P004:Object.values(threads).flat().filter(m=>m.role==='user').map(m=>m.text).slice(-120),P005:collectP005()},existing:observer});if(r&&r.profile){mergeObserver(r.profile);persist();renderSourceCounts()}}catch(e){console.warn('P004 observer API failed',e)}}
 
-async function send(input){input=text(input);if(!input)return;const c=active(),list=thread();list.push({id:uid('m'),role:'user',text:input,at:Date.now(),source:'P004'});analyzeEvidence(input,'P004','character chat');persist();renderMessages();$('messageInput').value='';resizeInput();$('sendBtn').disabled=true;await maybeRemember(input,'P004');if(urgentSafety(input)){const reply=safetyReply();list.push({id:uid('m'),role:'assistant',text:reply,at:Date.now(),mode:'safety',source:'P004'});observer.safety.push({at:Date.now(),source:'P004',kind:'explicit-self-harm-language',quote:short(input,160)});persist();renderMessages();$('sendBtn').disabled=false;$('messageInput').focus();backgroundObserve();return}showTyping();const skill=await relevantSkill(c);let reply=null;try{if(window.P004_API&&window.P004_API.enabled){const r=await window.P004_API.chat({version:VERSION,character:publicCharacter(c),skill:skill?{id:skill.id,source:skill.source,markdown:skill.skillMarkdown}:null,persona:sharedProfile(),memory:memoryContext(),messages:list.slice(-24).map(m=>({role:m.role,text:m.text})),observerHint:{doNotExposeClinicalLabels:true},safety:{roleplayMustYieldToSafety:true}});if(r&&typeof r.reply==='string')reply=r.reply.trim()}}catch(e){console.warn('P004 chat API failed',e)}removeTyping();if(!reply)reply=localReply(input,c);list.push({id:uid('m'),role:'assistant',text:reply,at:Date.now(),mode:skill?'skill':'card',source:'P004'});persist();renderMessages();$('sendBtn').disabled=false;$('messageInput').focus();backgroundObserve()}
+async function send(input){input=text(input);if(!input)return;const c=active(),list=thread();list.push({id:uid('m'),role:'user',text:input,at:Date.now(),source:'P004'});analyzeEvidence(input,'P004','character chat');persist();renderMessages();$('messageInput').value='';resizeInput();$('sendBtn').disabled=true;await maybeRemember(input,'P004');if(urgentSafety(input)){const reply=safetyReply();list.push({id:uid('m'),role:'assistant',text:reply,at:Date.now(),mode:'safety',source:'P004'});observer.safety.push({at:Date.now(),source:'P004',kind:'explicit-self-harm-language',quote:short(input,160)});persist();renderMessages();$('sendBtn').disabled=false;$('messageInput').focus();backgroundObserve();return}showTyping();const skill=await relevantSkill(c);let reply=null;try{if(window.P004_API&&window.P004_API.enabled){const r=await window.P004_API.chat({version:VERSION,character:publicCharacter(c),skill:skill?{id:skill.id,source:skill.source,markdown:skill.skillMarkdown}:null,persona:sharedProfile(),memory:memoryContext(),messages:list.slice(-24).map(m=>({role:m.role,text:m.text})),observerHint:{doNotExposeClinicalLabels:true},safety:{roleplayMustYieldToSafety:true}});if(r&&typeof r.reply==='string')reply=r.reply.trim()}}catch(e){console.warn('P004 chat API failed',e);if(window.P004_API?.mode==='openai-compatible')toast('API 调用失败，已暂用本地回复 · '+short(e.message||'',72))}removeTyping();if(!reply)reply=localReply(input,c);list.push({id:uid('m'),role:'assistant',text:reply,at:Date.now(),mode:skill?'skill':'card',source:'P004'});persist();renderMessages();$('sendBtn').disabled=false;$('messageInput').focus();backgroundObserve()}
 
 function renderAdmin(){importP005();const names={openness:'Openness',conscientiousness:'Conscientiousness',extraversion:'Extraversion',agreeableness:'Agreeableness',sensitivity:'Emotional sensitivity'};const bg=$('bigFiveGrid');bg.replaceChildren();Object.entries(observer.big).forEach(([k,v])=>{const row=document.createElement('div');row.className='metric-row';const n=document.createElement('strong');n.textContent=names[k];const bar=document.createElement('span');bar.className='metric-bar';const fill=document.createElement('i');fill.style.width=Math.round(v)+'%';bar.append(fill);const num=document.createElement('em');num.textContent=Math.round(v);row.append(n,bar,num);bg.append(row)});const conf=Math.min(95,Math.round(30+observer.evidence.length*1.1));$('observerConfidence').textContent='confidence '+conf+'% · evidence '+observer.evidence.length;const cn={phqLike:'PHQ-related',gadLike:'GAD-related',pclLike:'PCL-related',capeLike:'CAPE-related'},cg=$('clinicalGrid');cg.replaceChildren();Object.entries(observer.clinical).forEach(([k,v])=>{const d=document.createElement('div');d.className='clinical-tile';const s=document.createElement('strong');s.textContent=cn[k];const b=document.createElement('b');b.textContent=Math.round(v);const p=document.createElement('p');p.textContent='开放式对话线索强度；不能当作正式量表分数、阈值或诊断。';d.append(s,b,p);cg.append(d)});const ev=$('evidenceList');ev.replaceChildren();observer.evidence.slice().reverse().slice(0,120).forEach(e=>{const row=document.createElement('div');row.className='evidence-row';const src=document.createElement('strong');src.textContent=e.source;const dim=document.createElement('span');dim.textContent=e.dimension;const q=document.createElement('p');q.textContent=e.quote;const tm=document.createElement('em');tm.textContent=new Date(e.at).toLocaleDateString('zh-CN');row.append(src,dim,q,tm);ev.append(row)});const counts={};observer.evidence.forEach(e=>counts[e.source]=(counts[e.source]||0)+1);$('evidenceSummary').textContent=Object.entries(counts).map(([k,v])=>k+' '+v).join(' · ')||'暂无证据'}
 async function exportSkill(){const c=active(),s=await relevantSkill(c);if(!s){toast('这个角色还没有本地 Skill');return}const suggested=slug(c.name)+'-SKILL.md';if(window.showSaveFilePicker){try{const h=await window.showSaveFilePicker({suggestedName:suggested,types:[{description:'Markdown Skill',accept:{'text/markdown':['.md']}}]});const w=await h.createWritable();await w.write(s.skillMarkdown);await w.close();toast('SKILL.md 已保存到本地文件');return}catch(e){if(e&&e.name==='AbortError')return}}const blob=new Blob([s.skillMarkdown],{type:'text/markdown;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=suggested;a.click();setTimeout(()=>URL.revokeObjectURL(url),500);toast('已导出 SKILL.md')}
+
+function renderRuntime(){
+  const api=window.P004_API,mode=api&&api.mode;
+  const direct=api&&api.readDirect?api.readDirect():{};
+  const connected=mode==='backend'||mode==='openai-compatible';
+  $('apiBtn').classList.toggle('connected',connected);
+  $('apiBtnText').textContent=mode==='openai-compatible'?(direct.model||'API'):mode==='backend'?'Server API':'接入 API';
+  $('runtimeBadge').innerHTML=mode==='openai-compatible'?'<i></i> BYOK':mode==='backend'?'<i></i> backend':'<i></i> local first';
+}
+
+function openApiSettings(){
+  const s=window.P004_API?.readDirect?.()||{};
+  $('apiBaseUrl').value=s.baseUrl||'https://api.openai.com/v1';
+  $('apiKeyInput').value=s.apiKey||'';
+  $('apiModel').value=s.model||'';
+  $('apiKeyInput').type='password';$('toggleApiKeyBtn').textContent='显示';
+  $('apiTestResult').classList.add('hidden');$('apiTestResult').classList.remove('error');
+  document.querySelectorAll('.api-presets .preset').forEach(b=>b.classList.toggle('active',Boolean(b.dataset.apiBase&&b.dataset.apiBase===$('apiBaseUrl').value)));
+  openModal('api');
+}
+
+function apiCandidate(){return{baseUrl:text($('apiBaseUrl').value),apiKey:text($('apiKeyInput').value),model:text($('apiModel').value)}}
+function validateApiCandidate(x){if(!x.baseUrl)return'需要 Base URL';if(!x.apiKey)return'需要 API Key';if(!x.model)return'需要 Model';return''}
+
+async function testApi(){
+  const candidate=apiCandidate(),problem=validateApiCandidate(candidate),box=$('apiTestResult');
+  if(problem){box.textContent=problem;box.classList.remove('hidden');box.classList.add('error');return}
+  $('testApiBtn').disabled=true;box.classList.remove('hidden','error');box.textContent='正在发一个极小的测试请求…';
+  try{const r=await window.P004_API.testDirect(candidate);box.textContent=r.ok?'连接成功 · '+(r.reply||'OK'):'接口已返回，但没有拿到文本';box.classList.toggle('error',!r.ok)}
+  catch(e){box.textContent='连接失败 · '+short(e.message||String(e),160);box.classList.add('error')}
+  finally{$('testApiBtn').disabled=false}
+}
+
+function saveApi(){
+  const candidate=apiCandidate(),problem=validateApiCandidate(candidate);
+  if(problem){toast(problem);return}
+  window.P004_API.saveDirect(candidate);renderRuntime();closeModal('api');toast('API 只保存到当前标签页');
+}
+function clearApi(){window.P004_API.clearDirect();$('apiKeyInput').value='';$('apiModel').value='';renderRuntime();closeModal('api');toast('本次会话的 API 配置已清除')}
 
 function resizeInput(){const el=$('messageInput');el.style.height='auto';el.style.height=Math.min(160,el.scrollHeight)+'px'}
 $('composer').addEventListener('submit',e=>{e.preventDefault();send($('messageInput').value)});
@@ -100,8 +357,20 @@ $('messageInput').addEventListener('input',resizeInput);
 $('messageInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('composer').requestSubmit()}});
 ['newCharacterBtn','railNewBtn'].forEach(id=>$(id).addEventListener('click',()=>openEditor(null)));
 ['editCharacterBtn','editCardBtn'].forEach(id=>$(id).addEventListener('click',()=>openEditor(activeId)));
+$('creatorNextBtn').addEventListener('click',creatorNext);
+$('creatorBackBtn').addEventListener('click',()=>setCreatorStep(creatorStep-1));
+$('randomizeNpcBtn').addEventListener('click',randomizeCharacter);
 $('saveCharacterBtn').addEventListener('click',saveCharacter);
 $('deleteCharacterBtn').addEventListener('click',deleteCharacter);
+['charName','charAvatar','charExtra'].forEach(id=>$(id).addEventListener('input',()=>{creatorDraft.extra=text($('charExtra').value);renderCreatorPreview()}));
+['charIdentity','charScenario','charFirst'].forEach(id=>$(id).addEventListener('input',e=>{e.target.dataset.manual='1';renderCreatorPreview()}));
+$('apiBtn').addEventListener('click',openApiSettings);
+$('toggleApiKeyBtn').addEventListener('click',()=>{const input=$('apiKeyInput'),show=input.type==='password';input.type=show?'text':'password';$('toggleApiKeyBtn').textContent=show?'隐藏':'显示'});
+document.querySelectorAll('.api-presets .preset').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-presets .preset').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(btn.dataset.apiBase)$('apiBaseUrl').value=btn.dataset.apiBase}));
+$('testApiBtn').addEventListener('click',testApi);
+$('saveApiBtn').addEventListener('click',saveApi);
+$('clearApiBtn').addEventListener('click',clearApi);
+window.addEventListener('p004:api-settings-changed',renderRuntime);
 $('distillBtn').addEventListener('click',openDistill);
 $('distillEnabled').addEventListener('change',e=>$('distillFields').classList.toggle('hidden',!e.target.checked));
 $('distillFiles').addEventListener('change',e=>{pendingFiles=Array.from(e.target.files||[]);$('fileSummary').textContent=pendingFiles.length?(pendingFiles.length+' 个文件 · '+pendingFiles.map(f=>f.name).join(' / ')):'支持 txt / md / json / csv / srt / vtt'});
@@ -110,6 +379,6 @@ $('exportSkillBtn').addEventListener('click',exportSkill);
 $('refreshObserverBtn').addEventListener('click',async()=>{await backgroundObserve();renderAdmin();toast('人物画像已刷新')});
 $('adminBtn').addEventListener('click',()=>{renderAdmin();openModal('admin')});
 
-async function boot(){if(!chars.length)chars=DEFAULTS;if(!active())activeId=chars[0].id;if(adminMode)$('adminBtn').classList.remove('hidden');$('runtimeBadge').innerHTML=(window.P004_API&&window.P004_API.enabled)?'<i></i> API connected':'<i></i> local first';renderPersona();importP005();renderSourceCounts();renderCharacters();await renderActive();persist();backgroundObserve()}
+async function boot(){if(!chars.length)chars=DEFAULTS;if(!active())activeId=chars[0].id;if(adminMode)$('adminBtn').classList.remove('hidden');renderRuntime();renderPersona();importP005();renderSourceCounts();renderCharacters();await renderActive();persist();backgroundObserve()}
 boot();
 })();

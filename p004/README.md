@@ -98,3 +98,24 @@ window.P004_CONFIG = {
 - NVWA Skill: research-driven distillation of thinking patterns rather than a shallow persona prompt.
 
 P004 borrows these interaction patterns selectively; it is not a 1:1 clone of any one product.
+
+
+## 前端 BYOK（OpenAI-compatible）
+
+P004 支持用户在前端临时输入自己的 OpenAI-compatible 配置：
+
+- Base URL，例如 `https://api.openai.com/v1`
+- API Key
+- Model
+- 请求协议：`POST /chat/completions`
+- 认证：`Authorization: Bearer <key>`
+
+API Key 仅写入当前标签页的 `sessionStorage`，关闭标签页后清除；不会进入 GitHub 仓库、共享 profile、P004 Observer 或管理员画像。
+
+这是有意提供的 **BYOK** 模式。它适合个人原型和测试，不等于服务端密钥安全方案。任何运行在同一页面里的前端脚本理论上都能访问该 Key，因此建议使用限额、可撤销、专用于本项目的 Key，并避免在公共设备上使用。
+
+OpenAI 官方仍建议 API Key 不要暴露在浏览器客户端。P004 保留后端模式；若未来用于正式部署，仍建议切回服务端代理。
+
+### BYOK 当前能力
+
+前端 BYOK 当前只负责 **角色聊天**。长期记忆仍由本地逻辑保存，Observer 仍按本地研究原型运行；完整 NVWA 六路调研蒸馏仍需要正式后端。没有 NVWA 后端时，P004 只生成明确标注的 Character Skill 草稿。
