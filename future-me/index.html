@@ -3,164 +3,313 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f6f0e7" />
-  <title>Future Me · 和未来的自己聊聊</title>
-  <link rel="stylesheet" href="styles.css?v=20260914-2" />
-  <script src="../shared/config.js"></script>
-  <script src="../shared/core.js"></script>
+  <meta name="theme-color" content="#f6f2ea" />
+  <meta name="description" content="P005 Future Me：基于人生故事、未来目标与可能路径的未来自我交互原型。" />
+  <title>P005 · Future Me / 未来的我</title>
+  <link rel="stylesheet" href="styles.css?v=20260915-p005-1" />
 </head>
 <body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
   <main class="app-shell">
     <header class="topbar">
-      <a class="brand" href="../">AI-Ques</a>
-      <div class="step-dots" id="stepDots" aria-label="进度"></div>
-      <button class="text-btn" id="resetBtn">清除本地数据</button>
+      <a class="brand" href="../" aria-label="返回 AI-Ques">
+        <span class="brand-mark">P005</span>
+        <span><b>Future Me</b><small>未来的我</small></span>
+      </a>
+      <div class="step-wrap">
+        <span id="stepLabel">开始</span>
+        <div class="step-dots" id="stepDots" aria-label="进度"></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="exportBtn" title="导出本地数据" aria-label="导出本地数据">⇩</button>
+        <button class="icon-btn" id="resetBtn" title="清除本地数据" aria-label="清除本地数据">↺</button>
+      </div>
     </header>
 
-    <section class="screen active" id="screen-welcome">
+    <section class="screen active welcome-screen" id="screen-welcome">
       <div class="hero-copy">
-        <p class="eyebrow">Future Me · 未来自我实验</p>
-        <h1>给未来的自己<br><span>打个招呼。</span></h1>
-        <p class="lede">回答一组关于现在与未来的问题，我们会生成一条<strong>可能的人生路径</strong>，再让 60 岁的“你”带着这些未来记忆回来和你聊天。</p>
-        <div class="principles">
-          <div><b>不是预测</b><span>只生成一种合理但不确定的未来。</span></div>
-          <div><b>不是治疗</b><span>目标是自我反思与长期思考。</span></div>
-          <div><b>本地保存</b><span>当前 Demo 默认写入此浏览器；关闭页面后仍会保留。</span></div>
+        <div class="status-pill"><i></i> 一次来自未来的连接</div>
+        <p class="eyebrow">Future self · possible futures</p>
+        <h1>不是预测未来。<br><span>是提前认识未来的你。</span></h1>
+        <p class="lede">把现在的人生线索、重要关系、长期目标和正在犹豫的选择交给系统。它会生成一条<strong>可能的人生路径</strong>，再让 60 岁的“你”带着这些记忆回来。</p>
+        <div class="hero-actions">
+          <button class="primary xl" data-next="identity">连接未来的我 <span>→</span></button>
+          <button class="ghost-btn" id="resumeBtn">继续上次进度</button>
         </div>
-        <button class="primary" data-next="identity">开始认识未来的我 →</button>
-        <p class="tiny"><strong>隐私提示：</strong>人生故事与对话会保存在当前浏览器的 localStorage；共用设备请在结束后点击右上角“清除本地数据”。当前公开 Demo 不会自动上传到模型。<br>灵感来自 MIT Future You 研究；本 Demo 与 MIT 无官方隶属关系，也不复制其品牌与照片老化模块。</p>
+        <div class="trust-row">
+          <span>不是算命</span><span>不是诊断</span><span>默认本地保存</span><span>可接语音 / 图像 API</span>
+        </div>
+        <p class="storage-note">本 Demo 默认写入此浏览器的 localStorage，关闭页面后仍会保留。若你正在使用共用设备，结束后请用右上角 ↺ 清除本地数据。</p>
       </div>
-      <div class="future-card" aria-hidden="true">
-        <div class="time-ring"><span>NOW</span><strong>→</strong><span>60</span></div>
-        <div class="ghost-chat">
-          <div class="bubble user">你后来过得好吗？</div>
-          <div class="bubble future">没有一条路是直线，但我很庆幸你现在开始认真想这件事。</div>
-        </div>
+
+      <div class="future-stage" aria-hidden="true">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="horizon"></div>
+        <div class="age-node age-now"><small>NOW</small><b id="heroAge">今天</b></div>
+        <div class="age-node age-future"><small>FUTURE</small><b>60</b></div>
+        <article class="incoming-card">
+          <div class="incoming-head"><span class="avatar-mini">F</span><div><b>Future Me</b><small>来自 60 岁</small></div><i>●</i></div>
+          <p>“你不需要现在就知道整个人生。先把下一步走得更像自己。”</p>
+          <div class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
       </div>
     </section>
 
     <section class="screen" id="screen-identity">
-      <div class="panel-head">
-        <p class="eyebrow">01 · 现在的你</p>
-        <h2>先告诉未来的你，<br>现在是谁。</h2>
-        <p>这些信息用于让未来自我的叙述更像你，而不是生成诊断或标签。</p>
+      <div class="screen-grid profile-grid">
+        <div>
+          <p class="eyebrow">01 · 现在的我</p>
+          <h2>让未来的你，<br>先认出现在的你。</h2>
+          <p class="screen-intro">如果 P001–P004 已经保存过共享资料，这里会自动尝试带入；你只需要补充缺失的信息。</p>
+
+          <form class="form-grid" id="identityForm">
+            <label>
+              <span>希望怎么称呼你？</span>
+              <input name="name" required autocomplete="name" placeholder="例如：小林" />
+            </label>
+            <label>
+              <span>你现在几岁？</span>
+              <input name="age" required type="number" min="16" max="80" inputmode="numeric" placeholder="22" />
+            </label>
+            <label>
+              <span>在哪里长大？</span>
+              <input name="origin" placeholder="例如：成都" />
+            </label>
+            <label>
+              <span>现在住在哪里？</span>
+              <input name="location" placeholder="例如：北京" />
+            </label>
+            <label class="wide">
+              <span>你目前主要在做什么？</span>
+              <textarea name="currentWork" rows="3" placeholder="学习、工作、研究、创业，或者正在经历怎样的阶段……"></textarea>
+            </label>
+          </form>
+        </div>
+
+        <aside class="portrait-builder">
+          <div class="portrait-frame" id="currentPortraitFrame">
+            <div class="portrait-placeholder" id="currentPortraitPlaceholder">
+              <span>+</span><b>加入一张现在的照片</b><small>可选 · 仅用于未来头像体验</small>
+            </div>
+            <img id="currentPortraitImg" alt="当前头像预览" />
+            <input type="file" id="portraitInput" accept="image/*" hidden />
+            <button class="portrait-upload" id="portraitUploadBtn" type="button">选择照片</button>
+          </div>
+          <div class="privacy-card">
+            <b>照片怎么处理？</b>
+            <p>当前静态 Demo 默认只保存在浏览器。只有你后来配置了图像后端时，才会调用年龄变化接口；前端不会存 API Key。</p>
+          </div>
+        </aside>
       </div>
-      <form class="form-grid" id="identityForm">
-        <label>希望怎么称呼你？<input name="name" required placeholder="例如：小林" /></label>
-        <label>你现在几岁？<input name="age" required type="number" min="16" max="80" placeholder="22" /></label>
-        <label>你在哪里长大？<input name="origin" placeholder="例如：成都" /></label>
-        <label>你现在住在哪里？<input name="location" placeholder="例如：北京" /></label>
-        <label class="wide">你目前主要在做什么？<textarea name="currentWork" rows="3" placeholder="学习、工作、研究、创业，或者正处在什么阶段……"></textarea></label>
-      </form>
-      <div class="nav-row"><button class="secondary" data-prev="welcome">← 返回</button><button class="primary" data-validate="identityForm" data-next="present">继续 →</button></div>
+      <div class="nav-row"><button class="secondary" data-prev="welcome">← 返回</button><button class="primary" data-validate="identityForm" data-next="present">继续 <span>→</span></button></div>
     </section>
 
     <section class="screen" id="screen-present">
-      <div class="panel-head">
-        <p class="eyebrow">02 · 你的人生故事</p>
-        <h2>哪些经历，<br>把你带到了今天？</h2>
-        <p>原研究会收集重要关系、骄傲时刻、低谷与转折点，用来建立未来自我的“连续记忆”。</p>
+      <div class="screen-head">
+        <div><p class="eyebrow">02 · 人生线索</p><h2>哪些事情，把你带到了今天？</h2></div>
+        <p>不用写得像自传。几句话就够。Future Me 会把这些内容当成“连续记忆”的起点。</p>
       </div>
-      <form class="stack-form" id="presentForm">
-        <label><span>💁 重要的人</span><small>谁对你最重要？你们通常怎样相处？</small><textarea name="people" rows="4" placeholder="例如：父母、伴侣、室友、老师、朋友……"></textarea></label>
-        <label><span>🏆 一个你真正骄傲的时刻</span><small>发生了什么？为什么它对你重要？</small><textarea name="proud" rows="4"></textarea></label>
-        <label><span>🌧️ 一段低谷</span><small>什么事情最难？它后来怎样影响了你？</small><textarea name="lowPoint" rows="4"></textarea></label>
-        <label><span>🪧 一个转折点</span><small>哪件事明显改变了你的方向、关系或看待自己的方式？</small><textarea name="turningPoint" rows="4"></textarea></label>
+
+      <form class="story-grid" id="presentForm">
+        <label class="story-card">
+          <span class="story-icon">01</span>
+          <b>重要的人</b>
+          <small>谁对你最重要？你们通常怎样相处？</small>
+          <textarea name="people" rows="4" placeholder="父母、伴侣、朋友、老师……"></textarea>
+        </label>
+        <label class="story-card">
+          <span class="story-icon">02</span>
+          <b>真正骄傲的时刻</b>
+          <small>发生了什么？为什么它对你重要？</small>
+          <textarea name="proud" rows="4"></textarea>
+        </label>
+        <label class="story-card">
+          <span class="story-icon">03</span>
+          <b>一段低谷</b>
+          <small>什么事情最难？它怎样改变了你？</small>
+          <textarea name="lowPoint" rows="4"></textarea>
+        </label>
+        <label class="story-card">
+          <span class="story-icon">04</span>
+          <b>一个转折点</b>
+          <small>哪件事明显改变了你的方向？</small>
+          <textarea name="turningPoint" rows="4"></textarea>
+        </label>
       </form>
-      <div class="nav-row"><button class="secondary" data-prev="identity">← 返回</button><button class="primary" data-next="future">继续 →</button></div>
+      <div class="nav-row"><button class="secondary" data-prev="identity">← 返回</button><button class="primary" data-next="future">继续 <span>→</span></button></div>
     </section>
 
     <section class="screen" id="screen-future">
-      <div class="panel-head">
-        <p class="eyebrow">03 · 想象 60 岁</p>
-        <h2>不是猜未来，<br>而是把它写得足够具体。</h2>
-        <p>请写你希望发生的版本。系统会把这些愿望与现在的人生故事连接成一条“可能路径”。</p>
+      <div class="screen-head">
+        <div><p class="eyebrow">03 · 写出一个可能未来</p><h2>把“以后”写得具体一点。</h2></div>
+        <p>你不是在提交愿望清单，而是在给未来自我提供方向、冲突与价值排序。</p>
       </div>
-      <form class="stack-form" id="futureForm">
-        <label><span>🏔️ 你最想跨过去的一个挑战</span><textarea name="challenge" rows="3" placeholder="例如：害怕失败、长期拖延、关系里的边界、职业选择……"></textarea></label>
-        <label><span>🧩 一个你想长期投入的人生项目</span><textarea name="lifeProject" rows="3" placeholder="它可以是事业、家庭、创作、研究、公益，或一种生活方式。"></textarea></label>
-        <label><span>🧑‍🚀 理想的职业与成就</span><textarea name="career" rows="3" placeholder="60 岁时，你希望自己做过什么、留下什么？"></textarea></label>
-        <div class="two-col">
-          <label><span>💰 理想的财务状态</span><textarea name="finance" rows="3"></textarea></label>
-          <label><span>👪 理想的家庭/亲密关系</span><textarea name="family" rows="3"></textarea></label>
+
+      <form class="future-form" id="futureForm">
+        <div class="future-main-grid">
+          <label class="future-field accent-field">
+            <span>最想跨过去的挑战</span>
+            <textarea name="challenge" rows="3" placeholder="害怕失败、拖延、职业选择、关系边界……"></textarea>
+          </label>
+          <label class="future-field">
+            <span>想长期投入的人生项目</span>
+            <textarea name="lifeProject" rows="3" placeholder="事业、家庭、研究、创作、公益或一种生活方式"></textarea>
+          </label>
+          <label class="future-field">
+            <span>职业与成就</span>
+            <textarea name="career" rows="3" placeholder="60 岁时，希望自己做过什么、留下什么？"></textarea>
+          </label>
+          <label class="future-field">
+            <span>始终不想丢掉的东西</span>
+            <textarea name="values" rows="3" placeholder="好奇、自由、家人、创造、诚实……"></textarea>
+          </label>
+          <label class="future-field">
+            <span>理想的财务状态</span>
+            <textarea name="finance" rows="3"></textarea>
+          </label>
+          <label class="future-field">
+            <span>理想的家庭 / 亲密关系</span>
+            <textarea name="family" rows="3"></textarea>
+          </label>
+          <label class="future-field">
+            <span>60 岁时想住在哪里？</span>
+            <textarea name="futureLocation" rows="3"></textarea>
+          </label>
+          <label class="future-field">
+            <span>那时普通的一天怎么过？</span>
+            <textarea name="dailyLife" rows="3" placeholder="工作、运动、爱好、和谁一起吃饭……"></textarea>
+          </label>
         </div>
-        <div class="two-col">
-          <label><span>🗺️ 60 岁时想住在哪里？</span><textarea name="futureLocation" rows="3"></textarea></label>
-          <label><span>🏡 一天会怎么过？</span><textarea name="dailyLife" rows="3" placeholder="工作、运动、爱好、和谁一起吃饭……"></textarea></label>
+
+        <div class="decision-card">
+          <div class="decision-copy">
+            <span class="micro-tag">可选 · 多未来分支</span>
+            <h3>你最近有没有一个真的很纠结的选择？</h3>
+            <p>如果有，系统会同时生成两个“可能未来”的分支，不替你做决定。</p>
+          </div>
+          <div class="decision-fields">
+            <label><span>我正在决定</span><input name="decision" placeholder="例如：留在现在的工作，还是换一条赛道" /></label>
+            <div class="decision-options">
+              <label><span>Option A</span><input name="optionA" placeholder="留下" /></label>
+              <label><span>Option B</span><input name="optionB" placeholder="换赛道" /></label>
+            </div>
+          </div>
         </div>
-        <label><span>🧭 希望未来的自己始终没有丢掉什么？</span><textarea name="values" rows="3" placeholder="例如：好奇、善良、自由、家人、创造、诚实……"></textarea></label>
       </form>
-      <div class="nav-row"><button class="secondary" data-prev="present">← 返回</button><button class="primary" data-next="generate">生成 Future Me →</button></div>
+
+      <div class="nav-row"><button class="secondary" data-prev="present">← 返回</button><button class="primary glow" data-next="generate">生成 Future Me <span>→</span></button></div>
     </section>
 
-    <section class="screen" id="screen-generate">
-      <div class="generation">
-        <p class="eyebrow">04 · Future Memory</p>
-        <div class="orb"><span>60</span></div>
-        <h2 id="generateTitle">正在把你的人生线索连接起来……</h2>
-        <p id="generateSub">这不是预言，而是一种可供反思的未来叙事。</p>
+    <section class="screen generation-screen" id="screen-generate">
+      <div class="generation-core">
+        <div class="future-orb"><span>60</span><i></i></div>
+        <p class="eyebrow">04 · Synthetic memory</p>
+        <h2 id="generateTitle">正在把人生线索连接起来……</h2>
+        <p id="generateSub">不是预测，而是构造一个与你的信息相连、内部尽量一致的“可能未来”。</p>
         <div class="memory-stream" id="memoryStream"></div>
-        <button class="primary hidden" id="meetBtn">去见 60 岁的自己 →</button>
+        <button class="primary xl hidden" id="meetBtn">去见 60 岁的自己 <span>→</span></button>
       </div>
     </section>
 
     <section class="screen" id="screen-ready">
-      <div class="ready-layout">
-        <div class="future-identity">
-          <div class="avatar" id="futureAvatar">F</div>
-          <p class="eyebrow">你的 Future Me</p>
-          <h2><span id="futureName">你</span>，60 岁</h2>
-          <p>带着一段从“现在”走到 60 岁的 synthetic memory 回来。</p>
-        </div>
-        <div class="memory-card">
-          <p class="eyebrow">一种可能的人生路径</p>
+      <div class="ready-shell">
+        <aside class="future-person">
+          <div class="future-portrait" id="futurePortrait">
+            <img id="futurePortraitImg" alt="Future Me 头像" />
+            <div class="future-monogram" id="futureMonogram">F</div>
+            <div class="portrait-status" id="portraitStatus">未来头像未生成</div>
+          </div>
+          <p class="eyebrow">Your possible future self</p>
+          <h2><span id="futureName">你</span><small>60 岁</small></h2>
+          <p class="future-bio">带着一条由你当前故事与目标延伸出来的 synthetic memory 回来。</p>
+          <button class="soft-btn" id="agePortraitBtn">生成未来头像</button>
+          <button class="soft-btn" id="voiceModeBtn">开启语音模式</button>
+          <p class="api-note">没接后端时，头像不会伪装成“真实年龄化结果”；语音会优先使用浏览器的听写与朗读能力。</p>
+        </aside>
+
+        <div class="future-content">
+          <div class="section-kicker"><span>一种可能的人生路径</span><i></i></div>
           <div id="memorySummary"></div>
-          <div class="safe-note">未来可能完全不同。这里的内容是根据你刚刚的描述生成的反思材料，不是预测，也不是建议你必须走这条路。</div>
-          <button class="primary" data-next="chat">开始对话 →</button>
+          <div id="branchPreview"></div>
+          <div class="safe-note"><b>重要：</b>未来可能完全不同。这里的内容是反思材料，不是预测，也不是“你应该怎样生活”的建议。</div>
+          <button class="primary xl" data-next="chat">和未来的我聊聊 <span>→</span></button>
         </div>
       </div>
     </section>
 
     <section class="screen chat-screen" id="screen-chat">
-      <div class="chat-layout">
-        <aside class="chat-side">
-          <button class="secondary small" data-prev="ready">← 查看未来记忆</button>
-          <div class="avatar large" id="chatAvatar">F</div>
+      <div class="chat-shell">
+        <aside class="chat-profile">
+          <button class="back-link" data-prev="ready">← 查看未来时间线</button>
+          <div class="chat-avatar" id="chatAvatar">F</div>
           <h3 id="chatName">Future Me · 60</h3>
-          <p>可以问工作、家人、后悔、挑战、选择，也可以只说“你好”。</p>
+          <p>可以谈工作、家人、遗憾、选择，也可以只说“你好”。</p>
+          <div class="voice-state" id="voiceState"><i></i><span>文字模式</span></div>
           <div class="prompt-chips" id="promptChips">
             <button>你后来开心吗？</button>
             <button>我现在最该关注什么？</button>
             <button>最大的意外是什么？</button>
             <button>你有没有后悔？</button>
           </div>
-          <button class="text-btn" id="finishChatBtn">结束对话并写一封未来信</button>
+          <button class="capsule-link" id="finishChatBtn">写给未来的我 ↗</button>
         </aside>
+
         <div class="chat-main">
+          <div class="chat-topline">
+            <div><b>与 60 岁的自己连接中</b><small id="chatModeNote">本地 fallback · 可配置 LLM API</small></div>
+            <button class="soft-btn compact" id="speakLastBtn">朗读上一条</button>
+          </div>
           <div class="messages" id="messages" aria-live="polite"></div>
+          <div class="voice-listening hidden" id="voiceListening"><div class="listen-orb"></div><b>正在听你说……</b><span>再次点击麦克风可结束</span></div>
           <form class="composer" id="chatForm">
+            <button class="mic-btn" id="micBtn" type="button" title="语音输入" aria-label="语音输入">⌁</button>
             <textarea id="chatInput" rows="2" placeholder="问未来的自己一个问题……" required></textarea>
-            <button class="primary" type="submit">发送</button>
+            <button class="send-btn" type="submit" aria-label="发送">↑</button>
           </form>
-          <p class="tiny centered">当前公开 Demo 使用本地生成器；仓库预留了 LLM 后端接口。不会把输入自动上传到任何模型。</p>
+          <p class="tiny centered">公开 Demo 不会把输入自动上传到模型。配置 FUTURE_ME_API 后才会请求你的后端。</p>
         </div>
       </div>
     </section>
 
-    <section class="screen" id="screen-letter">
-      <div class="letter-layout">
-        <div>
-          <p class="eyebrow">05 · 带一点东西回到现在</p>
-          <h2>来自 60 岁的你的一封短信。</h2>
-          <p>Future You 的价值不是“知道答案”，而是让今天的选择多一个时间尺度。</p>
-          <label class="action-box">未来 7 天，我愿意做的一件小事<input id="nextAction" placeholder="例如：约老师聊一次职业选择" /></label>
-          <div class="nav-row"><button class="secondary" data-prev="chat">← 回去继续聊</button><button class="primary" id="refreshLetterBtn">重新生成这封信</button></div>
+    <section class="screen" id="screen-capsule">
+      <div class="capsule-shell">
+        <div class="capsule-compose">
+          <p class="eyebrow">05 · FutureMe style time capsule</p>
+          <h2>给未来的自己，<br>留下一封信。</h2>
+          <p class="screen-intro">把刚才的对话变成一个可回看的时间胶囊。静态 Demo 会保存在当前浏览器；若以后接邮件/短信后端，可真正按时投递。</p>
+
+          <label class="action-box">未来 7 天，我愿意做的一件小事
+            <input id="nextAction" placeholder="例如：约老师聊一次职业选择" />
+          </label>
+
+          <div class="unlock-block">
+            <b>什么时候再打开？</b>
+            <div class="unlock-chips" id="unlockChips">
+              <button data-months="6">6 个月</button>
+              <button class="active" data-months="12">1 年</button>
+              <button data-months="36">3 年</button>
+              <button data-months="60">5 年</button>
+            </div>
+            <label class="custom-date">或选择具体日期 <input id="unlockDate" type="date" /></label>
+          </div>
+
+          <div class="capsule-actions">
+            <button class="secondary" data-prev="chat">← 回去继续聊</button>
+            <button class="primary" id="saveCapsuleBtn">封存时间胶囊</button>
+          </div>
+
+          <div class="saved-capsules" id="savedCapsules"></div>
         </div>
+
         <article class="letter-card" id="futureLetter"></article>
       </div>
     </section>
   </main>
 
-  <script src="app.js?v=20260914-2"></script>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js?v=20260915-p005-1"></script>
 </body>
 </html>
