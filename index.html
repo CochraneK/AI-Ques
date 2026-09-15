@@ -3,110 +3,123 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#f7f7f5" />
-  <meta name="description" content="AI-Ques 心理测评交互实验室：比较不同心理测评交互形式的研究原型。" />
-  <title>AI-Ques · 心理测评交互实验室</title>
-  <link rel="stylesheet" href="styles.css?v=20260915-1" />
+  <meta name="theme-color" content="#f3f0e9" />
+  <meta name="description" content="BJTU P00 Lab：P001–P005 心理与未来自我交互研究总入口。" />
+  <title>BJTU · P00 Lab</title>
+  <link rel="stylesheet" href="styles.css?v=20260915-hub1" />
 </head>
 <body>
-  <a class="skip-link" href="#launcher">跳到实验选择</a>
+  <div class="glow glow-a" aria-hidden="true"></div>
+  <div class="glow glow-b" aria-hidden="true"></div>
 
   <header class="topbar">
-    <a class="wordmark" href="./" aria-label="AI-Ques 首页">
-      <span class="mark">AQ</span>
-      <span><strong>AI-Ques</strong><small>心理测评交互实验室</small></span>
+    <a class="brand" href="./">
+      <span class="brand-mark">P00</span>
+      <span><strong>BJTU · P00 Lab</strong><small>self × assessment × simulation × conversation × future</small></span>
     </a>
-    <div class="top-meta">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span>Research prototype</span>
+    <div class="top-actions">
+      <span class="status"><i></i> prototype hub</span>
       <a href="https://github.com/CochraneK/AI-Ques" target="_blank" rel="noreferrer">GitHub ↗</a>
     </div>
   </header>
 
   <main class="shell">
-    <section class="intro">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">ONE PROFILE · FIVE EXPERIENCES</p>
+        <h1>五条路径，<br><span>认识同一个人。</span></h1>
+        <p class="hero-lede">从“现在的我”到心理测评、人生模拟、自然对话，再到未来的自己。公共资料只填一次；每个模块保留自己的研究边界和私有数据。</p>
+      </div>
+      <div class="hero-metrics" aria-label="项目状态">
+        <div><b>05</b><span>modules</span></div>
+        <div><b>03</b><span>in this hub</span></div>
+        <div><b>01</b><span>shared profile</span></div>
+      </div>
+    </section>
+
+    <section class="hub-layout">
       <div>
-        <p class="eyebrow">INTERACTION × PSYCHOMETRICS</p>
-        <h1>同一份心理测评，<br><span>换一种完成方式。</span></h1>
-      </div>
-      <div class="intro-copy">
-        <p>比较原题、故事化、Emoji 任务与情景判断等不同交互形式，观察体验提升与测量代价之间的变化。</p>
-        <p class="research-note"><strong>研究原型，不用于诊断。</strong> 改写、游戏化或情景化版本都需要重新验证信度、效度与阈值。</p>
-      </div>
-    </section>
-
-    <section id="launcher" class="launcher" aria-labelledby="launcherTitle">
-      <div class="launcher-head">
-        <div>
-          <p class="eyebrow">START AN EXPERIMENT</p>
-          <h2 id="launcherTitle">选择量表和玩法</h2>
+        <div class="section-head">
+          <div><p class="eyebrow">EXPERIENCE MAP</p><h2>选择一个模块</h2></div>
+          <p>同级编号、同一入口，不再把某个模块当成“side experiment”。</p>
         </div>
-        <p>两步完成，不需要先读完整说明。</p>
-      </div>
 
-      <div class="launcher-grid">
-        <section class="step-block" aria-labelledby="scaleTitle">
-          <div class="step-title">
-            <span>01</span>
-            <div><h3 id="scaleTitle">量表</h3><p>先决定测量什么。</p></div>
-          </div>
-          <div id="scaleChoices" class="choice-grid scales"></div>
-        </section>
+        <div class="module-grid">
+          <article class="module-card muted" data-module="P001">
+            <div class="module-no">01</div>
+            <div class="module-copy"><span>SELF CONCEPT</span><h3>现在的我 / 未来的我 / 理想的我</h3><p>自我特征、排序、投射与自我差异。独立开发中，待接入统一入口。</p></div>
+            <span class="module-status">接入中</span>
+          </article>
 
-        <section class="step-block" aria-labelledby="modeTitle">
-          <div class="step-title">
-            <span>02</span>
-            <div><h3 id="modeTitle">玩法</h3><p>再决定怎么完成。</p></div>
-          </div>
-          <div id="modeChoices" class="choice-grid modes"></div>
-        </section>
-      </div>
+          <a class="module-card live tone-blue" href="p002/" data-module="P002">
+            <div class="module-no">02</div>
+            <div class="module-copy"><span>ASSESSMENT LAB</span><h3>PCL × CAPE 交互实验</h3><p>比较直接问卷、故事化、SJT、互动小说等不同完成方式。</p></div>
+            <span class="module-status">进入 ↗</span>
+          </a>
 
-      <div class="launch-bar">
-        <div id="selectedSummary" class="selected-summary" aria-live="polite">
-          <span class="selection-empty">请选择 1 个量表 + 1 种玩法</span>
+          <article class="module-card muted" data-module="P003">
+            <div class="module-no">03</div>
+            <div class="module-copy"><span>LIFE SIMULATOR</span><h3>人生模拟器</h3><p>从成长到成年的人生决策与人格反馈。基于 ai-uni 独立推进中。</p></div>
+            <span class="module-status">接入中</span>
+          </article>
+
+          <a class="module-card live tone-lime" href="p004/" data-module="P004">
+            <div class="module-no">04</div>
+            <div class="module-copy"><span>CONVERSATIONAL PORTRAIT</span><h3>聊天中的人物画像</h3><p>自然交流形成用户侧趣味画像；研究侧推断与证据单独隔离。</p></div>
+            <span class="module-status">进入 ↗</span>
+          </a>
+
+          <a class="module-card live tone-violet" href="p005/" data-module="P005">
+            <div class="module-no">05</div>
+            <div class="module-copy"><span>FUTURE SELF</span><h3>Future Me · 未来的我</h3><p>人生故事、可能未来、未来自我对话、语音/头像接口与时间胶囊。</p></div>
+            <span class="module-status">进入 ↗</span>
+          </a>
         </div>
-        <button id="startBtn" class="primary" disabled>开始体验 <span aria-hidden="true">→</span></button>
       </div>
+
+      <aside class="profile-panel">
+        <div class="profile-head">
+          <div><p class="eyebrow">SHARED PROFILE</p><h2>一次填写，多处复用</h2></div>
+          <span class="profile-badge" id="profileBadge">未填写</span>
+        </div>
+        <p class="profile-note">这里只保存适合跨模块复用的基础资料。P004 的临床样推断、证据原话等不会进入这份公共 profile。</p>
+
+        <form id="profileForm" class="profile-form">
+          <label><span>称呼</span><input name="name" autocomplete="name" placeholder="例如：小林" /></label>
+          <div class="profile-two">
+            <label><span>年龄</span><input name="age" type="number" min="12" max="100" placeholder="22" /></label>
+            <label><span>成长地</span><input name="origin" placeholder="例如：成都" /></label>
+          </div>
+          <label><span>当前城市</span><input name="location" placeholder="例如：北京" /></label>
+          <label><span>现在主要在做什么</span><textarea name="currentWork" rows="2" placeholder="学习、工作、研究、创业……"></textarea></label>
+          <label><span>希望长期保留的价值</span><textarea name="values" rows="2" placeholder="自由、关系、创造、好奇……"></textarea></label>
+          <div class="profile-actions">
+            <button class="save-btn" type="submit">保存公共资料</button>
+            <button class="clear-btn" id="clearProfileBtn" type="button">清除</button>
+          </div>
+        </form>
+
+        <div class="privacy-box">
+          <b>数据边界</b>
+          <p>公共资料保存在当前浏览器的 <code>bjtu.p00.profile.v1</code>。这是静态原型，不代表正式研究的数据治理方案。</p>
+        </div>
+      </aside>
     </section>
 
-    <a class="future-card" href="p004/">
-      <span class="future-icon" aria-hidden="true">04</span>
-      <span class="future-copy">
-        <span class="future-kicker">P004 · CONVERSATIONAL PORTRAIT</span>
-        <strong>聊天中的人物画像</strong>
-        <small>自然交流 → 动态人物印象 → 趣味报告；研究侧保留证据、覆盖率与不确定性。</small>
-      </span>
-      <span class="future-arrow" aria-hidden="true">↗</span>
-    </a>
-
-    <a class="future-card" href="future-me/" style="margin-top:8px">
-      <span class="future-icon" aria-hidden="true">60</span>
-      <span class="future-copy">
-        <span class="future-kicker">SIDE EXPERIMENT · FUTURE ME</span>
-        <strong>和 60 岁的自己聊聊</strong>
-        <small>人生故事访谈 → 未来记忆 → 对话 → 一封来自未来的信。默认本地运行。</small>
-      </span>
-      <span class="future-arrow" aria-hidden="true">↗</span>
-    </a>
-
-    <section id="game" class="game-shell hidden" aria-live="polite">
-      <div class="game-topbar">
-        <button id="backBtn" class="ghost">← 返回</button>
-        <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress"></div></div>
-        <div id="progressText" class="progress-text"></div>
-      </div>
-      <div id="gameBody"></div>
+    <section class="principles">
+      <div><span>01</span><b>公共资料 ≠ 管理员推断</b><p>跨模块只复用低敏感、用户侧可理解的信息。</p></div>
+      <div><span>02</span><b>每个模块单独立界</b><p>量表、对话画像、未来自我各自维护研究与隐私边界。</p></div>
+      <div><span>03</span><b>原型先诚实，再扩展</b><p>不把启发式信号包装成诊断，不把可能未来包装成预测。</p></div>
     </section>
-
-    <section id="result" class="result-shell hidden"></section>
 
     <footer>
-      <p>AI-Ques · 交互式心理测评研究原型。正式研究或服务部署前，请完成伦理、授权、语言版本与心理测量学验证。</p>
+      <span>BJTU · P00 Lab</span>
+      <span>Research / product prototypes · not clinical diagnosis</span>
     </footer>
   </main>
 
-  <script src="app.js?v=20260915-1"></script>
-  <script src="experiments.js?v=20260915-1"></script>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="shared/profile.js?v=1"></script>
+  <script src="app.js?v=20260915-hub1"></script>
 </body>
 </html>
