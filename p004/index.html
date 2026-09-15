@@ -123,7 +123,7 @@
 <div id="distillModal" class="modal hidden" role="dialog" aria-modal="true">
   <div class="backdrop" data-close="distill"></div><section class="modal-card distill-modal">
     <button class="modal-close" data-close="distill">×</button><p class="eyebrow">NVWA · OPTIONAL</p><h2>把“设定”蒸馏成可运行的思维 Skill。</h2>
-    <p class="modal-lead">不开启时，P004 直接使用 Character Card。开启后，后端按 NVWA 的研究→提炼→验证路线生成 <code>SKILL.md</code>，保存在本地 Skill Vault，并在之后的对话中作为角色思维层调用。</p>
+    <p class="modal-lead">不开启时，P004 直接使用 Character Card。若配置正式 NVWA 后端，会按研究→提炼→验证路线生成 <code>SKILL.md</code>；只有前端 BYOK 时，聊天会调用你的模型，但蒸馏仍生成明确标注的本地 Character Skill 草稿。</p>
     <label class="switch-row"><span><b>启用 NVWA 蒸馏</b><small>表达 DNA · 心智模型 · 决策启发式 · 反模式 · 诚实边界</small></span><input id="distillEnabled" type="checkbox"><i></i></label>
     <div id="distillFields" class="distill-fields hidden">
       <label><span>蒸馏对象 / 主题</span><input id="distillSubject" maxlength="100" placeholder="人物、你创建的 NPC 原型，或某种主题视角"></label>
