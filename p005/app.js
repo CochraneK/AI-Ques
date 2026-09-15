@@ -25,12 +25,43 @@ const P001_PROFILE_ASSETS_FALLBACK = {
   ]
 };
 
-function p001Context(){
+function p001Sources(){
   const root=window.P00_CONTEXT||{};
-  return root.p001||root.P001||window.P001_PROFILE||{};
+  const sources=[root.p001,root.P001,window.P001_PROFILE].filter((x)=>x&&typeof x==='object');
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||'';
+      if(!/p[-_.]?001/i.test(key))continue;
+      const raw=parseJson(localStorage.getItem(key)||'');
+      if(raw&&typeof raw==='object')sources.push(raw);
+    }
+  }catch(_){}
+  return sources;
+}
+function nestedCandidates(source){
+  if(!source||typeof source!=='object')return [];
+  const out=[source];
+  for(const key of ['profile','result','results','answers','self','data','summary']){
+    const value=source[key];
+    if(value&&typeof value==='object'&&!Array.isArray(value))out.push(value);
+  }
+  return out;
+}
+function p001Context(){
+  const sources=p001Sources();
+  return sources.length?sources[0]:{};
 }
 function p001Assets(){
-  const ext=p001Context().assets||window.P001_PROFILE_ASSETS||{};
+  let ext=window.P001_PROFILE_ASSETS||null;
+  if(!ext){
+    for(const source of p001Sources()){
+      for(const candidate of nestedCandidates(source)){
+        if(candidate.assets&&typeof candidate.assets==='object'){ext=candidate.assets;break}
+      }
+      if(ext)break;
+    }
+  }
+  ext=ext||{};
   const qualities=Array.isArray(ext.positiveQualities)&&ext.positiveQualities.length===24
     ? ext.positiveQualities
     : P001_PROFILE_ASSETS_FALLBACK.qualities;
@@ -40,8 +71,13 @@ function p001Assets(){
   return {qualities:[...qualities],values:[...values]};
 }
 function firstArray(source,keys){
-  for(const key of keys){
-    if(Array.isArray(source&&source[key]))return source[key].filter(Boolean).map(String);
+  const sources=source?[source]:p001Sources();
+  for(const item of sources){
+    for(const candidate of nestedCandidates(item)){
+      for(const key of keys){
+        if(Array.isArray(candidate&&candidate[key]))return candidate[key].filter(Boolean).map(String);
+      }
+    }
   }
   return [];
 }
@@ -228,9 +264,8 @@ function mapSharedIntoProfile(shared){
   }
 }
 function hydrateP001Selections(){
-  const source=p001Context();
-  const qualities=firstArray(source,['selectedQualities','positiveQualities','qualities','strengths','traits']).slice(0,6);
-  const values=firstArray(source,['selectedValues','valueChoices','values','priorities']).slice(0,4);
+  const qualities=firstArray(null,['selectedQualities','positiveQualities','qualities','strengths','traits']).slice(0,6);
+  const values=firstArray(null,['selectedValues','valueChoices','importantValues','values','priorities']).slice(0,4);
   if(qualities.length&&!(state.structuredAnswers.p001Qualities&&state.structuredAnswers.p001Qualities.selected&&state.structuredAnswers.p001Qualities.selected.length)){
     state.structuredAnswers.p001Qualities={selected:qualities,detail:'',reusedFromP001:true};
     state.profile.positiveQualities=qualities.join('、');
