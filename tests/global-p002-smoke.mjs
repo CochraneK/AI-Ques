@@ -8,6 +8,7 @@ const p2html=read('p002/index.html');
 const portal=read('portal/app.js');
 const admin=read('admin/app.js');
 const core=read('shared/core.js');
+const p004Adapter=read('p004/global-adapter.js');
 
 assert.equal(new Set(registry.projects.map(x=>x.id)).size, registry.projects.length, 'project ids must be unique');
 assert.ok(registry.projects.find(x=>x.id==='P001'&&x.status==='active'));
@@ -38,9 +39,12 @@ assert.equal(capeCount,15,'CAPE-P15 must have 15 items');
 assert.match(portal,/project-registry\.json/);
 assert.match(admin,/P002/);
 assert.match(admin,/rapid_under_800ms_n/);
+assert.match(core,/aiques\.global\.profile\.v1/);
+assert.match(p004Adapter,/AIQ\.startSession\('P004'/);
+assert.match(p004Adapter,/chat_user_message/);
 assert.match(p2,/criterion_a_established:false/);
 
-for (const [name,src] of [['p002',p2],['portal',portal],['admin',admin],['core',core]]) {
+for (const [name,src] of [['p002',p2],['portal',portal],['admin',admin],['core',core],['p004-adapter',p004Adapter]]) {
   new Function(src);
   console.log('syntax ok:',name);
 }
