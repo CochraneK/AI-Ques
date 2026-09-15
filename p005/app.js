@@ -219,6 +219,7 @@ function load(){
   const hasProgress=Boolean(saved&&(Object.keys(state.profile).length||state.memory||state.messages.length||state.currentPortrait||state.capsules.length));
   if($('#resumeBtn'))$('#resumeBtn').classList.toggle('hidden',!hasProgress);
   if($('#generateAgeNow'))$('#generateAgeNow').textContent=state.profile.age?state.profile.age:'现在';
+  state.screen='welcome';
 }
 
 function updateProgress(){
@@ -523,6 +524,7 @@ function renderReady(){
   $('#chatName').textContent=clean(state.profile.name,'Future Me')+' · 60';
   $('#futureIntro').textContent=state.memory.futureVignette||'一个由你现在的故事延伸出来的可能版本。';
   renderFuturePortrait();
+  $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&apiConfig('imageApi')));
 
   const memories=Array.isArray(state.memory.memories)&&state.memory.memories.length
     ? state.memory.memories.slice(0,3)
