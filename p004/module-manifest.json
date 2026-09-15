@@ -1,6 +1,6 @@
 {
   "module": "P004",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "name": "角色世界 / Character Conversations",
   "status": "prototype_only",
   "purpose": "NPC/character text conversations with optional NVWA distillation, local skill artifacts, long-term memory and administrator-only longitudinal personality inference.",
@@ -12,7 +12,11 @@
     "long_term_memory": true,
     "nvwa_distillation_optional": true,
     "openai_compatible_byok": true,
-    "playful_character_creator": true
+    "playful_character_creator": true,
+    "character_strengths_basis": "VIA 24 Character Strengths / 6 Virtues; theory-backed taxonomy, not strict MECE",
+    "interaction_feel_basis": "Interpersonal Circumplex; orthogonal Agency x Communion, 8 sectors",
+    "relationship_selection_auto_advance": false,
+    "freellmapi_local_preset": true
   },
   "evidence_sources": [
     "P004",
