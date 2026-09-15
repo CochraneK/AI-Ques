@@ -1,220 +1,197 @@
 # P005 · Future Me / 未来的我
 
-P005 是 BJTU 项目中的“未来自我”交互模块。它参考 MIT **Future You** 的公开研究架构与 **FutureMe** 的时间胶囊机制，但不复制其品牌、受保护素材或界面代码。
+P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的公开研究机制为主线，并把 FutureMe 式时间胶囊降为对话后的可选延伸。
 
-当前版本是一个可直接部署到 GitHub Pages 的研究 / 产品原型：没有后端时也能完整体验；配置后端后，可以逐步替换成本地 fallback 之外的 LLM、图像年龄变化、语音与管理员数据同步。
+详细机制拆解见 [RESEARCH_NOTES.md](RESEARCH_NOTES.md)。
 
-## 当前体验
+## V0.2 核心流程
 
-1. **现在的我**：读取 P001–P004 可能已经写入的共享资料，并允许补充当前照片。
-2. **人生线索**：重要的人、骄傲时刻、低谷、转折点。
-3. **未来方向**：挑战、长期项目、职业、价值观、关系、财务、地点与日常。
-4. **多未来分支**：可选输入一个真实 A/B 决策，同时生成两种可能路径，而不是替用户决定。
-5. **Synthetic Memory**：根据前述信息生成一条从现在到 60 岁的“可能人生线”。
-6. **Future Me 对话**：默认使用确定性的本地 fallback；接入后端后可使用真实 LLM。
-7. **语音模式**：浏览器支持时可语音听写，并自动朗读 Future Me 回复；也可接独立语音 API。
-8. **未来头像**：上传当前照片并预留年龄变化 API；未接 API 时明确使用当前照片占位，不伪装成真实年龄化结果。
-9. **FutureMe 式时间胶囊**：支持 6 个月、1 年、3 年、5 年或自定义解锁日期；静态版保存在浏览器。
-10. **全局 / 管理员桥接**：共享 profile、模块事件与可配置管理员 API。
+```text
+共享基础资料
+  ↓
+一题一屏的人生故事访谈
+  ↓
+当前照片（可选）
+  ↓
+年龄变化 API（可选）
+  ↓
+Future / Synthetic Memory
+  ↓
+60 岁可能未来自我揭示
+  ↓
+文本对话
+  ↓
+语音 / A-B 分支 / 时间胶囊（增强层）
+```
 
-## UI 方向
+这对应 Future You 论文公开描述的四个核心模块：
 
-P005 不采用“量表 / 后台表单”视觉，而采用“未来来电 + 时间地平线”视觉语言：
+1. Life Story Interface
+2. Age-Progressed AI
+3. Future Memory Architecture
+4. Chat Interface
 
-- 暖米色纸张背景 + 紫色未来感 + 桃色 / 薄荷绿辅助色；
-- 大标题只用于关键过渡，输入区保持紧凑；
-- 叙事卡、时间线、对话与时间胶囊分别使用不同信息层级；
-- 手机端自动降级为单列布局；
-- 支持 prefers-reduced-motion。
+## UI 原则
 
-## 本地运行
+P005 是 P00 “Less is more” 的参考实现。
 
-仓库根目录：
+- 一屏只做一件事；
+- 一次只问一个问题；
+- 白底、黑字、单一 Future Violet；
+- 不用卡片墙表达信息架构；
+- 不用玻璃拟态、霓虹、发光球体和无意义渐变制造“AI 感”；
+- 高级功能采用 progressive disclosure；
+- 文字、留白、节奏、头像与对话本身承担体验。
 
-~~~bash
-python -m http.server 8000
-~~~
+全局 UI 约束见 `docs/DESIGN_PRINCIPLES.md`。
 
-然后打开：
+## Life Story 输入
 
-~~~text
-http://localhost:8000/p005/
-~~~
+V0.2 按 Future You 的公开研究机制采用顺序式开放问题，覆盖：
 
-## 前端配置
+- name / age / pronouns / location;
+- current life;
+- important people;
+- proud point;
+- low point;
+- turning point;
+- current challenge;
+- long-term life project;
+- future career;
+- future financial situation;
+- future family / relationships;
+- future location;
+- future daily life;
+- values.
 
-推荐在部署环境中通过一个不会暴露密钥的配置脚本写入“后端 URL”，而不是把模型 API Key 放进 GitHub Pages。
+最后保留一个可选 A/B 决策问题，对应当前 Future You “Paths” 的探索方向，但不会替用户判断哪条路正确。
 
-P005 同时兼容旧式单变量与新的配置对象：
+## Future Memory
 
-~~~html
-<script>
+P005 支持两层：
+
+### 静态 fallback
+
+没有后端时，使用确定性的本地生成逻辑，把用户输入组织成：
+
+- summary;
+- future vignette;
+- rewarding / memorable memory;
+- challenge / struggle memory;
+- unexpected-outcome memory;
+- timeline;
+- optional A/B branch.
+
+它只是架构演示，不等同于论文里的 LLM synthetic memory。
+
+### Memory API
+
+可配置：
+
+```js
 window.P005_FUTURE_ME_CONFIG = {
+  memoryApi: "https://your-backend.example.com/p005/memory",
   chatApi: "https://your-backend.example.com/p005/chat",
   imageApi: "https://your-backend.example.com/p005/age-image",
   voiceApi: "https://your-backend.example.com/p005/voice",
   adminApi: "https://your-backend.example.com/p00/events"
 };
-</script>
-~~~
+```
 
-兼容变量：
+Memory API 请求包含 `profile`、`targetAge: 60` 与生成约束。建议返回：
 
-- window.FUTURE_ME_API
-- window.FUTURE_ME_IMAGE_API
-- window.FUTURE_ME_VOICE_API
-- window.P00_ADMIN_API
-
-### 1. Chat API
-
-请求：
-
-~~~json
+```json
 {
-  "module": "P005",
-  "profile": {},
-  "syntheticMemory": {},
-  "messages": [],
-  "userMessage": "我现在最该关注什么？",
-  "instruction": "..."
+  "summary": "...",
+  "futureVignette": "...",
+  "memories": ["...", "...", "..."],
+  "timeline": [],
+  "branch": null
 }
-~~~
+```
 
-返回：
+## Chat
 
-~~~json
-{ "reply": "..." }
-~~~
+Future Me 的对话原则：
 
-后端 system prompt 应确保模型：
+- 是**一个可能的** 60 岁未来自我；
+- 必须扎根于用户的 life story 与 future memory；
+- 可以自然使用 “when I was your age...” 一类连续性语言；
+- 同时讲预期内与预期外的人生结果；
+- 更像 autobiographical mirror，而不是 counselor；
+- 回答后可以反问，促进用户自己反思；
+- 不声称预测、诊断、治疗或确定未来。
 
-- 只扮演**一个可能的** 60 岁未来自我；
-- 回复必须扎根于用户提供的人生故事与 synthetic memory；
-- 不声称预言、确定未来、诊断或治疗；
-- 可以表达不确定性、矛盾与人生变化，而不是一味积极。
+V0.2 按原 Future You 论文机制：累计 16 条有效交换消息后，才出现不抢注意力的“结束这次对话”入口。
 
-### 2. Image API
+## 图像与语音
 
-请求：
+- 图像年龄变化是可选 API，不连接时不伪造 aged result。
+- 语音是增强层，默认核心体验仍是文本。
+- 浏览器支持时可用 SpeechRecognition 与 speechSynthesis fallback。
+- 个性化 / 克隆声音必须单独取得明确同意并设计删除机制。
 
-~~~json
-{
-  "image": "data:image/jpeg;base64,...",
-  "currentAge": 22,
-  "targetAge": 60,
-  "instruction": "Preserve identity..."
-}
-~~~
+2025 的 Future You 多模态研究提示：文本、语音、avatar 都可产生效果，交互质量、真实感和参与感比单纯增加视觉复杂度更重要。因此 P005 优先保证 autobiographical grounding 与对话质量，而不是堆多媒体。
 
-返回任一格式：
+## 数据
 
-~~~json
-{ "imageUrl": "https://..." }
-~~~
+公共跨模块资料只通过：
 
-或：
+```text
+shared/profile.js
+localStorage["bjtu.p00.profile.v1"]
+```
 
-~~~json
-{ "imageBase64": "..." }
-~~~
+P005 自身状态：
 
-正式版本应增加：上传同意、媒体存储策略、删除机制、人脸数据治理与年龄变化结果免责声明。
+```text
+localStorage["bjtu.p005.state.v1"]
+```
 
-### 3. Voice API
+其中可能包含：
+- life-story responses;
+- future goals;
+- future memory;
+- conversation;
+- current/future portraits;
+- time capsules.
 
-用于 TTS / 个性化未来声音。请求：
+静态 GitHub Pages 仅用于原型。正式研究需要知情同意、伦理审批、数据保留 / 删除政策、媒体治理与服务端权限控制。
 
-~~~json
-{
-  "text": "未来自我的回答",
-  "voice": "future-self",
-  "language": "zh-CN",
-  "profile": { "name": "..." , "targetAge": 60 }
-}
-~~~
+## 研究边界
 
-返回：
-
-~~~json
-{ "audioUrl": "https://..." }
-~~~
-
-若不配置，前端自动退回浏览器 speechSynthesis。语音输入默认使用浏览器 SpeechRecognition / webkitSpeechRecognition（如果可用）。
-
-> 不建议无明确同意地克隆用户声音。未来若做“老年版自己的声音”，应单独设计知情同意和删除流程。
-
-### 4. Admin API
-
-P005 在关键事件后可发送：
-
-- future_generated
-- future_portrait_generated
-- chat_turn
-- capsule_saved
-
-请求包含 P005 snapshot，但**不会把 base64 照片塞进管理员事件**；照片应通过独立媒体接口管理。
-
-## P001–P005 共享资料
-
-P005 通过仓库统一的 `shared/profile.js` 读取公共资料：
-
-- `window.BJTU_PROFILE`
-- canonical storage: `localStorage["bjtu.p00.profile.v1"]`
-- `window.P00_CONTEXT.profile` 仅作为兼容入口
-
-旧版 key 只由 shared adapter 做安全迁移，P005 自身不再维护多套全局 profile key。
-
-当前只自动复用适合用户体验的非诊断性资料，例如称呼、年龄、城市、当前角色与价值取向。P004 的管理员侧诊断 / 风险推断不应直接展示为 Future Me 对用户的“事实”。
-
-P005 也会触发浏览器事件：
-
-~~~js
-window.addEventListener("p00:session", (event) => {
-  console.log(event.detail.module, event.detail.type, event.detail.snapshot);
-});
-~~~
-
-方便未来统一首页 / 管理后台接入。
-
-## 数据与隐私
-
-静态 Demo 默认使用浏览器 localStorage 保存：
-
-- 人生故事与未来目标
-- synthetic memory
-- 对话历史
-- 当前 / 未来头像（若用户添加）
-- 时间胶囊
-
-右上角可一键清除，也可导出完整 JSON。共用设备不建议长期保留私人内容。
-
-如果配置远端 API，则实际的数据处理行为取决于你的后端部署，必须在正式收集数据前补齐知情同意、隐私说明、数据保留 / 删除政策和伦理审批。
-
-## 研究 / 产品边界
-
-P005 的目标是提升 future-self continuity、自我反思与长期思考，不用于：
-
+P005 不用于：
 - 预测具体人生事件；
-- 诊断心理 / 精神问题；
+- 临床诊断；
+- 治疗；
 - 替用户做职业、婚恋、医疗或财务决定；
-- 声称“60 岁的真实自己”正在与用户通信。
+- 声称生成内容就是用户真正的未来。
+
+## 本地运行
+
+```bash
+python -m http.server 8000
+```
+
+访问：
+
+```text
+http://localhost:8000/p005/
+```
 
 ## 质量检查
 
-仓库已有 GitHub Actions Quality Gate，PR 会执行：
+仓库 CI 会运行：
 
-~~~bash
-node --check app.js
-node --check experiments.js
+```bash
 node --check p005/app.js
-node tests/smoke.mjs
+node tests/structure.mjs
 python scripts/quality_sensor.py --strict
-python scripts/next_quality_target.py
-~~~
+```
 
-## 参考方向
+## 主要公开资料
 
-- MIT Future You：life-story questionnaire → future/synthetic memory → future-self conversation。
-- FutureMe：给未来自己写信与未来投递的时间胶囊体验。
-
-P005 复刻的是公开描述的**交互机制与研究思路**，不是 MIT / FutureMe 的品牌、原始素材或受保护实现。
+- MIT Future You project: https://www.media.mit.edu/projects/future-you/overview/
+- Current Future You: https://futureyou.media.mit.edu/
+- Future You 2024 paper: https://arxiv.org/abs/2405.12514
+- Future You 2025 multimodal paper: https://arxiv.org/abs/2512.06106
