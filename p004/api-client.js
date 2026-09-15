@@ -110,7 +110,8 @@
 
   async function testDirect(candidate){
     const previous=sessionStorage.getItem(DIRECT_KEY);
-    writeDirect(candidate);
+    const temp={baseUrl:clean(candidate&&candidate.baseUrl),apiKey:clean(candidate&&candidate.apiKey),model:clean(candidate&&candidate.model)};
+    sessionStorage.setItem(DIRECT_KEY,JSON.stringify(temp));
     try{
       const result=await directChat({character:{name:'API Tester',identity:'连接测试'},messages:[{role:'user',text:'只回复 OK'}]},{system:'这是连接测试。只回复 OK。',timeoutMs:30000});
       return {ok:Boolean(result&&result.reply),reply:result&&result.reply};
