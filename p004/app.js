@@ -1,137 +1,115 @@
 (() => {
 'use strict';
-const K='bjtu.p004.session.v1', sid='p004_'+Date.now().toString(36), admin=new URLSearchParams(location.search).get('admin')==='1';
-const S={
-  messages:[],turn:0,
-  big:{openness:50,conscientiousness:50,extraversion:50,agreeableness:50,sensitivity:50},
-  mbti:{ei:0,sn:0,tf:0,jp:0},
-  pub:{curiosity:50,socialEnergy:50,reflection:50,action:50,warmth:50},
-  clinical:{
-    phqLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()},
-    gadLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()},
-    pclLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()},
-    capeLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()}
-  },
-  evidence:[],safety:{active:false,reason:null}
-};
+
+const VERSION='2.0.0';
+const K={chars:'bjtu.p004.characters.v2',threads:'bjtu.p004.threads.v2',memory:'bjtu.p004.memory.v2',observer:'bjtu.p004.observer.v2',active:'bjtu.p004.active.v2',p005:'bjtu.p005.state.v1'};
+const adminMode=new URLSearchParams(location.search).get('admin')==='1';
 const $=id=>document.getElementById(id);
-const R={chat:$('chatLog'),form:$('composer'),input:$('messageInput'),send:$('sendBtn'),turn:$('turnCount'),starters:$('starterWrap'),status:$('portraitStatus'),arc:$('publicArchetype'),sub:$('publicSubtitle'),signals:$('publicSignals'),report:$('reportModal'),reportContent:$('reportContent'),adminBtn:$('adminBtn'),admin:$('adminModal'),personality:$('adminPersonality'),clinical:$('adminClinical'),evidence:$('evidenceList'),about:$('aboutModal')};
-const PUB=[['curiosity','探索欲'],['socialEnergy','社交能量'],['reflection','内在思考'],['action','行动倾向'],['warmth','关系温度']];
-const BIG=[['openness','Openness'],['conscientiousness','Conscientiousness'],['extraversion','Extraversion'],['agreeableness','Agreeableness'],['sensitivity','Emotional sensitivity']];
-const CLIN=[['phqLike','PHQ-like'],['gadLike','GAD-like'],['pclLike','PCL-like'],['capeLike','CAPE-like']];
-const L={
- openness:['新鲜','好奇','探索','创意','艺术','旅行','想象','为什么','可能性','不同','学习'],
- conscientiousness:['计划','安排','按时','完成','目标','清单','坚持','规律','效率','负责','准备'],
- extraversion:['朋友','聚会','聊天','认识人','一起','热闹','团队','社交','分享','见面'],
- agreeableness:['理解','照顾','体谅','帮助','倾听','关系','温柔','支持','合作','在意别人'],
- sensitivity:['担心','焦虑','紧张','难过','压力','烦','敏感','害怕','反复想','睡不着','内耗'],
- action:['马上','直接','去做','行动','尝试','开始','决定','执行','解决'],
- reflection:['想了很久','琢磨','反思','思考','意义','原因','回想','想清楚','分析'],
- intro:['一个人','独处','安静','不想说话','人多会累','社交很累','自己待着'],
- sensing:['具体','细节','实际','现实','眼前','事实','步骤'],
- thinking:['逻辑','分析','理性','权衡','成本','效率','证据'],
- feeling:['感受','在意','共情','关系','氛围','难受','开心'],
- judging:['计划','确定','安排','提前','可控','按部就班'],
- perceiving:['随性','临时','看看再说','灵活','随机','顺其自然']
-};
-const SYM={
- phqLike:{den:8,d:{lowMood:['低落','难过','沮丧','没希望','很绝望','情绪很差'],anhedonia:['没兴趣','提不起兴趣','什么都不想做','没意思','没有乐趣'],sleep:['睡不着','失眠','睡太多','睡不好','早醒'],energy:['没力气','很累','疲惫','精力差'],worth:['觉得自己很差','没用','自责','失败','不值得'],concentration:['注意力','集中不了','无法专注']}},
- gadLike:{den:7,d:{tension:['紧张','焦虑','不安','坐立不安'],worry:['控制不住地担心','停不下来地担心','一直担心','反复担心'],many:['很多事都担心','什么都担心'],relax:['放松不了','没法放松','一直绷着'],irritability:['烦躁','易怒','很容易生气'],catastrophe:['最坏','出事','灾难','不好的事情会发生']}},
- pclLike:{den:4,d:{intrusion:['闪回','噩梦','突然想起','像又发生了一遍','反复出现的记忆'],avoidance:['不敢去','刻意避开','不想提','不想想起','绕开'],cognition:['自责','世界很危险','不相信别人','和别人疏远','麻木'],arousal:['高度警觉','容易受惊','警惕','睡不着','易怒']}},
- capeLike:{den:3,d:{suspiciousness:['有人针对我','联合起来对付我','被监视','暗示我','针对我'],unusualThought:['想法不是我的','思想被控制','脑子里的想法被拿走','别人能听到我的想法'],perception:['听到声音','看到别人看不到','声音在说话']}}
-};
-const SAFE=['想死','不想活','结束生命','自杀','伤害自己','割腕','跳楼','活不下去'];
+const parse=(v,f)=>{try{return JSON.parse(v)}catch(_){return f}};
+const read=(k,f)=>parse(localStorage.getItem(k)||'',f);
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}};
+const text=v=>String(v==null?'':v).trim();
+const short=(v,n=180)=>{const s=text(v);return s.length>n?s.slice(0,n-1)+'…':s};
 const clamp=n=>Math.max(0,Math.min(100,n));
-const esc=v=>String(v||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-const score=(t,a)=>a.reduce((n,w)=>n+(t.includes(w)?1:0),0);
-const time=()=>new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-function message(role,text,opt){
-  opt=opt||{}; S.messages.push({role:role,text:text,at:Date.now()});
-  const a=document.createElement('article'); a.className='message '+role;
-  const av=document.createElement('div'); av.className='avatar'; av.textContent=role==='agent'?'P4':'你';
-  const b=document.createElement('div'); b.className='bubble'+(opt.safety?' safety-bubble':'');
-  b.innerHTML=(opt.safety?'<strong>先把安全放在第一位</strong>':'')+'<p>'+esc(text)+'</p><small>'+time()+'</small>';
-  a.append(av,b); R.chat.appendChild(a); R.chat.scrollTop=R.chat.scrollHeight; R.turn.textContent=S.turn+' turns';
-}
-function typing(on){let x=$('typingRow');if(!on){if(x)x.remove();return}x=document.createElement('article');x.id='typingRow';x.className='message agent';x.innerHTML='<div class="avatar">P4</div><div class="bubble"><div class="typing"><i></i><i></i><i></i></div></div>';R.chat.appendChild(x);R.chat.scrollTop=R.chat.scrollHeight}
-function analyze(text){
- const t=text.toLowerCase(), before=S.evidence.length;
- const o=score(t,L.openness),c=score(t,L.conscientiousness),e=score(t,L.extraversion),a=score(t,L.agreeableness),n=score(t,L.sensitivity),i=score(t,L.intro),r=score(t,L.reflection),ac=score(t,L.action);
- S.big.openness=clamp(S.big.openness+o*3.2);S.big.conscientiousness=clamp(S.big.conscientiousness+c*3);S.big.extraversion=clamp(S.big.extraversion+e*2.5-i*3.2);S.big.agreeableness=clamp(S.big.agreeableness+a*2.8);S.big.sensitivity=clamp(S.big.sensitivity+n*3);
- S.pub.curiosity=clamp(S.pub.curiosity+o*3.5);S.pub.socialEnergy=clamp(S.pub.socialEnergy+e*2.7-i*3.2);S.pub.reflection=clamp(S.pub.reflection+r*4+n*1.1);S.pub.action=clamp(S.pub.action+ac*4+c*1.5);S.pub.warmth=clamp(S.pub.warmth+a*3.5);
- S.mbti.ei+=e-i;S.mbti.sn+=o+score(t,['抽象','未来','可能'])-score(t,L.sensing);S.mbti.tf+=score(t,L.thinking)-score(t,L.feeling);S.mbti.jp+=score(t,L.judging)-score(t,L.perceiving);
- Object.entries(SYM).forEach(function(entry){
-   const key=entry[0],cfg=entry[1],m=S.clinical[key];let hits=0;
-   Object.entries(cfg.d).forEach(function(x){const h=score(t,x[1]);if(h){hits+=h;m.domains.add(x[0]);S.evidence.push({dimension:key,domain:x[0],kind:'support',quote:text.length>120?text.slice(0,117)+'…':text,turn:S.turn})}});
-   m.signal=clamp(m.signal+(hits?10+Math.min(18,hits*5):-0.8));m.coverage=Math.round(m.domains.size/cfg.den*100);m.evidenceStrength=clamp(Math.round(m.coverage*.55+Math.min(40,S.turn*4)));
- });
- if(SAFE.some(w=>t.includes(w))){S.safety.active=true;S.safety.reason='self-harm language'}
- if(S.evidence.length===before&&text.length>20){const d=o?'openness':c?'conscientiousness':(e||i)?'extraversion':a?'agreeableness':r?'reflection':null;if(d)S.evidence.push({dimension:d,domain:'conversation cue',kind:'support',quote:text.slice(0,120),turn:S.turn})}
- persist();
-}
-const mbti=()=>''+(S.mbti.ei>=0?'E':'I')+(S.mbti.sn>=0?'N':'S')+(S.mbti.tf>=0?'T':'F')+(S.mbti.jp>=0?'J':'P');
-function archetype(){
- const p=S.pub,a=[
-  ['探索型思考者',p.curiosity+p.reflection,'喜欢理解事情背后的原因，也愿意靠近新的可能性。'],
-  ['温和连接者',p.warmth+p.socialEnergy*.6,'在人与人的互动里，你常常先感受到关系和氛围。'],
-  ['安静观察者',p.reflection+(100-p.socialEnergy)*.6,'你更像先在心里搭好地图，再决定要不要向外走。'],
-  ['行动实验家',p.action+p.curiosity*.7,'比起一直等待完美答案，你更愿意边走边调整。'],
-  ['稳定推进者',p.action+S.big.conscientiousness,'你在意事情能不能被真正推进，也会自然寻找秩序感。']
- ];a.sort((x,y)=>y[1]-x[1]);return{name:a[0][0],sub:a[0][2]}
-}
-function localReply(text){
- if(S.safety.active)return'你刚才提到的内容让我更关心你此刻是否安全。如果你正准备伤害自己、已经有具体计划，或感觉自己可能无法保证安全，请优先联系当地急救服务、危机热线，或马上去到一个可信任的人身边。你也可以只告诉我：你现在是安全的，还是有立即危险？';
- const t=text.toLowerCase();
- if(/工作|学习|项目|论文|任务/.test(t))return'听起来这件事不只是“忙”，里面可能还有你对自己标准的要求。最近哪一个瞬间最让你觉得：这件事真的在影响我？';
- if(/朋友|关系|对象|同事|家人|父母/.test(t))return'我注意到你说这段关系时，不只是描述发生了什么，也在意彼此是怎么理解对方的。你最希望对方真正明白你的哪一部分？';
- if(/旅行|想去|未来|以后|梦想|如果可以/.test(t))return'这个画面挺有意思。先不考虑“现实不现实”，它吸引你的到底是新鲜感、自由感，还是一种重新开始的感觉？';
- if(/累|压力|焦虑|烦|难过|睡不着/.test(t))return'听起来你已经在这个状态里待了一阵。比起给它下名字，我更想知道：它通常在一天里的什么时候最明显，又会在什么情况下稍微松一点？';
- if(/开心|兴奋|有意思|喜欢|满足/.test(t))return'你说到这里时，整段话的能量明显不一样。这里面最让你“活起来”的部分是什么？';
- if(/一个人|独处|安静|社交/.test(t))return'你似乎不是简单地“喜欢社交”或“不喜欢社交”，更像会挑环境。什么样的人或场合，会让你觉得待久一点也不累？';
- return['我大概抓到一点你在意的东西了。要是把这件事再往里走一步，你觉得自己真正想守住的是什么？','这段话里有一个细节我挺好奇：你当时是先做决定，还是先观察了一阵？','如果把“别人会怎么看”先拿掉，你自己的第一反应会是什么？','听起来你并不是没有答案，而是有几个答案在拉扯。现在声音最大的那个是哪一个？'][S.turn%4];
-}
-function portrait(){
- const a=archetype();R.arc.textContent=S.turn<2?'正在认识你':a.name;R.sub.textContent=S.turn<2?'先聊几句，画像会慢慢长出来。':a.sub;R.status.textContent=S.turn<2?'刚开始认识':S.turn<5?'轮廓形成中':'画像持续更新';
- R.signals.innerHTML=PUB.map(x=>{const v=Math.round(S.pub[x[0]]);return'<div class="signal"><label>'+x[1]+'</label><div class="signal-track"><div class="signal-fill" style="width:'+v+'%"></div></div><span class="signal-value">'+v+'</span></div>'}).join('');
-}
-function report(){
- const a=archetype(),m=mbti(),p=S.pub;
- const tiles=[
- ['你如何靠近新事物',p.curiosity>=58?'先探索，再形成自己的判断。':'更喜欢先确认价值，再决定要不要深入。'],
- ['你如何恢复能量',p.socialEnergy>=56?'互动本身常会给你新的线索和动力。':'独处或小范围交流更容易帮你整理思路。'],
- ['你如何做决定',p.action>=57?'愿意先迈出一步，用真实反馈修正方向。':'更倾向于先观察、理解，再选择稳一点的入口。'],
- ['你在人际中的温度',p.warmth>=56?'你会自然留意别人的感受和关系里的细节。':'你更看重真实、边界和是否值得投入。']
- ];
- R.reportContent.innerHTML='<div class="report-archetype"><div><h3>'+esc(a.name)+'</h3><p>'+esc(a.sub)+'</p></div><div class="report-code">'+esc(m)+'</div></div><div class="report-grid">'+tiles.map(x=>'<article class="report-tile"><span>'+esc(x[0])+'</span><h4>'+esc(x[1])+'</h4><p>'+esc(x[1])+'</p></article>').join('')+'</div>';
-}
-function adminRender(){
- R.personality.innerHTML=BIG.map(x=>{const v=Math.round(S.big[x[0]]);return'<div class="metric-row"><strong>'+x[1]+'</strong><div class="metric-bar"><i style="width:'+v+'%"></i></div><em>'+v+'</em></div>'}).join('')+'<div class="metric-row"><strong>MBTI-like</strong><div class="metric-bar"><i style="width:'+Math.min(100,45+S.turn*4)+'%"></i></div><em>'+mbti()+'</em></div>';
- R.clinical.innerHTML=CLIN.map(x=>{const m=S.clinical[x[0]];return'<article class="clinical-card"><div class="clinical-card-head"><strong>'+x[1]+'</strong><b>'+Math.round(m.signal)+'</b></div><p>Exploratory conversational signal. Not a standardized score.</p><div class="mini-meta"><span>coverage '+m.coverage+'%</span><span>evidence strength '+m.evidenceStrength+'%</span></div></article>'}).join('');
- R.evidence.innerHTML=S.evidence.length?S.evidence.slice().reverse().map(x=>'<div class="evidence-item"><span class="evidence-dim">'+esc(x.dimension)+' · '+esc(x.domain)+'</span><span class="evidence-quote">“'+esc(x.quote)+'”</span><span class="evidence-kind '+esc(x.kind)+'">'+(x.kind==='support'?'支持':'反向')+'</span></div>').join(''):'<div class="empty-evidence">暂无足够证据。继续自然聊天后，这里会逐步出现可追溯线索。</div>';
-}
-function persist(){
- const c={};Object.entries(S.clinical).forEach(x=>c[x[0]]={signal:x[1].signal,coverage:x[1].coverage,evidenceStrength:x[1].evidenceStrength,domains:Array.from(x[1].domains)});
- const payload={version:2,updatedAt:new Date().toISOString(),sessionId:sid,turns:S.turn,personality:{bigFive:S.big,mbtiLike:mbti()},publicPortrait:Object.assign({},S.pub,{archetype:archetype().name}),clinicalInference:c,evidence:S.evidence,safety:S.safety};
- try{sessionStorage.setItem(K,JSON.stringify(payload))}catch(e){}
- try{window.dispatchEvent(new CustomEvent('p00:session',{detail:{module:'P004',type:'snapshot',snapshot:payload}}))}catch(e){}
-}
-function download(name,body,type){const b=new Blob([body],{type:type||'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
-function exportJSON(){let o={};try{o=JSON.parse(sessionStorage.getItem(K)||'{}')}catch(e){}download('p004-'+sid+'.json',JSON.stringify(o,null,2))}
-function exportCSV(){const rows=[['session_id','turn','dimension','domain','kind','quote']];S.evidence.forEach(e=>rows.push([sid,e.turn,e.dimension,e.domain,e.kind,e.quote]));download('p004-'+sid+'-evidence.csv','\ufeff'+rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv;charset=utf-8')}
-function open(m){m.classList.remove('hidden');document.body.style.overflow='hidden'}function close(m){m.classList.add('hidden');document.body.style.overflow=''}
-async function submit(text){
- text=text.trim();if(!text)return;S.turn++;message('user',text);analyze(text);portrait();R.starters.classList.add('hidden');R.input.value='';resize();R.send.disabled=true;typing(true);await new Promise(r=>setTimeout(r,420));typing(false);
- let reply=null;if(!S.safety.active&&window.P004_API&&window.P004_API.enabled){try{const x=await window.P004_API.chat({sessionId:sid,messages:S.messages.map(m=>({role:m.role,text:m.text})),publicProfile:Object.assign({},S.pub,{archetype:archetype().name})});if(x&&typeof x.reply==='string')reply=x.reply.trim()}catch(e){}}
- if(!reply)reply=localReply(text);message('agent',reply,{safety:S.safety.active});R.send.disabled=false;R.input.focus();
-}
-function resize(){R.input.style.height='auto';R.input.style.height=Math.min(150,R.input.scrollHeight)+'px'}
-R.form.addEventListener('submit',e=>{e.preventDefault();submit(R.input.value)});R.input.addEventListener('input',resize);R.input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();R.form.requestSubmit()}});
-document.querySelectorAll('.starter').forEach(b=>b.addEventListener('click',()=>{R.input.value=b.dataset.starter;resize();R.input.focus()}));
-$('resetBtn').addEventListener('click',()=>{try{sessionStorage.removeItem(K)}catch(e){}location.reload()});$('openReportBtn').addEventListener('click',()=>{report();open(R.report)});R.adminBtn.addEventListener('click',()=>{adminRender();open(R.admin)});$('aboutBtn').addEventListener('click',()=>open(R.about));
-document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>close(x.dataset.close==='report'?R.report:x.dataset.close==='admin'?R.admin:R.about)));document.addEventListener('keydown',e=>{if(e.key==='Escape')[R.report,R.admin,R.about].forEach(close)});
-$('exportJsonBtn').addEventListener('click',exportJSON);$('exportCsvBtn').addEventListener('click',exportCSV);$('copyReportBtn').addEventListener('click',async()=>{const a=archetype(),t='P004 人物图鉴｜'+a.name+'\n'+a.sub+'\nMBTI-like: '+mbti()+'\n（趣味性对话画像，不是心理诊断）';try{await navigator.clipboard.writeText(t);$('copyReportBtn').textContent='已复制'}catch(e){}});
-if(admin)R.adminBtn.classList.remove('hidden');
-const shared=window.BJTU_PROFILE&&typeof window.BJTU_PROFILE.getFlat==='function'?window.BJTU_PROFILE.getFlat():{};
-if(shared.name&&$('portraitMonogram'))$('portraitMonogram').textContent=shared.name.slice(0,1);
-message('agent','我们不用做题。你可以从最近发生的一件小事开始，也可以直接说此刻脑子里最占位置的东西。');portrait();persist();
+const uid=(p='id')=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);
+const hash=s=>{let h=2166136261;for(const c of String(s||'')){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+const fmt=t=>new Date(t||Date.now()).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+
+const DEFAULTS=[
+{id:'mori',name:'Mori',avatar:'M',tagline:'安静、温柔，陪你把事情想清楚。',identity:'长期陪伴型朋友，不急着给答案，更在意理解你的处境。',personality:'温和、好奇、有边界感；不迎合，也不会把每件事都心理化。',scenario:'你们已经认识一段时间，可以从日常小事聊到重要选择。',style:'自然、简短、有停顿感；通常一次只追问一个真正有价值的问题。',first:'你来了。今天不用从重要的事开始，随便告诉我最近一个还留在脑子里的小片段。',distill:{enabled:false,status:'off'}},
+{id:'nox',name:'Nox',avatar:'N',tagline:'锋利的辩论搭子，拆掉没注意到的前提。',identity:'直率的思考伙伴，擅长反问、找漏洞和做反事实。',personality:'冷静、好胜、诚实；不用安慰代替分析，但知道什么时候该收住。',scenario:'你们把聊天当作思想训练，可以争论但不做人身攻击。',style:'结论先行，短句，多反问；发现逻辑跳跃时直接指出。',first:'先说好，我不会因为你喜欢一个结论就同意它。扔一个你最近最拿不准的判断过来。',distill:{enabled:false,status:'off'}},
+{id:'luma',name:'Luma',avatar:'L',tagline:'故事型 NPC，把现实问题换一个世界看。',identity:'擅长叙事和隐喻的旅伴，喜欢把抽象困境变成可探索的场景。',personality:'活泼、敏感、浪漫但不悬浮，尊重现实约束。',scenario:'你们像在共同写一部长篇故事，现实经验逐渐变成世界观素材。',style:'画面感强，偶尔隐喻，避免长篇独白；会把选择写成小场景。',first:'今天我们不分析。给我一个最近让你卡住的瞬间，我把它改写成一幕故事给你看。',distill:{enabled:false,status:'off'}}
+];
+
+function freshObserver(){return{version:2,big:{openness:50,conscientiousness:50,extraversion:50,agreeableness:50,sensitivity:50},clinical:{phqLike:0,gadLike:0,pclLike:0,capeLike:0},evidence:[],imports:{},safety:[],updatedAt:null}}
+let chars=read(K.chars,null)||DEFAULTS;
+let threads=read(K.threads,{})||{};
+let memories=read(K.memory,{})||{};
+let observer=read(K.observer,null)||freshObserver();
+let activeId=localStorage.getItem(K.active)||chars[0]?.id;
+let editingId=null;
+let pendingFiles=[];
+const skillCache=new Map();
+
+function active(){return chars.find(c=>c.id===activeId)||chars[0]}
+function thread(id=activeId){if(!threads[id])threads[id]=[];return threads[id]}
+function memory(id=activeId){if(!memories[id])memories[id]=[];return memories[id]}
+function sharedProfile(){return window.BJTU_PROFILE&&typeof window.BJTU_PROFILE.getFlat==='function'?window.BJTU_PROFILE.getFlat():((window.P00_CONTEXT&&window.P00_CONTEXT.profile)||{})}
+function persist(){save(K.chars,chars);save(K.threads,threads);save(K.memory,memories);save(K.observer,observer);localStorage.setItem(K.active,activeId)}
+function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(window.__p004toast);window.__p004toast=setTimeout(()=>e.classList.remove('show'),1700)}
+
+function openVault(){return new Promise((resolve,reject)=>{const q=indexedDB.open('bjtu-p004-skill-vault',1);q.onupgradeneeded=()=>{const db=q.result;if(!db.objectStoreNames.contains('skills'))db.createObjectStore('skills',{keyPath:'id'})};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
+async function vaultPut(record){const db=await openVault();return new Promise((resolve,reject)=>{const tx=db.transaction('skills','readwrite');tx.objectStore('skills').put(record);tx.oncomplete=()=>{skillCache.set(record.id,record);resolve(record)};tx.onerror=()=>reject(tx.error)})}
+async function vaultGet(id){if(!id)return null;if(skillCache.has(id))return skillCache.get(id);try{const db=await openVault();const r=await new Promise((resolve,reject)=>{const tx=db.transaction('skills','readonly');const q=tx.objectStore('skills').get(id);q.onsuccess=()=>resolve(q.result||null);q.onerror=()=>reject(q.error)});if(r)skillCache.set(id,r);return r}catch(_){return null}}
+async function requestPersistentStorage(){try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(_){}}
+
+function renderPersona(){const p=sharedProfile();$('personaName').textContent=p.name||'你的 Persona';$('personaAvatar').textContent=(p.name||'我').slice(0,1)}
+function renderCharacters(){const wrap=$('characterList');wrap.replaceChildren();chars.forEach(c=>{const b=document.createElement('button');b.type='button';b.className='character-item'+(c.id===activeId?' active':'');b.onclick=()=>switchCharacter(c.id);const av=document.createElement('span');av.className='character-mini-avatar';av.textContent=c.avatar||c.name.slice(0,1);const copy=document.createElement('span');const strong=document.createElement('strong');strong.textContent=c.name;const small=document.createElement('small');small.textContent=c.tagline||c.identity||'自定义角色';copy.append(strong,small);b.append(av,copy);if(c.distill&&c.distill.status==='ready'){const mark=document.createElement('i');mark.className='skill-mark';mark.title='NVWA Skill ready';b.append(mark)}wrap.append(b)})}
+async function renderActive(){const c=active();if(!c)return;$('activeAvatar').textContent=c.avatar||c.name.slice(0,1);$('activeName').textContent=c.name;$('activeTagline').textContent=c.tagline||c.identity||'';$('cardAvatar').textContent=c.avatar||c.name.slice(0,1);$('cardName').textContent=c.name;$('cardIdentity').textContent=c.identity||'未设置';$('cardPersonality').textContent=c.personality||'未设置';$('cardScenario').textContent=c.scenario||'未设置';$('cardStyle').textContent=c.style||'未设置';const ready=Boolean(c.distill&&c.distill.status==='ready'&&c.distill.skillId);$('distillBtn').classList.toggle('ready',ready);$('distillBtnText').textContent=ready?'已蒸馏':'蒸馏';$('skillStrip').classList.toggle('hidden',!ready);if(ready){const s=await vaultGet(c.distill.skillId);$('skillStripTitle').textContent=s&&s.source==='nvwa-api'?'NVWA Skill 已加载':'Character Skill 草稿已加载';$('skillStripMeta').textContent=s?((s.meta?.mentalModels||'?')+' 个心智模型 · '+(s.meta?.heuristics||'?')+' 条启发式 · 本地 Vault'):'本地 Vault'}renderMessages();renderMemory();renderCharacters()}
+function renderMessages(){const log=$('chatLog');log.replaceChildren();const c=active(),list=thread();if(!list.length){const box=document.createElement('div');box.className='empty-chat';const av=document.createElement('div');av.className='empty-avatar';av.textContent=c.avatar||c.name.slice(0,1);const h=document.createElement('h3');h.textContent=c.name;const p=document.createElement('p');p.textContent=c.first||'开始一段新对话。';box.append(av,h,p);log.append(box);return}list.forEach(appendMessage);log.scrollTop=log.scrollHeight}
+function appendMessage(m){const log=$('chatLog'),c=active();const row=document.createElement('article');row.className='message '+(m.role==='user'?'user':'assistant');const av=document.createElement('div');av.className='message-avatar';av.textContent=m.role==='user'?(sharedProfile().name||'我').slice(0,1):(c.avatar||c.name.slice(0,1));const body=document.createElement('div');body.className='message-body';const name=document.createElement('span');name.className='message-name';name.textContent=m.role==='user'?(sharedProfile().name||'你'):c.name;const bubble=document.createElement('div');bubble.className='bubble';bubble.textContent=m.text;const meta=document.createElement('div');meta.className='message-meta';meta.textContent=fmt(m.at)+(m.mode==='skill'?' · NVWA':m.mode==='safety'?' · safety':'');body.append(name,bubble,meta);row.append(av,body);log.append(row)}
+function renderMemory(){const wrap=$('memoryList'),items=memory().slice().reverse();wrap.replaceChildren();$('memoryCount').textContent=String(items.length);if(!items.length){const e=document.createElement('span');e.className='memory-empty';e.textContent='还没有长期记忆。聊过几轮后，稳定偏好、事件和未完成话题会被压缩成记忆块。';wrap.append(e);return}items.slice(0,12).forEach(m=>{const d=document.createElement('div');d.className='memory-item';const p=document.createElement('p');p.textContent=m.text;const s=document.createElement('small');s.textContent=(m.source||'P004')+' · '+new Date(m.createdAt).toLocaleDateString('zh-CN');d.append(p,s);wrap.append(d)})}
+function renderSourceCounts(){const counts={};observer.evidence.forEach(e=>counts[e.source]=(counts[e.source]||0)+1);const box=$('sourceCounts');box.replaceChildren();const entries=Object.entries(counts);if(!entries.length){const s=document.createElement('span');s.className='source-pill';s.textContent='等待交互';box.append(s);return}entries.forEach(([k,v])=>{const s=document.createElement('span');s.className='source-pill';s.textContent=k+' · '+v;box.append(s)})}
+async function switchCharacter(id){activeId=id;persist();renderCharacters();await renderActive()}
+
+function openModal(name){$(name+'Modal').classList.remove('hidden');document.body.style.overflow='hidden'}
+function closeModal(name){$(name+'Modal').classList.add('hidden');document.body.style.overflow=''}
+document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>closeModal(x.dataset.close)));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['character','distill','admin'].forEach(closeModal)});
+
+function openEditor(id){editingId=id||null;const c=id?chars.find(x=>x.id===id):{name:'',avatar:'',identity:'',personality:'',scenario:'',style:'',first:''};$('characterModalTitle').textContent=id?'编辑角色':'创建一个角色';$('charName').value=c.name||'';$('charAvatar').value=c.avatar||'';$('charIdentity').value=c.identity||'';$('charPersonality').value=c.personality||'';$('charScenario').value=c.scenario||'';$('charStyle').value=c.style||'';$('charFirst').value=c.first||'';$('deleteCharacterBtn').classList.toggle('hidden',!id);openModal('character')}
+function saveCharacter(){const name=text($('charName').value);if(!name){toast('先给角色一个名字');return}const patch={name,avatar:text($('charAvatar').value)||name.slice(0,1),identity:text($('charIdentity').value),personality:text($('charPersonality').value),scenario:text($('charScenario').value),style:text($('charStyle').value),first:text($('charFirst').value)};if(editingId){const c=chars.find(x=>x.id===editingId);Object.assign(c,patch);c.tagline=short(c.identity||c.personality,52)}else{patch.id=uid('npc');patch.tagline=short(patch.identity||patch.personality||'自定义角色',52);patch.distill={enabled:false,status:'off'};chars.push(patch);activeId=patch.id}persist();closeModal('character');renderCharacters();renderActive();toast('角色已保存')}
+function deleteCharacter(){if(!editingId||chars.length<=1){toast('至少保留一个角色');return}const idx=chars.findIndex(c=>c.id===editingId);if(idx<0)return;const removed=chars.splice(idx,1)[0];delete threads[removed.id];delete memories[removed.id];activeId=chars[0].id;persist();closeModal('character');renderCharacters();renderActive();toast('角色已删除')}
+
+function publicCharacter(c){return{id:c.id,name:c.name,identity:c.identity,personality:c.personality,scenario:c.scenario,style:c.style,first:c.first}}
+function slug(v){return text(v).toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g,'-').replace(/^-|-$/g,'')||'character'}
+async function readMaterials(){const out=[];const pasted=text($('distillMaterial').value);if(pasted)out.push({name:'pasted-material.md',type:'text/markdown',text:pasted});for(const f of pendingFiles){try{out.push({name:f.name,type:f.type||'text/plain',text:(await f.text()).slice(0,120000)})}catch(_){}}return out}
+function openDistill(){const c=active();$('distillEnabled').checked=Boolean(c.distill&&c.distill.enabled);$('distillFields').classList.toggle('hidden',!$('distillEnabled').checked);$('distillSubject').value=c.distill?.subject||c.name;$('distillFocus').value=c.distill?.focus||'';$('distillMaterial').value='';$('distillFiles').value='';$('fileSummary').textContent='支持 txt / md / json / csv / srt / vtt';pendingFiles=[];$('distillProgress').classList.add('hidden');$('distillResult').classList.add('hidden');openModal('distill')}
+function localSkillDraft(c,subject,focus){const name=slug(subject||c.name)+'-perspective';return[
+'---','name: '+name,'description: |','  P004 本地 Character Skill 草稿。未执行 NVWA 六路调研、三重验证或外部事实核查。','  仅用于在没有后端时保持角色设定的一致性。','---','','# '+(subject||c.name)+' · Character Skill Draft','','> 注意：这是本地草稿，不是完整 NVWA 蒸馏产物。','','## 身份','- 名称：'+c.name,'- 身份：'+(c.identity||'未设置'),'- 场景：'+(c.scenario||'未设置'),'','## 人格与边界',c.personality||'未设置','','## 表达 DNA（来自 Character Card）',c.style||'未设置','','## 聚焦方向',focus||'全面保持角色一致性','','## 运行规则','- 直接以角色身份交流。','- 不把 Character Card 当成用户心理测量。','- 记忆用于维持关系连续性，不应无条件重复全部历史。','- 面对事实性问题时承认信息不足，不编造来源。','- 即时安全风险高于角色扮演。','','## 诚实边界','- 未执行 NVWA 的六类来源研究。','- 未执行跨域复现 / 生成力 / 排他性三重验证。','- 不能声称代表真实人物本人。'
+].join(String.fromCharCode(10))}
+async function runDistill(){const c=active();if(!$('distillEnabled').checked){c.distill={enabled:false,status:'off'};persist();closeModal('distill');renderActive();toast('继续使用 Character Card');return}const subject=text($('distillSubject').value)||c.name,focus=text($('distillFocus').value),materials=await readMaterials();$('distillProgress').classList.remove('hidden');$('runDistillBtn').disabled=true;let result=null;try{if(window.P004_API&&window.P004_API.enabled){result=await window.P004_API.distill({protocol:'nvwa-skill',protocolVersion:'xmg2024/nvwa-skill@main',character:publicCharacter(c),request:{subject,focus,mode:materials.length?'local-material-first':'web-research',materials},requirements:{researchStreams:6,tripleVerification:true,mentalModels:[3,7],decisionHeuristics:[5,10],includeExpressionDNA:true,includeAntiPatterns:true,includeHonestLimits:true,qualityValidation:true}})}}catch(e){console.warn('NVWA distill API failed',e)}let source='nvwa-api',skillMarkdown,meta;if(result&&typeof result.skillMarkdown==='string'&&result.skillMarkdown.trim()){skillMarkdown=result.skillMarkdown;meta=Object.assign({mentalModels:null,heuristics:null,validated:true},result.meta||{})}else{source='local-draft';skillMarkdown=localSkillDraft(c,subject,focus);meta={mentalModels:0,heuristics:0,validated:false,reason:'No NVWA backend configured or no valid skill returned'}}const record={id:uid('skill'),characterId:c.id,subject,focus,source,createdAt:new Date().toISOString(),skillMarkdown,meta,research:result?.research||null};await requestPersistentStorage();await vaultPut(record);c.distill={enabled:true,status:'ready',skillId:record.id,subject,focus,source};persist();$('distillProgress').classList.add('hidden');$('runDistillBtn').disabled=false;$('distillResult').classList.remove('hidden');$('distillResult').textContent=source==='nvwa-api'?'NVWA Skill 已完成并写入本地 Skill Vault。后续对话会加载该 SKILL.md。':'当前没有可用的 NVWA 后端，因此只生成了明确标注的本地 Character Skill 草稿；没有伪装成完整蒸馏。';renderActive();toast(source==='nvwa-api'?'NVWA Skill 已就绪':'已生成本地 Skill 草稿')}
+async function relevantSkill(c){return c&&c.distill&&c.distill.enabled&&c.distill.status==='ready'?vaultGet(c.distill.skillId):null}
+
+const SAFETY_TERMS=['想死','不想活','结束生命','自杀','伤害自己','割腕','跳楼','活不下去','杀了自己'];
+function urgentSafety(v){const t=String(v||'').toLowerCase();return SAFETY_TERMS.some(w=>t.includes(w))}
+function safetyReply(){return '你刚才提到的内容让我更关心你此刻是否安全。先暂停角色聊天：如果你正在准备伤害自己、已经有具体计划，或觉得自己可能无法保证安全，请立刻联系当地急救服务、危机热线，或去到一个可信任的人身边。你也可以只告诉我：你现在是安全的，还是有立即危险？'}
+function localReply(input,c){const t=input.toLowerCase(),style=(c.style||'')+' '+(c.personality||'');if(/反问|辩论|漏洞/.test(style))return '先别急着回答。你现在默认成立、但其实还没有验证的前提是什么？';if(/故事|隐喻|画面/.test(style))return '我把它换成一个画面：你站在两扇门前，一扇写着“熟悉但可控”，另一扇写着“未知但可能长大”。真正让你停住的，是哪一种失去？';if(/温和|陪伴|理解/.test(style)&&/难过|焦虑|压力|累|烦|失眠/.test(t))return '我先不急着解释它。最近一次这种感觉最明显，是发生在什么具体场景里？';const mem=memory();const hook=mem.length?'我还记得你之前提过“'+short(mem[mem.length-1].text,42)+'”。':' ';return hook+'你这句话里，我更在意的不是结论，而是它为什么在现在变得重要。愿意再往前说一点吗？'}
+function showTyping(){const log=$('chatLog'),row=document.createElement('article');row.id='typingRow';row.className='message assistant';const av=document.createElement('div');av.className='message-avatar';av.textContent=active().avatar||active().name.slice(0,1);const body=document.createElement('div');body.className='message-body';const n=document.createElement('span');n.className='message-name';n.textContent=active().name;const bubble=document.createElement('div');bubble.className='bubble';const dots=document.createElement('div');dots.className='typing';dots.innerHTML='<i></i><i></i><i></i>';bubble.append(dots);body.append(n,bubble);row.append(av,body);log.append(row);log.scrollTop=log.scrollHeight}
+function removeTyping(){const x=$('typingRow');if(x)x.remove()}
+function memoryContext(){return memory().slice(-8).map(x=>x.text)}
+async function maybeRemember(input,source){if(input.length<20)return;const list=memory(),candidate=short(input.replace(/\s+/g,' '),190);if(list.some(x=>x.text===candidate))return;let value=candidate;try{if(window.P004_API&&window.P004_API.enabled&&thread().filter(m=>m.role==='user').length%4===0){const r=await window.P004_API.remember({character:publicCharacter(active()),recentMessages:thread().slice(-12),existing:list.slice(-24)});if(r&&typeof r.memory==='string')value=short(r.memory,240)}}catch(_){}list.push({id:uid('mem'),text:value,source,createdAt:Date.now()});if(list.length>60)list.splice(0,list.length-60);persist();renderMemory()}
+
+const WORDS={openness:['好奇','新鲜','探索','创意','艺术','旅行','想象','可能性','学习','故事'],conscientiousness:['计划','安排','完成','目标','清单','坚持','规律','效率','准备'],extraversion:['朋友','聚会','聊天','认识人','一起','团队','社交','分享','见面'],agreeableness:['理解','照顾','体谅','帮助','倾听','关系','支持','合作','在意别人'],sensitivity:['担心','焦虑','紧张','难过','压力','敏感','害怕','反复想','睡不着','内耗']};
+const CLIN={phqLike:['低落','没兴趣','睡不好','失眠','疲惫','自责','没用','无法专注'],gadLike:['焦虑','紧张','担心','放松不了','烦躁','最坏','出事'],pclLike:['闪回','噩梦','避开','不想提','高度警觉','容易受惊','麻木'],capeLike:['被监视','针对我','思想被控制','别人能听到我的想法','听到声音','看到别人看不到']};
+function hits(t,arr){return arr.reduce((n,w)=>n+(t.includes(w)?1:0),0)}
+function analyzeEvidence(input,source,context,quiet){const t=input.toLowerCase();Object.entries(WORDS).forEach(([k,arr])=>{const h=hits(t,arr);if(h){observer.big[k]=clamp(observer.big[k]+Math.min(4,h*1.4));observer.evidence.push({id:uid('ev'),source,context,dimension:k,quote:short(input),at:Date.now(),strength:Math.min(1,.35+h*.12)})}});Object.entries(CLIN).forEach(([k,arr])=>{const h=hits(t,arr);if(h){observer.clinical[k]=clamp(observer.clinical[k]+Math.min(6,h*2));observer.evidence.push({id:uid('ev'),source,context,dimension:k,quote:short(input),at:Date.now(),strength:Math.min(1,.3+h*.14)})}});observer.updatedAt=new Date().toISOString();if(observer.evidence.length>500)observer.evidence.splice(0,observer.evidence.length-500);if(!quiet){persist();renderSourceCounts()}}
+function importP005(){const raw=read(K.p005,null);if(!raw)return;const signature=hash(JSON.stringify({profile:raw.profile,messages:raw.messages}));if(observer.imports.P005===signature)return;observer.evidence=observer.evidence.filter(e=>e.source!=='P005');const p=raw.profile||{};['currentWork','people','proud','lowPoint','turningPoint','futureWork','dailyLife','values','decision'].forEach(k=>{if(p[k])analyzeEvidence(String(p[k]),'P005','Future You open response',true)});(raw.messages||[]).filter(m=>m.role==='user'&&m.text).forEach(m=>analyzeEvidence(m.text,'P005','Future You chat',true));observer.imports.P005=signature;persist();renderSourceCounts()}
+function collectP005(){const raw=read(K.p005,null);if(!raw)return[];const out=[];Object.values(raw.profile||{}).forEach(v=>{if(typeof v==='string'&&v.trim())out.push(v)});(raw.messages||[]).filter(m=>m.role==='user'&&m.text).forEach(m=>out.push(m.text));return out.slice(-120)}
+function mergeObserver(p){if(p.big)Object.keys(observer.big).forEach(k=>{if(Number.isFinite(Number(p.big[k])))observer.big[k]=clamp(Number(p.big[k]))});if(p.clinical)Object.keys(observer.clinical).forEach(k=>{if(Number.isFinite(Number(p.clinical[k])))observer.clinical[k]=clamp(Number(p.clinical[k]))});if(Array.isArray(p.evidence))p.evidence.slice(-120).forEach(e=>observer.evidence.push({id:uid('ev'),source:e.source||'API',context:e.context||'observer',dimension:e.dimension||'unknown',quote:short(e.quote||''),at:e.at||Date.now(),strength:e.strength||.5}));observer.updatedAt=new Date().toISOString()}
+async function backgroundObserve(){importP005();if(!(window.P004_API&&window.P004_API.enabled))return;try{const r=await window.P004_API.observe({sources:{P004:Object.values(threads).flat().filter(m=>m.role==='user').map(m=>m.text).slice(-120),P005:collectP005()},existing:observer});if(r&&r.profile){mergeObserver(r.profile);persist();renderSourceCounts()}}catch(e){console.warn('P004 observer API failed',e)}}
+
+async function send(input){input=text(input);if(!input)return;const c=active(),list=thread();list.push({id:uid('m'),role:'user',text:input,at:Date.now(),source:'P004'});analyzeEvidence(input,'P004','character chat');persist();renderMessages();$('messageInput').value='';resizeInput();$('sendBtn').disabled=true;await maybeRemember(input,'P004');if(urgentSafety(input)){const reply=safetyReply();list.push({id:uid('m'),role:'assistant',text:reply,at:Date.now(),mode:'safety',source:'P004'});observer.safety.push({at:Date.now(),source:'P004',kind:'explicit-self-harm-language',quote:short(input,160)});persist();renderMessages();$('sendBtn').disabled=false;$('messageInput').focus();backgroundObserve();return}showTyping();const skill=await relevantSkill(c);let reply=null;try{if(window.P004_API&&window.P004_API.enabled){const r=await window.P004_API.chat({version:VERSION,character:publicCharacter(c),skill:skill?{id:skill.id,source:skill.source,markdown:skill.skillMarkdown}:null,persona:sharedProfile(),memory:memoryContext(),messages:list.slice(-24).map(m=>({role:m.role,text:m.text})),observerHint:{doNotExposeClinicalLabels:true},safety:{roleplayMustYieldToSafety:true}});if(r&&typeof r.reply==='string')reply=r.reply.trim()}}catch(e){console.warn('P004 chat API failed',e)}removeTyping();if(!reply)reply=localReply(input,c);list.push({id:uid('m'),role:'assistant',text:reply,at:Date.now(),mode:skill?'skill':'card',source:'P004'});persist();renderMessages();$('sendBtn').disabled=false;$('messageInput').focus();backgroundObserve()}
+
+function renderAdmin(){importP005();const names={openness:'Openness',conscientiousness:'Conscientiousness',extraversion:'Extraversion',agreeableness:'Agreeableness',sensitivity:'Emotional sensitivity'};const bg=$('bigFiveGrid');bg.replaceChildren();Object.entries(observer.big).forEach(([k,v])=>{const row=document.createElement('div');row.className='metric-row';const n=document.createElement('strong');n.textContent=names[k];const bar=document.createElement('span');bar.className='metric-bar';const fill=document.createElement('i');fill.style.width=Math.round(v)+'%';bar.append(fill);const num=document.createElement('em');num.textContent=Math.round(v);row.append(n,bar,num);bg.append(row)});const conf=Math.min(95,Math.round(30+observer.evidence.length*1.1));$('observerConfidence').textContent='confidence '+conf+'% · evidence '+observer.evidence.length;const cn={phqLike:'PHQ-related',gadLike:'GAD-related',pclLike:'PCL-related',capeLike:'CAPE-related'},cg=$('clinicalGrid');cg.replaceChildren();Object.entries(observer.clinical).forEach(([k,v])=>{const d=document.createElement('div');d.className='clinical-tile';const s=document.createElement('strong');s.textContent=cn[k];const b=document.createElement('b');b.textContent=Math.round(v);const p=document.createElement('p');p.textContent='开放式对话线索强度；不能当作正式量表分数、阈值或诊断。';d.append(s,b,p);cg.append(d)});const ev=$('evidenceList');ev.replaceChildren();observer.evidence.slice().reverse().slice(0,120).forEach(e=>{const row=document.createElement('div');row.className='evidence-row';const src=document.createElement('strong');src.textContent=e.source;const dim=document.createElement('span');dim.textContent=e.dimension;const q=document.createElement('p');q.textContent=e.quote;const tm=document.createElement('em');tm.textContent=new Date(e.at).toLocaleDateString('zh-CN');row.append(src,dim,q,tm);ev.append(row)});const counts={};observer.evidence.forEach(e=>counts[e.source]=(counts[e.source]||0)+1);$('evidenceSummary').textContent=Object.entries(counts).map(([k,v])=>k+' '+v).join(' · ')||'暂无证据'}
+async function exportSkill(){const c=active(),s=await relevantSkill(c);if(!s){toast('这个角色还没有本地 Skill');return}const suggested=slug(c.name)+'-SKILL.md';if(window.showSaveFilePicker){try{const h=await window.showSaveFilePicker({suggestedName:suggested,types:[{description:'Markdown Skill',accept:{'text/markdown':['.md']}}]});const w=await h.createWritable();await w.write(s.skillMarkdown);await w.close();toast('SKILL.md 已保存到本地文件');return}catch(e){if(e&&e.name==='AbortError')return}}const blob=new Blob([s.skillMarkdown],{type:'text/markdown;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=suggested;a.click();setTimeout(()=>URL.revokeObjectURL(url),500);toast('已导出 SKILL.md')}
+
+function resizeInput(){const el=$('messageInput');el.style.height='auto';el.style.height=Math.min(160,el.scrollHeight)+'px'}
+$('composer').addEventListener('submit',e=>{e.preventDefault();send($('messageInput').value)});
+$('messageInput').addEventListener('input',resizeInput);
+$('messageInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('composer').requestSubmit()}});
+['newCharacterBtn','railNewBtn'].forEach(id=>$(id).addEventListener('click',()=>openEditor(null)));
+['editCharacterBtn','editCardBtn'].forEach(id=>$(id).addEventListener('click',()=>openEditor(activeId)));
+$('saveCharacterBtn').addEventListener('click',saveCharacter);
+$('deleteCharacterBtn').addEventListener('click',deleteCharacter);
+$('distillBtn').addEventListener('click',openDistill);
+$('distillEnabled').addEventListener('change',e=>$('distillFields').classList.toggle('hidden',!e.target.checked));
+$('distillFiles').addEventListener('change',e=>{pendingFiles=Array.from(e.target.files||[]);$('fileSummary').textContent=pendingFiles.length?(pendingFiles.length+' 个文件 · '+pendingFiles.map(f=>f.name).join(' / ')):'支持 txt / md / json / csv / srt / vtt'});
+$('runDistillBtn').addEventListener('click',runDistill);
+$('exportSkillBtn').addEventListener('click',exportSkill);
+$('refreshObserverBtn').addEventListener('click',async()=>{await backgroundObserve();renderAdmin();toast('人物画像已刷新')});
+$('adminBtn').addEventListener('click',()=>{renderAdmin();openModal('admin')});
+
+async function boot(){if(!chars.length)chars=DEFAULTS;if(!active())activeId=chars[0].id;if(adminMode)$('adminBtn').classList.remove('hidden');$('runtimeBadge').innerHTML=(window.P004_API&&window.P004_API.enabled)?'<i></i> API connected':'<i></i> local first';renderPersona();importP005();renderSourceCounts();renderCharacters();await renderActive();persist();backgroundObserve()}
+boot();
 })();
