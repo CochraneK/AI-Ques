@@ -1,0 +1,45 @@
+:root{
+  --ink:#15211a;--muted:#667269;--soft:#879087;
+  --paper:#f4f1ea;--surface:rgba(255,255,255,.72);--surface-strong:#fffdf8;
+  --line:rgba(21,33,26,.105);--line-strong:rgba(21,33,26,.18);
+  --green:#557660;--green-2:#789a80;--sage:#dfeadf;
+  --sand:#eadcc8;--amber:#a77c45;--rose:#a96e73;--violet:#756d91;
+  --shadow-sm:0 8px 24px rgba(30,43,35,.055);
+  --shadow-md:0 22px 70px rgba(30,43,35,.085);
+  --radius-sm:14px;--radius:22px;--radius-lg:32px;
+  --max:1180px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{color:var(--ink);background-color:var(--paper);text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+::selection{background:#cfe0d2;color:#16211a}
+a,button,input,textarea,select{font:inherit}
+button,a{-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:3px solid rgba(85,118,96,.22);outline-offset:3px
+}
+.aiq-glass{
+  background:var(--surface);border:1px solid var(--line);
+  box-shadow:var(--shadow-md);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)
+}
+.aiq-grid-bg{
+  background-image:
+    linear-gradient(rgba(21,33,26,.027) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(21,33,26,.027) 1px,transparent 1px);
+  background-size:28px 28px
+}
+.aiq-noise{position:relative;isolation:isolate}
+.aiq-noise:before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.18;
+  background-image:radial-gradient(circle at center,rgba(21,33,26,.12) .55px,transparent .65px);
+  background-size:7px 7px;mask-image:linear-gradient(to bottom,black,transparent 82%)
+}
+.aiq-pill{
+  display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);font-size:11px;font-weight:800;color:var(--muted)
+}
+.aiq-dot{width:7px;height:7px;border-radius:50%;background:var(--green-2);box-shadow:0 0 0 5px rgba(120,154,128,.12)}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
