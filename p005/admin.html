@@ -11,7 +11,7 @@
   <main class="admin-shell">
     <a class="back" href="./">← P005</a>
     <p class="kicker">P005 · LOCAL PROTOTYPE ADMIN</p>
-    <h1>未来时间</h1>
+    <h1>研究设置</h1>
     <p class="note">这个静态页只控制当前浏览器里的 P005 原型。正式环境应由服务端管理员配置覆盖。</p>
 
     <form id="horizonForm">
@@ -24,13 +24,29 @@
         <label><input type="radio" name="targetHorizon" value="10y"> 10 年后</label>
         <label><input type="radio" name="targetHorizon" value="age60"> 60 岁时</label>
       </fieldset>
+
+      <fieldset>
+        <legend>前测输入方式</legend>
+        <label><input type="radio" name="intakeProtocol" value="guided"> 低负担版 <small>MECE 选项 + 可选补充，默认</small></label>
+        <label><input type="radio" name="intakeProtocol" value="replication"> 研究复刻版 <small>按 2024 Future You 公开字段，自由文本</small></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Future Me 声音</legend>
+        <label><input type="radio" name="voiceId" value="marin"> Marin <small>默认，自然</small></label>
+        <label><input type="radio" name="voiceId" value="cedar"> Cedar</label>
+        <label><input type="radio" name="voiceId" value="coral"> Coral</label>
+        <label><input type="radio" name="voiceId" value="verse"> Verse</label>
+      </fieldset>
+
       <button type="submit">保存</button>
     </form>
 
     <section class="status">
       <h2>数据回传</h2>
       <p id="adminApiState"></p>
-      <p>若配置了 <code>adminApi</code>，P005 会发送：会话开始、每一题回答、照片元数据、Future Memory、每轮对话、时间胶囊与导出事件。照片文件本身不会作为 base64 塞进事件接口。</p>
+      <p>若配置了 <code>adminApi</code>，P005 会发送：协议版本、每一题回答、Future Memory、每轮对话、结束方式、分享卡片与时间胶囊事件。照片文件本身不会作为 base64 塞进事件接口。</p>
+      <p id="voiceApiState"></p>
     </section>
   </main>
   <script src="runtime-config.js?v=1"></script>
