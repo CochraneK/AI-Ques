@@ -6,8 +6,7 @@ registerMode(
   'psychogat',
   {
     name:'PsychoGAT 式',
-    desc:'把量表构念串成连续互动小说，并让前序选择影响后续情境。论文范式使用 LLM agents；当前 Pages 原型为冻结内容版本。',
-    tag:'互动小说 / LLM-agent 范式'
+    desc:'以连续互动小说呈现情境选择；当前静态版使用冻结场景，不做 LLM 动态生成。'
   },
   {renderStep: renderPsychoGAT}
 );
@@ -43,13 +42,11 @@ function renderPsychoGAT(){
   const nodes=PSYCHOGAT_NODES[state.scale], node=nodes[state.index];
   if(!node) return finishPsychoGAT();
   progress(state.index+1,nodes.length);
-  const memory=state.psychoMemory.slice(-2).join(' ') || '故事刚刚开始，还没有形成前序记忆。';
-  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">PsychoGAT 式 · 回合 ${state.index+1}/${nodes.length} · ${node[0]}</div><h2>${node[1]}</h2><p class="story">${node[2]}</p>${state.index?`<div class="reflection"><strong>Story Memory</strong><br>${memory}</div>`:''}<div class="rush-options">${node[3].map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div><div class="source-list"><p><strong>论文范式：</strong>Designer → Controller → Critic → Evaluator。当前静态原型只冻结故事节点与隐藏路径，不宣称复现论文中的 LLM-agent 性能。</p></div><div class="safe-note">这是论文范式的结构化原型，不是经过验证的 ${SCALES[state.scale].name} 替代测验。</div></div>`;
+  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">第 ${state.index+1} 幕 / ${nodes.length}</div><h2>${node[1]}</h2><p class="story">${node[2]}</p><div class="rush-options">${node[3].map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.index===0?'<p class="mode-note">请选择最接近你的反应。故事会按固定场景继续。</p>':''}</div>`;
   document.querySelectorAll('.rush-option').forEach(b=>b.onclick=()=>{
     const o=node[3][Number(b.dataset.i)];
     state.psychoScore+=o[1];
     state.expSignals[node[0]]=(state.expSignals[node[0]]||0)+o[1];
-    state.psychoMemory.push(o[1]?'上一幕选择了更贴近目标构念的一条故事路径。':'上一幕选择了较少体现目标构念的一条故事路径。');
     state.index++;
     renderPsychoGAT();
   });
@@ -57,7 +54,11 @@ function renderPsychoGAT(){
 
 function finishPsychoGAT(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
-  $('#result').innerHTML=`<p class="eyebrow">完成 · PsychoGAT 式</p><h2>连续互动小说完成</h2><div class="result-grid"><div class="result-card"><div class="score-big">${state.psychoScore}</div><p>冻结路径信号，仅用于这个原型内部。</p><p>Yang et al. (ACL 2024) 的 PsychoGAT 使用 LLM Designer、Controller、Critic 与 psychometric evaluator；本页不是其官方代码。</p></div><div class="result-card"><h3>故事中的构念信号</h3>${signalBars(state.expSignals)}</div></div><div class="safe-note"><strong>不要把这个数解释为 ${SCALES[state.scale].name} 得分、风险或诊断。</strong></div>${experimentalSourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
+  if(!SHOW_RESEARCH){
+    $('#result').innerHTML=participantCompletion();
+    return;
+  }
+  $('#result').innerHTML=`<p class="eyebrow">Research view · PsychoGAT 式</p><h2>连续互动小说信号</h2><div class="result-grid"><div class="result-card"><div class="score-big">${state.psychoScore}</div><p>冻结路径信号，仅用于原型内部。</p></div><div class="result-card"><h3>构念信号</h3>${signalBars(state.expSignals)}</div></div><div class="safe-note"><strong>研究检查视图。</strong> 当前为 PsychoGAT-inspired 静态流程，不等同于论文中的 LLM-agent 实现。</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
 }
 
 function signalBars(obj){
@@ -65,8 +66,5 @@ function signalBars(obj){
   return `<div class="bars">${e.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div>`;
 }
 
-function experimentalSourceBlock(){
-  return `<div class="source-list"><h3>研究依据</h3><p><strong>PsychoGAT</strong>: Yang et al., ACL 2024, DOI 10.18653/v1/2024.acl-long.779。它支持“LLM agents + 连续互动小说”的心理测量范式，但当前静态实现仍需单独验证。</p></div>`;
-}
 
 renderLauncher();
