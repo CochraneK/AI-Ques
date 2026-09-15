@@ -12,6 +12,8 @@ const SCALES = {
     name:"PCL-5",
     subtitle:"过去 1 个月 · 20 项",
     prompt:"过去一个月，这项情况让你困扰到什么程度？",
+    scoringScheme:"pcl5-va-0-4",
+    anchorNote:"作答时请始终以同一段最困扰的压力经历为参照；本原型不会要求你写出事件内容。",
     choices:[["完全没有",0],["有一点",1],["中等程度",2],["相当多",3],["非常严重",4]],
     clusters:{
       B:{title:"侵入与再体验",desc:"关注不由自主的记忆、梦境、再体验与提醒后的反应。",glyph:"↺"},
@@ -47,8 +49,10 @@ const SCALES = {
     name:"Current CAPE-P15",
     subtitle:"过去 3 个月 · 15 项",
     prompt:"过去三个月，这种体验出现得有多频繁？",
-    choices:[["从未",1],["有时",2],["经常",3],["几乎总是",4]],
-    distressChoices:[["完全不困扰",1],["有一点困扰",2],["比较困扰",3],["非常困扰",4]],
+    scoringScheme:"current-cape-p15-original-0-3",
+    anchorNote:"频率与困扰分开记录；只有出现过该体验时才追问困扰。",
+    choices:[["从未",0],["有时",1],["经常",2],["几乎总是",3]],
+    distressChoices:[["完全不困扰",0],["有一点困扰",1],["比较困扰",2],["非常困扰",3]],
     clusters:{
       PI:{title:"指向性体验",desc:"关注他人言语、目光或行动是否被体验为特别指向自己。",glyph:"◎"},
       BE:{title:"异常思维体验",desc:"关注思维归属、控制感、影响感与现实边界相关体验。",glyph:"◇"},
@@ -104,8 +108,8 @@ const nextBtn = $("#nextBtn");
 function renderScaleChoices(){
   scaleChoices.innerHTML = Object.values(SCALES).map(function(s){
     return '<button class="scale-card ' + (state.scaleId===s.id?'active':'') + '" data-scale="' + s.id + '" aria-pressed="' + (state.scaleId===s.id) + '">' +
-      '<h3>' + s.name + '</h3><p>' + s.subtitle + '</p>' +
-      '<span class="tag">' + (s.id==="pcl5"?'20 项 · 0–4':'15 项 · 频率 / 困扰') + '</span></button>';
+      '<h3>' + s.name + '</h3><p>' + s.subtitle + '<br><small>' + s.anchorNote + '</small></p>' +
+      '<span class="tag">' + (s.id==="pcl5"?'20 项 · 0–4':'15 项 · 原始 0–3') + '</span></button>';
   }).join("");
   scaleChoices.querySelectorAll("[data-scale]").forEach(function(btn){
     btn.onclick=function(){
@@ -218,7 +222,7 @@ function renderAnswers(s){
       btn.classList.add("active");
       state.pendingFrequency=Number(btn.dataset.value);
 
-      if(s.id==="cape15" && state.pendingFrequency>=2){
+      if(s.id==="cape15" && state.pendingFrequency>=1){
         renderDistress(s);
         nextBtn.disabled=state.pendingDistress===null;
       }else{
@@ -258,6 +262,7 @@ nextBtn.onclick=function(){
     study_version:VERSION,
     scale_id:s.id,
     scale_name:s.name,
+    scoring_scheme:s.scoringScheme,
     condition_id:state.conditionId,
     item_id:item.id,
     cluster:item.cluster,
@@ -293,7 +298,7 @@ function summarize(){
     clusters[k]={n:rr.length,sum:vals.reduce(function(a,b){return a+b},0),mean:mean(vals)};
 
     if(s.id==="cape15"){
-      const endorsed=rr.filter(function(r){return r.frequency_or_severity>=2 && r.distress!=null});
+      const endorsed=rr.filter(function(r){return r.frequency_or_severity>=1 && r.distress!=null});
       clusters[k].distress_mean_endorsed=mean(endorsed.map(function(r){return r.distress}));
       clusters[k].endorsed_n=endorsed.length;
     }else{
@@ -319,11 +324,13 @@ function summarize(){
       clusters:clusters,
       dsm_cluster_pattern:provisional,
       dsm_cluster_pattern_all:Object.values(provisional).every(Boolean),
+      criterion_a_established:false,
+      interpretation_status:"symptom_pattern_only_not_diagnosis",
       timing:timing
     };
   }
 
-  const endorsed=rows.filter(function(r){return r.frequency_or_severity>=2 && r.distress!=null});
+  const endorsed=rows.filter(function(r){return r.frequency_or_severity>=1 && r.distress!=null});
   return {
     frequency_sum:rows.reduce(function(a,r){return a+r.frequency_or_severity},0),
     frequency_mean:mean(rows.map(function(r){return r.frequency_or_severity})),
@@ -357,7 +364,7 @@ function finish(){
       clusterBlock(s,summary.clusters);
   }else{
     cards.innerHTML =
-      '<div class="metric-card"><span class="section-kicker">平均频率</span><div class="metric">' + summary.frequency_mean.toFixed(2) + '</div><p>1–4 的平均频率分。页面不设置“高风险”标签。</p></div>' +
+      '<div class="metric-card"><span class="section-kicker">平均频率</span><div class="metric">' + summary.frequency_mean.toFixed(2) + '</div><p>原始 0–3 的平均频率分。页面不设置“高风险”标签。</p></div>' +
       '<div class="metric-card"><span class="section-kicker">出现过的体验</span><div class="metric">' + summary.endorsed_n + '</div><p>频率至少为“有时”的条目数。</p></div>' +
       '<div class="metric-card"><span class="section-kicker">困扰均值</span><div class="metric">' + (summary.distress_mean_endorsed==null?"—":summary.distress_mean_endorsed.toFixed(2)) + '</div><p>仅对出现过的体验计算，频率与困扰分开保留。</p></div>' +
       clusterBlock(s,summary.clusters);
@@ -370,7 +377,7 @@ function clusterBlock(s,clusters){
   const rows=Object.entries(clusters).map(function(entry){
     const k=entry[0];
     const v=entry[1];
-    const pct=s.id==="pcl5" ? (v.sum/(v.n*4))*100 : ((v.mean-1)/3)*100;
+    const pct=s.id==="pcl5" ? (v.sum/(v.n*4))*100 : (v.mean/3)*100;
     const tail=s.id==="pcl5"
       ? "总分 " + v.sum + " · ≥2 条目 " + v.endorsed_ge2
       : "频率均值 " + v.mean.toFixed(2) + " · 出现 " + v.endorsed_n;
@@ -390,6 +397,7 @@ function payload(){
     participant_id:state.participantId || null,
     session_id:state.sessionId,
     scale_id:state.scaleId,
+    scoring_scheme:SCALES[state.scaleId].scoringScheme,
     condition_id:state.conditionId,
     started_at:state.startedAt,
     finished_at:state.finishedAt,
@@ -418,7 +426,7 @@ $("#downloadJson").onclick=function(){
 };
 
 $("#downloadCsv").onclick=function(){
-  const cols=["participant_id","session_id","study_version","scale_id","scale_name","condition_id","item_id","cluster","frequency_or_severity","distress","response_ms","answered_at"];
+  const cols=["participant_id","session_id","study_version","scale_id","scale_name","scoring_scheme","condition_id","item_id","cluster","frequency_or_severity","distress","response_ms","answered_at"];
   const esc=function(v){
     return v==null ? "" : '"' + String(v).replaceAll('"','""') + '"';
   };
