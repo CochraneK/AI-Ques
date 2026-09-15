@@ -91,11 +91,29 @@ const state={scale:null,mode:null,index:0,answers:[],emojiFound:0,emojiSeen:0,ru
 const $=s=>document.querySelector(s);
 
 function renderLauncher(){
-  $('#scaleChoices').innerHTML=Object.values(SCALES).map(s=>`<button class="choice ${state.scale===s.id?'active':''}" data-scale="${s.id}"><h3>${s.name}</h3><p>${s.subtitle}<br>时间窗口：${s.window}</p><span class="tag">${s.id==='pcl5'?'标准评分可保留':'原型转述需验证'}</span></button>`).join('');
-  $('#modeChoices').innerHTML=Object.entries(MODES).map(([id,m])=>`<button class="choice ${state.mode===id?'active':''}" data-mode="${id}"><h3>${m.name}</h3><p>${m.desc}</p><span class="tag">${m.tag}</span></button>`).join('');
+  $('#scaleChoices').innerHTML=Object.values(SCALES).map(s=>`<button class="choice ${state.scale===s.id?'active':''}" data-scale="${s.id}" aria-pressed="${state.scale===s.id}">
+    <h3>${s.name}</h3>
+    <p>${s.subtitle}<br>时间窗口：${s.window}</p>
+    <span class="tag">${s.id==='pcl5'?'标准评分可保留':'原型转述需验证'}</span>
+  </button>`).join('');
+
+  $('#modeChoices').innerHTML=Object.entries(MODES).map(([id,m])=>`<button class="choice ${state.mode===id?'active':''}" data-mode="${id}" aria-pressed="${state.mode===id}">
+    <h3>${m.name}</h3>
+    <p>${m.desc}</p>
+    <span class="tag">${m.tag}</span>
+  </button>`).join('');
+
   document.querySelectorAll('[data-scale]').forEach(b=>b.onclick=()=>{state.scale=b.dataset.scale;renderLauncher();});
   document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;renderLauncher();});
-  $('#startBtn').disabled=!(state.scale&&state.mode);
+
+  const ready=state.scale&&state.mode;
+  $('#startBtn').disabled=!ready;
+  const summary=$('#selectedSummary');
+  if(summary){
+    summary.innerHTML=ready
+      ? `<span class="selection-chip">${SCALES[state.scale].name}</span><span class="selection-plus">+</span><span class="selection-chip">${MODES[state.mode].name}</span>`
+      : `<span class="selection-empty">${state.scale?'再选择一种玩法':state.mode?'再选择一个量表':'请选择 1 个量表 + 1 种玩法'}</span>`;
+  }
 }
 
 function resetRun(){state.index=0;state.answers=[];state.emojiFound=0;state.emojiSeen=0;state.rushSignals={};state.lastReflection='';state.chapterSeen={};}
