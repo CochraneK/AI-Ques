@@ -26,6 +26,7 @@ jobs:
           node --check portal/app.js
           node --check admin/app.js
           node --check p002/app.js
+          node --check p004/global-adapter.js
 
       - name: Run behavior smoke tests
         run: |
