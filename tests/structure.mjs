@@ -23,7 +23,7 @@ for (const file of [
   "shared/profile.js",
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
   "p004/index.html", "p004/app.js", "p004/module-manifest.json",
-  "p005/index.html", "p005/app.js", "p005/module-manifest.json",
+  "p005/index.html", "p005/app.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
   "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
@@ -58,6 +58,11 @@ assert.doesNotMatch(p005, /const SHARED_KEYS/);
 assert.match(p005, /const QUESTIONS = \[/);
 assert.match(p005, /surveyIndex/);
 assert.match(p005, /exchanged<16/);
+assert.match(p005, /targetHorizon:'4y'/);
+assert.match(p005, /HORIZON_OPTIONS = \['1y','2y','3y','4y','10y','age60'\]/);
+assert.doesNotMatch(p005, /if\(name==='generate'\).*survey/);
+assert.match(read("p005/runtime-config.js"), /targetHorizon: "4y"/);
+assert.match(read("p005/admin.html"), /60 岁时/);
 assert.match(read("docs/DESIGN_PRINCIPLES.md"), /Less is more/);
 
 const legacyFuture = fs.readdirSync(path.join(root, "future-me")).sort();
