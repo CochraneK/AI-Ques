@@ -120,12 +120,6 @@ function renderLauncher(){
 
   const ready=state.scale&&state.mode;
   $('#startBtn').disabled=!ready;
-  const summary=$('#selectedSummary');
-  if(summary){
-    summary.innerHTML=ready
-      ? `<span class="selection-chip">${SCALES[state.scale].name}</span><span class="selection-plus">+</span><span class="selection-chip">${MODES[state.mode].name}</span>`
-      : `<span class="selection-empty">${state.scale?'再选择一种玩法':state.mode?'再选择一个量表':'请选择 1 个量表 + 1 种玩法'}</span>`;
-  }
 }
 
 function resetRun(){
@@ -170,7 +164,7 @@ function renderStep(){
     ${firstItem?`<p class="instrument-instruction">${scale.instruction}</p>`:''}
     <div class="question-card">
       ${emojiActive?`<button class="emoji-clue" id="emojiClue" aria-label="找到隐藏表情">${['🪐','🫧','🦊','🌱','🧩','🐳'][state.index%6]}</button>`:''}
-      <div class="question-id">${scale.name} · ${item.id}/${scale.items.length}</div>
+      <div class="question-id">${scale.id==='pcl5'?'过去一个月 · 同一压力经历':'过去三个月'}</div>
       <div class="question">${item.text}</div>
       ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
       <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
