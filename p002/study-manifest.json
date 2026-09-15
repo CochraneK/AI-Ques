@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "study_id": "P002",
+  "study_version": "p002-0.2.0",
+  "status": "prototype_only",
+  "formal_data_collection_authorized": false,
+  "instruments": {
+    "pcl5": {
+      "items": 20,
+      "window": "past_month",
+      "encoding": "0-4",
+      "clusters": [
+        "B",
+        "C",
+        "D",
+        "E"
+      ],
+      "wording_status": "prototype_paraphrase_pending_approved_target_language_freeze"
+    },
+    "cape15": {
+      "items": 15,
+      "window": "past_3_months",
+      "frequency_encoding": "1-4",
+      "distress_encoding": "1-4_conditional_if_frequency_ge_2",
+      "clusters": [
+        "PI",
+        "BE",
+        "PA"
+      ],
+      "wording_status": "prototype_paraphrase_pending_approved_target_language_freeze"
+    }
+  },
+  "conditions": {
+    "standard": {
+      "measurement_content": "identical",
+      "construct_cues": false,
+      "visual_guidance": "minimal"
+    },
+    "guided": {
+      "measurement_content": "identical",
+      "construct_cues": true,
+      "visual_guidance": "cluster_card_and_chapter_visuals"
+    }
+  },
+  "event_contract": {
+    "project_id": "P002",
+    "required_item_fields": [
+      "participant_id",
+      "session_id",
+      "study_version",
+      "scale_id",
+      "condition_id",
+      "item_id",
+      "cluster",
+      "frequency_or_severity",
+      "response_ms",
+      "answered_at"
+    ],
+    "cape_item_additional": [
+      "distress"
+    ],
+    "quality_signals": [
+      "median_response_ms",
+      "rapid_under_800ms_n",
+      "total_response_ms"
+    ]
+  },
+  "participant_feedback": {
+    "diagnostic_labels": false,
+    "clinical_cutoffs": false,
+    "risk_labels": false
+  },
+  "admin_only_research_signals": {
+    "pcl_dsm_cluster_pattern": true,
+    "rapid_response_flag": true
+  },
+  "production_gates": [
+    "approved target-language wording/version frozen",
+    "ethics approval",
+    "consent and withdrawal flow",
+    "risk escalation and human referral plan",
+    "authenticated research backend",
+    "retention/deletion policy",
+    "data dictionary and study_version frozen"
+  ]
+}
