@@ -105,6 +105,14 @@ const SHOW_SOURCE=queryParam('source')==='1';
 const SHOW_RESEARCH=queryParam('research')==='1';
 
 function renderLauncher(){
+  const hint = $('#experienceHint');
+  if(hint){
+    hint.textContent = state.condition==='scenario'
+      ? '根据几个生活情境，选择最接近你的反应。'
+      : state.condition==='direct'
+        ? '选择量表后，直接按题目完成这次体验。'
+        : '沿着一段简单的故事，完成当前量表。';
+  }
   $('#scaleChoices').innerHTML=Object.values(SCALES).map(s=>`<button class="choice ${state.scale===s.id?'active':''}" data-scale="${s.id}" aria-pressed="${state.scale===s.id}">
     <h3>${s.name}</h3>
     <p>${s.subtitle}<br>时间窗口：${s.window}</p>
@@ -191,8 +199,8 @@ function renderStoryIntro(scale,ch){
   progress(state.index,scale.items.length);
   const choices=['从左边继续','从中间继续','从右边继续'];
   const pub=publicChapter(ch.key);
-  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一条路继续。</p><div class="rush-options">${choices.map((label,i)=>`<button class="rush-option" data-vassip-choice="${i}">${label}</button>`).join('')}</div></div>`;
-  document.querySelectorAll('[data-vassip-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=Number(b.dataset.vassipChoice);renderStep();});
+  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一条路继续。</p><div class="rush-options">${choices.map((label,i)=>`<button class="rush-option" data-story-choice="${i}">${label}</button>`).join('')}</div></div>`;
+  document.querySelectorAll('[data-story-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=Number(b.dataset.storyChoice);renderStep();});
 }
 
 function renderRush(){
