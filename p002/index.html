@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f4f1ea">
   <title>P002 · 情绪天气站</title>
+  <link rel="stylesheet" href="../shared/theme.css">
   <link rel="stylesheet" href="./styles.css">
   <script src="../shared/config.js"></script>
   <script src="../shared/core.js"></script>
 </head>
-<body>
+<body class="aiq-noise">
   <div class="ambient ambient-a"></div>
   <div class="ambient ambient-b"></div>
 
@@ -18,34 +19,56 @@
       <span class="brand-mark">P002</span>
       <span>情绪天气站</span>
     </a>
-    <div class="status-pill"><span class="status-dot"></span> Research prototype</div>
+    <div class="top-status">
+      <span class="aiq-pill"><i class="aiq-dot"></i> Research prototype</span>
+      <a href="../portal/" class="back-hub">项目中心 →</a>
+    </div>
   </header>
 
   <main class="shell">
     <section id="launcher" class="screen">
       <div class="hero">
-        <p class="eyebrow">PCL-5 · Current CAPE-P15</p>
-        <h1>不是给自己贴标签，<br>只是把最近的感受记录得更清楚。</h1>
-        <p class="hero-copy">P002 聚焦两套核心量表的稳定呈现、可追溯计分与研究数据结构。当前页面是研究原型，不提供诊断结论。</p>
+        <div class="hero-copy-wrap">
+          <p class="eyebrow">PCL-5 · CURRENT CAPE-P15</p>
+          <h1>把最近的体验，<br><span>记录得更清楚。</span></h1>
+          <p class="hero-copy">P002 不给你贴标签。这里先保证量表结构、版本和研究数据可追溯，再比较“标准呈现”与“轻交互导览”是否影响完成体验。</p>
+          <div class="hero-facts">
+            <span>● 同一 participant_id</span>
+            <span>● item-level timing</span>
+            <span>● 不显示诊断标签</span>
+          </div>
+        </div>
+        <div class="weather-console" aria-hidden="true">
+          <div class="console-label">RECENT EXPERIENCE / SIGNAL MAP</div>
+          <div class="weather-disc">
+            <div class="disc-ring r1"></div>
+            <div class="disc-ring r2"></div>
+            <div class="disc-core">P002</div>
+            <i class="signal s1"></i><i class="signal s2"></i><i class="signal s3"></i><i class="signal s4"></i><i class="signal s5"></i>
+          </div>
+          <div class="console-foot"><span>01 — PCL-5</span><span>02 — CAPE-P15</span></div>
+        </div>
       </div>
 
       <div class="setup-grid">
-        <section class="panel setup-panel">
+        <section class="panel setup-panel identity-panel">
+          <div class="step-no">01</div>
           <div class="section-head">
             <div>
-              <p class="section-kicker">01 · 全局身份</p>
+              <p class="section-kicker">全局身份</p>
               <h2>沿用项目中心的信息</h2>
             </div>
           </div>
           <div id="profileSummary" class="field"></div>
-          <p class="hint">P001 / P002 / 后续项目共用同一个 participant_id，不需要重复填写基本信息。</p>
+          <p class="hint">P001 / P002 / 后续项目共用同一个 participant_id，不重复填写。</p>
         </section>
 
         <section class="panel setup-panel">
+          <div class="step-no">02</div>
           <div class="section-head">
             <div>
-              <p class="section-kicker">02 · 量表</p>
-              <h2>选择本次测量</h2>
+              <p class="section-kicker">量表</p>
+              <h2>这次记录什么？</h2>
             </div>
           </div>
           <div id="scaleChoices" class="scale-grid"></div>
@@ -53,38 +76,41 @@
       </div>
 
       <section class="panel setup-panel presentation-panel">
-        <div class="section-head">
+        <div class="step-no">03</div>
+        <div class="section-head split-head">
           <div>
-            <p class="section-kicker">03 · 呈现条件</p>
+            <p class="section-kicker">呈现条件</p>
             <h2>同一量表，两种低改编体验</h2>
           </div>
+          <span class="method-note">题干 / 选项 / 计分保持一致</span>
         </div>
-        <div id="conditionChoices" class="scale-grid"></div>
-        <p class="hint">两种条件使用完全相同的题干、选项和计分。差别只在视觉与章节引导，可用于 Phase 1 体验比较。</p>
+        <div id="conditionChoices" class="condition-grid"></div>
+        <p class="hint">标准呈现隐藏构念提示；轻交互导览增加维度卡片和章节导航。condition_id 会写进每条研究数据。</p>
       </section>
 
       <section class="panel protocol-panel">
         <div>
           <p class="section-kicker">研究边界</p>
-          <h2>这一版先把“测得准”放在“玩得花”前面</h2>
+          <h2>先测得稳，再讨论好不好玩。</h2>
+          <p>正式收数前仍需冻结目标语言版本、伦理流程与风险处置方案。</p>
         </div>
         <div class="protocol-grid">
-          <div><strong>PCL-5</strong><span>过去 1 个月 · 20 项 · 0–4</span></div>
-          <div><strong>CAPE-P15</strong><span>过去 3 个月 · 15 项 · 频率 + 条件式困扰度</span></div>
-          <div><strong>数据层</strong><span>item-level + cluster + timing + version</span></div>
+          <div><span class="protocol-code">PCL</span><strong>20 项</strong><small>过去 1 个月 · 0–4</small></div>
+          <div><span class="protocol-code">CAPE</span><strong>15 项</strong><small>过去 3 个月 · 频率 + 条件式困扰度</small></div>
+          <div><span class="protocol-code">DATA</span><strong>逐题</strong><small>cluster · timing · version · condition</small></div>
         </div>
       </section>
 
-      <button id="startBtn" class="primary wide" disabled>开始本次记录</button>
+      <button id="startBtn" class="primary wide start-cta" disabled><span>开始本次记录</span><b>→</b></button>
     </section>
 
     <section id="assessment" class="screen hidden">
       <div class="assessment-head">
-        <button id="exitBtn" class="ghost">← 返回</button>
+        <button id="exitBtn" class="ghost">← 返回设置</button>
         <div class="progress-wrap">
           <div class="progress-meta">
             <span id="progressLabel">0 / 0</span>
-            <span id="scaleLabel"></span>
+            <div class="progress-tags"><span id="conditionLabel"></span><span id="scaleLabel"></span></div>
           </div>
           <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
         </div>
@@ -92,6 +118,7 @@
 
       <div class="question-layout">
         <aside class="context-card" id="contextCard">
+          <div class="context-topline"><span>GUIDED VIEW</span><span id="clusterCode"></span></div>
           <div id="weatherGlyph" class="weather-glyph">◌</div>
           <p class="section-kicker">当前维度</p>
           <h2 id="clusterTitle"></h2>
@@ -100,7 +127,10 @@
         </aside>
 
         <section class="question-card">
-          <p id="questionIndex" class="section-kicker"></p>
+          <div class="question-topline">
+            <p id="questionIndex" class="section-kicker"></p>
+            <span id="sessionChip"></span>
+          </div>
           <h2 id="questionText"></h2>
           <p id="questionPrompt" class="question-prompt"></p>
           <div id="answerOptions" class="answer-options"></div>
@@ -113,8 +143,8 @@
           </div>
 
           <div class="question-foot">
-            <span>没有正确答案，按最近真实情况选择。</span>
-            <button id="nextBtn" class="primary" disabled>下一题</button>
+            <span>没有正确答案。按最近真实情况选择。</span>
+            <button id="nextBtn" class="primary" disabled>下一题 →</button>
           </div>
         </section>
       </div>
@@ -122,9 +152,9 @@
 
     <section id="result" class="screen hidden">
       <div class="result-hero">
-        <p class="eyebrow">完成</p>
-        <h1>本次记录已整理好。</h1>
-        <p>页面只做研究计分与结构化导出，不把分数解释成诊断或个人“风险等级”。</p>
+        <p class="eyebrow">SESSION COMPLETE</p>
+        <h1>这次记录，<br><span>已经整理好了。</span></h1>
+        <p>结果页只展示研究计分和结构化概览，不把分数解释成诊断或个人“风险等级”。</p>
       </div>
 
       <div id="resultCards" class="result-grid"></div>
@@ -132,13 +162,13 @@
       <section class="panel export-panel">
         <div>
           <p class="section-kicker">研究导出</p>
-          <h2>带走原始数据，而不是一张不可追溯的截图</h2>
+          <h2>保留可以复核的原始数据。</h2>
           <p class="hint">JSON 保存完整 session；CSV 按题目展开，便于进入 R / SPSS / Python。</p>
         </div>
         <div class="export-actions">
-          <button id="downloadJson" class="secondary">下载 JSON</button>
-          <button id="downloadCsv" class="secondary">下载 CSV</button>
-          <button id="restartBtn" class="primary">再做一次</button>
+          <button id="downloadJson" class="secondary">JSON</button>
+          <button id="downloadCsv" class="secondary">CSV</button>
+          <button id="restartBtn" class="primary">再做一次 →</button>
         </div>
       </section>
     </section>
@@ -146,7 +176,7 @@
 
   <footer>
     <span>P002 · BJTU Project</span>
-    <span>Prototype · unified local queue / configurable research sync</span>
+    <span>Prototype · unified event queue · configurable research sync</span>
   </footer>
 
   <script src="./app.js"></script>
