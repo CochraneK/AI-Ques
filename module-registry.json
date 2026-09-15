@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-15",
+  "shared_profile": {
+    "adapter": "shared/profile.js",
+    "key": "bjtu.p00.profile.v1"
+  },
+  "modules": [
+    {
+      "id": "P001",
+      "name": "Self Concept",
+      "status": "external-development",
+      "path": null
+    },
+    {
+      "id": "P002",
+      "name": "PCL × CAPE Interaction Lab",
+      "status": "prototype",
+      "path": "p002/"
+    },
+    {
+      "id": "P003",
+      "name": "Life Simulator",
+      "status": "external-development",
+      "path": null,
+      "source_repo": "CochraneK/ai-uni"
+    },
+    {
+      "id": "P004",
+      "name": "Conversational Portrait",
+      "status": "prototype",
+      "path": "p004/"
+    },
+    {
+      "id": "P005",
+      "name": "Future Me",
+      "status": "prototype",
+      "path": "p005/",
+      "legacy_paths": [
+        "future-me/"
+      ]
+    }
+  ]
+}
