@@ -100,19 +100,6 @@ h1 span{color:var(--muted);font-weight:530}
 }
 .primary:disabled{opacity:.28;cursor:not-allowed}
 .primary:not(:disabled):active,.ghost:active,.answer:active,.rush-option:active{transform:scale(.96)}
-.future-card{
-  display:grid;grid-template-columns:42px 1fr auto;gap:13px;align-items:center;
-  min-height:84px;padding:13px 16px;border-radius:16px;background:var(--surface-subtle);
-  text-decoration:none;
-}
-.future-card:hover{background:#e9ebe7}
-.future-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--text);color:white;font-size:11px;font-weight:800}
-.future-copy{min-width:0}.future-kicker,.future-copy strong,.future-copy small{display:block}
-.future-kicker{color:var(--faint);font-size:8px;font-weight:800;letter-spacing:.1em}
-.future-copy strong{margin-top:2px;font-size:12px}
-.future-copy small{margin-top:2px;color:var(--muted);font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.future-arrow{color:var(--muted);font-size:14px}
-
 .game-shell,.result-shell{
   max-width:860px;margin:34px auto 0;background:var(--surface);border-radius:20px;padding:22px 24px;box-shadow:var(--shadow)
 }
