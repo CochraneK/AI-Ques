@@ -22,7 +22,7 @@ assert.equal(byId.P003.path, null);
 for (const file of [
   "shared/profile.js",
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
-  "p004/index.html", "p004/app.js", "p004/module-manifest.json",
+  "p004/index.html", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
   "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md"
 ]) {
@@ -41,15 +41,24 @@ assert.match(shared, /name.*age.*origin.*location.*currentWork/s);
 assert.ok(!/clinicalInference|evidenceQuotes|safetyState/.test(shared), "shared adapter must not whitelist admin/clinical fields");
 
 const p004 = read("p004/app.js");
-assert.match(p004, /sessionStorage\.setItem\(K/);
-assert.match(p004, /bjtu\.p004\.session\.v1/);
+assert.match(p004, /bjtu\.p004\.characters\.v2/);
+assert.match(p004, /bjtu\.p004\.memory\.v2/);
+assert.match(p004, /bjtu\.p005\.state\.v1/);
+assert.match(p004, /indexedDB\.open\('bjtu-p004-skill-vault'/);
+assert.match(p004, /roleplayMustYieldToSafety:true/);
+assert.match(p004, /doNotExposeClinicalLabels:true/);
 assert.doesNotMatch(p004, /aiques\.global\.profile\.v1/);
-assert.doesNotMatch(p004, /confidence:/);
-assert.match(p004, /evidenceStrength/);
 
 const p004Index = read("p004/index.html");
-assert.match(p004Index, /sessionStorage/);
-assert.match(p004Index, /清除本次画像/);
+assert.match(p004Index, /CHARACTER CARD/);
+assert.match(p004Index, /BACKGROUND OBSERVER/);
+assert.match(p004Index, /NVWA/);
+assert.doesNotMatch(p004Index, /清除本次画像/);
+
+const p004Manifest = JSON.parse(read("p004/module-manifest.json"));
+assert.equal(p004Manifest.version, "2.0.0");
+assert.equal(p004Manifest.user_experience.clinical_labels_visible, false);
+assert.equal(p004Manifest.user_experience.nvwa_distillation_optional, true);
 
 const p005 = read("p005/app.js");
 assert.match(p005, /bjtu\.p005\.state\.v1/);
