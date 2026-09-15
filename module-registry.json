@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-15",
+  "updated_at": "2026-09-16",
   "shared_profile": {
     "adapter": "shared/profile.js",
     "key": "bjtu.p00.profile.v1"
@@ -16,7 +16,10 @@
       "id": "P002",
       "name": "PCL × CAPE Interaction Lab",
       "status": "prototype",
-      "path": "p002/"
+      "path": "p002/",
+      "admin_path": "p002/admin.html",
+      "default_presentation": "story",
+      "participant_condition_picker": false
     },
     {
       "id": "P003",
