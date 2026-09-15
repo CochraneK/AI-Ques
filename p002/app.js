@@ -70,14 +70,6 @@ const MODES = {
   rush:{name:'HEXACO-RUSH / SJT 式',desc:'通过叙事情境与选择产生实验性构念信号。'}
 };
 
-const MODE_HANDLERS = {};
-
-function registerMode(id, meta, handlers={}){
-  if(!id || !meta?.name) throw new Error('registerMode requires a mode id and metadata');
-  MODES[id]=meta;
-  MODE_HANDLERS[id]=handlers;
-}
-
 const RUSH = {
   pcl5:[
     {title:'意外出现的提醒',story:'你正在做别的事情，某个画面或声音突然让你想起那段压力经历。',cluster:'B',options:[['只是短暂想起，很快回到正在做的事',0],['相关画面或念头会反复出现一阵',2],['相关画面或念头强烈反复出现，很难把注意力移开',4]]},
@@ -145,9 +137,6 @@ function resetRun(){
   state.emojiIndex=state.scale?Math.floor(Math.random()*SCALES[state.scale].items.length):null;
   state.rushSignals={};
   state.chapterSeen={};
-  state.expSignals={};
-  state.psychoMemory=[];
-  state.psychoScore=0;
 }
 function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
 function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
@@ -166,8 +155,6 @@ function publicChapter(key){
 }
 
 function renderStep(){
-  const modeHandler=MODE_HANDLERS[state.mode]?.renderStep;
-  if(modeHandler) return modeHandler();
   if(state.mode==='rush') return renderRush();
   const scale=SCALES[state.scale], item=scale.items[state.index];
   if(!item) return finishStandard();
@@ -183,7 +170,7 @@ function renderStep(){
     ${firstItem?`<p class="instrument-instruction">${scale.instruction}</p>`:''}
     <div class="question-card">
       ${emojiActive?`<button class="emoji-clue" id="emojiClue" aria-label="找到隐藏表情">${['🪐','🫧','🦊','🌱','🧩','🐳'][state.index%6]}</button>`:''}
-      <div class="question-id">${scale.name} · ${item.id}/${scale.items.length}${state.mode==='vassip'?` · ${item.cluster}`:''}</div>
+      <div class="question-id">${scale.name} · ${item.id}/${scale.items.length}</div>
       <div class="question">${item.text}</div>
       ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
       <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
