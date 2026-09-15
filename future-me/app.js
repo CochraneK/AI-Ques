@@ -1,14 +1,37 @@
 const STORAGE_KEY='aiques_future_me_v1';
-const state={screen:'welcome',profile:{},memory:null,messages:[],generated:false};
+const P001_VERSION='p001-global-0.1.0';
+const state={screen:'welcome',profile:{},memory:null,messages:[],generated:false,globalSession:null,globalCompleted:false};
 const screens=['welcome','identity','present','future','generate','ready','chat','letter'];
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify({profile:state.profile,memory:state.memory,messages:state.messages}));}
 function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(x){state.profile=x.profile||{};state.memory=x.memory||null;state.messages=x.messages||[];fillForms();}}catch(e){}}
+function mergeGlobalProfile(){
+  const gp=AIQ.getProfile();
+  if(!gp)return;
+  ['name','age','origin','location','currentWork'].forEach(k=>{
+    if(gp[k]!=null && gp[k]!=='')state.profile[k]=gp[k];
+  });
+}
+function syncGlobalProfileIfChanged(){
+  const gp=AIQ.getProfile();
+  if(!gp)return;
+  const next={name:state.profile.name||'',age:state.profile.age||'',origin:state.profile.origin||'',location:state.profile.location||'',currentWork:state.profile.currentWork||''};
+  const changed=['name','age','origin','location','currentWork'].some(k=>String(gp[k]??'')!==String(next[k]??''));
+  if(changed)AIQ.saveProfile(next);
+}
 function fillForms(){for(const [k,v] of Object.entries(state.profile)){const el=document.querySelector(`[name="${k}"]`);if(el)el.value=v||'';}}
-function collect(){['identityForm','presentForm','futureForm'].forEach(id=>{const form=$('#'+id);if(!form)return;new FormData(form).forEach((v,k)=>state.profile[k]=String(v).trim());});save();}
-function show(name){collect();state.screen=name;$$('.screen').forEach(x=>x.classList.remove('active'));$('#screen-'+name).classList.add('active');renderDots();if(name==='generate')generateSequence();if(name==='ready')renderReady();if(name==='chat')startChat();if(name==='letter')renderLetter();window.scrollTo({top:0,behavior:'smooth'});}
+function collect(){['identityForm','presentForm','futureForm'].forEach(id=>{const form=$('#'+id);if(!form)return;new FormData(form).forEach((v,k)=>state.profile[k]=String(v).trim());});syncGlobalProfileIfChanged();save();}
+function show(name){
+  collect();
+  if(name!=='welcome'&&!state.globalSession){
+    state.globalSession=AIQ.startSession('P001',P001_VERSION);
+  }
+  if(state.globalSession){
+    AIQ.recordEvent('screen_entered',{screen:name,p001_profile:state.profile},{project_id:'P001',session_id:state.globalSession.session_id});
+  }
+  state.screen=name;$('.screen').forEach(x=>x.classList.remove('active'));$('#screen-'+name).classList.add('active');renderDots();if(name==='generate')generateSequence();if(name==='ready')renderReady();if(name==='chat')startChat();if(name==='letter')renderLetter();window.scrollTo({top:0,behavior:'smooth'});}
 function renderDots(){const idx=Math.max(0,screens.indexOf(state.screen));$('#stepDots').innerHTML=[1,2,3,4,5].map((_,i)=>`<i class="${idx>=Math.min(7,i+1)?'active':''}"></i>`).join('');}
 
 $$('[data-next]').forEach(b=>b.onclick=()=>{const formId=b.dataset.validate;if(formId&&!$('#'+formId).reportValidity())return;show(b.dataset.next);});
@@ -110,11 +133,29 @@ async function getFutureReply(input){
   await new Promise(r=>setTimeout(r,350));return localFutureReply(input);
 }
 
-$('#chatForm').onsubmit=async e=>{e.preventDefault();const input=$('#chatInput');const text=input.value.trim();if(!text)return;state.messages.push({role:'user',text});input.value='';renderMessages();const pending={role:'future',text:'…'};state.messages.push(pending);renderMessages();const reply=await getFutureReply(text);pending.text=reply;save();renderMessages();};
+$('#chatForm').onsubmit=async e=>{e.preventDefault();const input=$('#chatInput');const text=input.value.trim();if(!text)return;state.messages.push({role:'user',text});input.value='';renderMessages();const pending={role:'future',text:'…'};state.messages.push(pending);renderMessages();const reply=await getFutureReply(text);pending.text=reply;
+  if(state.globalSession){
+    AIQ.recordEvent('chat_turn',{user:text,future:reply},{project_id:'P001',session_id:state.globalSession.session_id});
+  }
+  save();renderMessages();};
 $$('#promptChips button').forEach(b=>b.onclick=()=>{$('#chatInput').value=b.textContent;$('#chatForm').requestSubmit();});
 $('#finishChatBtn').onclick=()=>show('letter');
 
-function renderLetter(){collect();const p=state.profile;const action=$('#nextAction').value.trim();const latest=state.messages.filter(x=>x.role==='user').slice(-1)[0]?.text||'未来会怎样';const letter=`<h3>给现在的 ${escapeHtml(clean(p.name,'我'))}</h3><p>你现在还在想“${escapeHtml(firstClause(latest,'未来会怎样'))}”。我不能从 60 岁回来证明哪条路一定正确，因为这个我本来就是一种可能性。</p><p>但从这条可能的人生线回头看，有三件事值得你保留：第一，别丢掉 <strong>${escapeHtml(firstClause(p.values,'你真正重视的东西'))}</strong>；第二，把“${escapeHtml(firstClause(p.challenge,'那个难题'))}”拆成能反复练习的小动作；第三，别只照顾计划，也照顾 ${escapeHtml(firstClause(p.people,'重要的人'))}。</p><p>后来，围绕“${escapeHtml(firstClause(p.lifeProject,'长期投入的事情'))}”的积累，比很多短期得失更重要。职业、城市、关系都可能和你现在想的不完全一样，但你会越来越清楚什么值得。</p><p>${action?`这周你决定先做：<strong>${escapeHtml(action)}</strong>。很好，不需要更宏大。`:'如果愿意，给这周的自己留一个小到可以真的做到的行动。'} </p><p>未来见。<br><strong>60 岁的你（一个可能版本）</strong></p>`;$('#futureLetter').innerHTML=letter;}
+function renderLetter(){
+  collect();
+  if(state.globalSession&&!state.globalCompleted){
+    AIQ.completeSession(state.globalSession,{profile:state.profile,memory:state.memory,messages:state.messages,next_action:$('#nextAction').value.trim()||null});
+    state.globalCompleted=true;
+  }
+  const p=state.profile;const action=$('#nextAction').value.trim();const latest=state.messages.filter(x=>x.role==='user').slice(-1)[0]?.text||'未来会怎样';const letter=`<h3>给现在的 ${escapeHtml(clean(p.name,'我'))}</h3><p>你现在还在想“${escapeHtml(firstClause(latest,'未来会怎样'))}”。我不能从 60 岁回来证明哪条路一定正确，因为这个我本来就是一种可能性。</p><p>但从这条可能的人生线回头看，有三件事值得你保留：第一，别丢掉 <strong>${escapeHtml(firstClause(p.values,'你真正重视的东西'))}</strong>；第二，把“${escapeHtml(firstClause(p.challenge,'那个难题'))}”拆成能反复练习的小动作；第三，别只照顾计划，也照顾 ${escapeHtml(firstClause(p.people,'重要的人'))}。</p><p>后来，围绕“${escapeHtml(firstClause(p.lifeProject,'长期投入的事情'))}”的积累，比很多短期得失更重要。职业、城市、关系都可能和你现在想的不完全一样，但你会越来越清楚什么值得。</p><p>${action?`这周你决定先做：<strong>${escapeHtml(action)}</strong>。很好，不需要更宏大。`:'如果愿意，给这周的自己留一个小到可以真的做到的行动。'} </p><p>未来见。<br><strong>60 岁的你（一个可能版本）</strong></p>`;$('#futureLetter').innerHTML=letter;}
 $('#refreshLetterBtn').onclick=renderLetter;$('#nextAction').addEventListener('input',()=>{clearTimeout(window.__letterT);window.__letterT=setTimeout(renderLetter,250)});
 
-load();renderDots();
+const __globalProfile=AIQ.ensureProfile({portalUrl:'../portal/',returnTo:location.href});
+load();
+mergeGlobalProfile();
+fillForms();
+if(__globalProfile){
+  const startBtn=document.querySelector('[data-next="identity"]');
+  if(startBtn)startBtn.dataset.next='present';
+}
+renderDots();
