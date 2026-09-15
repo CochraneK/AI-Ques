@@ -82,29 +82,51 @@
     ].filter(Boolean).join('\n');
   }
 
+  function makeApiError(message,meta={}){
+    const error=new Error(message);
+    error.name='P004ApiError';
+    Object.assign(error,meta);
+    return error;
+  }
+
   async function directChat(payload,options={}){
     const s=readDirect();
     if(!s.baseUrl||!s.apiKey||!s.model)return null;
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),Number(options.timeoutMs||60000));
+    const endpoint=endpointFrom(s.baseUrl);
     const messages=[
       {role:'system',content:options.system||characterSystem(payload)},
       ...(payload.messages||[]).map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.text||m.content||'')}))
     ];
     try{
-      const r=await fetch(endpointFrom(s.baseUrl),{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.apiKey},
-        body:JSON.stringify({model:s.model,messages,stream:false}),
-        signal:controller.signal
-      });
+      let r;
+      try{
+        r=await fetch(endpoint,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.apiKey},
+          body:JSON.stringify({model:s.model,messages,stream:false}),
+          signal:controller.signal
+        });
+      }catch(fetchError){
+        if(fetchError&&fetchError.name==='AbortError'){
+          throw makeApiError('请求超时',{kind:'timeout',endpoint,detail:'超过 '+Number(options.timeoutMs||60000)+' ms 未完成'});
+        }
+        throw makeApiError('浏览器无法完成网络请求',{kind:'network',endpoint,detail:fetchError&&fetchError.message?fetchError.message:String(fetchError)});
+      }
       const raw=await r.text();
       let data={};try{data=JSON.parse(raw)}catch(_){}
-      if(!r.ok)throw new Error((data&&data.error&&data.error.message)||('OpenAI-compatible API '+r.status));
+      if(!r.ok){
+        const providerMessage=(data&&data.error&&(data.error.message||data.error.code))||'OpenAI-compatible API 请求失败';
+        throw makeApiError(String(providerMessage),{
+          kind:'http',status:r.status,statusText:r.statusText||'',endpoint,
+          detail:raw.slice(0,1600)
+        });
+      }
       const value=data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content;
-      if(typeof value==='string')return {reply:value.trim(),raw:data};
-      if(Array.isArray(value))return {reply:value.map(x=>x&&x.text||'').join('').trim(),raw:data};
-      throw new Error('接口返回中没有 choices[0].message.content');
+      if(typeof value==='string')return {reply:value.trim(),raw:data,endpoint,status:r.status};
+      if(Array.isArray(value))return {reply:value.map(x=>x&&x.text||'').join('').trim(),raw:data,endpoint,status:r.status};
+      throw makeApiError('接口返回成功，但没有 choices[0].message.content',{kind:'response',status:r.status,statusText:r.statusText||'',endpoint,detail:raw.slice(0,1600)});
     }finally{clearTimeout(timer)}
   }
 
@@ -114,7 +136,16 @@
     sessionStorage.setItem(DIRECT_KEY,JSON.stringify(temp));
     try{
       const result=await directChat({character:{name:'API Tester',identity:'连接测试'},messages:[{role:'user',text:'只回复 OK'}]},{system:'这是连接测试。只回复 OK。',timeoutMs:30000});
-      return {ok:Boolean(result&&result.reply),reply:result&&result.reply};
+      return {ok:Boolean(result&&result.reply),reply:result&&result.reply,endpoint:result&&result.endpoint,status:result&&result.status};
+    }catch(error){
+      return {ok:false,error:{
+        kind:error&&error.kind||'client',
+        status:error&&error.status||null,
+        statusText:error&&error.statusText||'',
+        endpoint:error&&error.endpoint||endpointFrom(temp.baseUrl),
+        message:error&&error.message||String(error),
+        detail:error&&error.detail||''
+      }};
     }finally{
       if(previous==null)sessionStorage.removeItem(DIRECT_KEY);
       else sessionStorage.setItem(DIRECT_KEY,previous);
