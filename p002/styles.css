@@ -116,8 +116,6 @@ h1 span{color:var(--muted);font-weight:530}
 }
 .answer:hover{background:#fafaf8;border-color:#cbd0ca}
 .answer .score{color:var(--faint);font-size:9px}
-.emoji-clue{position:absolute;right:0;top:9px;border:0;background:transparent;font-size:22px;cursor:pointer}
-.emoji-clue.found{opacity:.3;pointer-events:none}
 
 .chapter-card{padding:17px;border-radius:14px;background:var(--surface-subtle);margin-bottom:15px}
 .chapter-card h2{margin:3px 0 6px;font-size:24px}.chapter-card p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}
