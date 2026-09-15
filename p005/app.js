@@ -125,6 +125,18 @@ function targetLabel(){
 function interpolateQuestion(text){
   return String(text||'').replaceAll('{future}',targetPhrase());
 }
+function renderTargetLabels(){
+  const values={
+    welcomeTarget:targetPhrase(),
+    pairFuture:targetPhrase(),
+    generateAgeFuture:targetPhrase(),
+    futureTargetLabel:targetPhrase()
+  };
+  Object.entries(values).forEach(([id,value])=>{
+    const node=document.getElementById(id);
+    if(node)node.textContent=value;
+  });
+}
 
 function showToast(message){
   const toast=$('#toast');
@@ -196,7 +208,7 @@ async function syncAdmin(type,payload={}){
   const endpoint=apiConfig('adminApi');
   if(!endpoint)return;
   try{
-    await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({
       module:MODULE_ID,
       version:MODULE_VERSION,
       event:type,
@@ -269,6 +281,7 @@ function load(){
   const hasProgress=Boolean(saved&&(Object.keys(state.profile).length||state.memory||state.messages.length||state.currentPortrait||state.capsules.length));
   if($('#resumeBtn'))$('#resumeBtn').classList.toggle('hidden',!hasProgress);
   if($('#generateAgeNow'))$('#generateAgeNow').textContent=state.profile.age?state.profile.age:'现在';
+  renderTargetLabels();
   state.screen='welcome';
 }
 
@@ -571,7 +584,7 @@ function renderFuturePortrait(){
   if(!frame||!image||!mono||!status)return;
   mono.textContent=(clean(state.profile.name,'F').charAt(0)||'F').toUpperCase();
   if(state.futurePortrait){
-    frame.classList.add('has-image');image.src=state.futurePortrait;status.textContent='可能的 60 岁头像';
+    frame.classList.add('has-image');image.src=state.futurePortrait;status.textContent='可能的 '+targetPhrase()+'头像';
   }else{
     frame.classList.remove('has-image');image.removeAttribute('src');
     status.textContent=state.currentPortrait?'未连接年龄化结果':'未上传照片';
@@ -640,7 +653,7 @@ function renderMessages(){
   const box=$('#messages');
   box.innerHTML=state.messages.map((message)=>{
     const role=message.role==='future'?'future':'user';
-    return '<div class="message '+role+'"><span class="meta">'+(role==='future'?'Future Me · 60':'现在的我')+'</span>'+escapeHtml(message.text)+'</div>';
+    return '<div class="message '+role+'"><span class="meta">'+(role==='future'?'Future Me · '+targetPhrase():'现在的我')+'</span>'+escapeHtml(message.text)+'</div>';
   }).join('');
   box.scrollTop=box.scrollHeight;
   const exchanged=state.messages.filter((m)=>m.text!=='…').length;
@@ -659,7 +672,7 @@ function localFutureReply(input){
 
   const groups={
     happy:[
-      '并不是一直开心。到 60 岁以后，我更在意的不是“幸福有没有到达”，而是生活有没有长期偏离“'+values+'”。',
+      '并不是一直开心。到"+targetPhrase()+"，我更在意的不是“幸福有没有到达”，而是生活有没有长期偏离“'+values+'”。',
       '有快乐，也有很普通甚至很难的几年。真正稳定下来的，是我终于不再要求每个阶段都证明自己走对了。'
     ],
     career:[
@@ -680,7 +693,7 @@ function localFutureReply(input){
     ],
     decision:[
       m.branch
-        ? '关于“'+m.branch.decision+'”，我不会假装从 60 岁知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
+        ? '关于“'+m.branch.decision+'”，我不会假装从"+targetPhrase()+"知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
         : '如果你卡在一个选择里，我会问三个问题：我真正重视什么？哪种代价我愿意承担？哪个下一步能让我获得更多真实信息？'
     ],
     surprise:[
@@ -688,7 +701,7 @@ function localFutureReply(input){
       '未来最常见的不是戏剧性反转，而是一些当时不起眼的选择，几年后突然显出差异。'
     ],
     default:[
-      '当我把这个问题从 60 岁往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
+      '当我从"+targetPhrase()+"往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
       '我能给你的不是答案，而是一点时间距离。很多问题放到几十年的尺度里，会从“必须马上选对”变成“先做一次真实尝试”。'
     ]
   };
@@ -828,7 +841,7 @@ function letterHtml(){
   const latest=state.messages.filter((x)=>x.role==='user').slice(-1)[0];
   const latestQuestion=latest?firstClause(latest.text,'未来会怎样'):'未来会怎样';
   return '<h3>给未来的 '+escapeHtml(clean(p.name,'我'))+'</h3>'+
-    '<p>今天的我还在想“'+escapeHtml(latestQuestion)+'”。刚才我和一个 60 岁的可能版本聊了一会儿。它没有告诉我答案，只是把时间拉长了一点。</p>'+
+    '<p>今天的我还在想“'+escapeHtml(latestQuestion)+'”。刚才我和一个 '+escapeHtml(targetPhrase())+'的可能版本聊了一会儿。它没有告诉我答案，只是把时间拉长了一点。</p>'+
     '<p>我希望以后还记得：别丢掉 <strong>'+escapeHtml(firstClause(p.values,'真正重视的东西'))+'</strong>，也别总等“以后”再照顾 '+escapeHtml(firstClause(p.people,'重要的人'))+'。</p>'+
     '<p>'+(action?'这周我先做：<strong>'+escapeHtml(action)+'</strong>。':'我会给这周的自己留一个足够小、真的能做到的动作。')+'</p>'+
     '<p>未来见。<br><strong>'+escapeHtml(clean(p.name,'现在的我'))+' · '+new Date().toLocaleDateString('zh-CN')+'</strong></p>';
