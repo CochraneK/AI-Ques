@@ -79,11 +79,17 @@ def scan_repo() -> list[dict]:
                 "Escape every dynamic field or construct the DOM with textContent.",
             ))
 
-    if "resetRun = function" in experiments and "renderStep = function" in experiments:
+    if "resetRun = function" in experiments or "renderStep = function" in experiments:
         findings.append(finding(
             "runtime-monkey-patch", "P1", "experiments.js",
             "Experimental modes replace core runtime functions at load time.",
             "Move modes behind a single explicit mode registry/interface instead of monkey-patching resetRun/renderStep.",
+        ))
+    elif "const MODE_HANDLERS = {}" not in app or "registerMode(" not in experiments:
+        findings.append(finding(
+            "missing-mode-registry", "P1", "app.js / experiments.js",
+            "Experimental modes do not use the explicit core mode registry.",
+            "Register experimental renderers through registerMode() and keep core dispatch ownership in app.js.",
         ))
 
     if not (ROOT / "tests").exists():

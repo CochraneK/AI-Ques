@@ -68,6 +68,14 @@ const MODES = {
   rush:{name:'HEXACO-RUSH 式',desc:'把构念改写成连续情景决策；输出实验性行为画像，不冒充标准量表分数。',tag:'创新最高 / 需验证'}
 };
 
+const MODE_HANDLERS = {};
+
+function registerMode(id, meta, handlers={}){
+  if(!id || !meta?.name) throw new Error('registerMode requires a mode id and metadata');
+  MODES[id]=meta;
+  MODE_HANDLERS[id]=handlers;
+}
+
 const RUSH = {
   pcl5:[
     {title:'夜里 00:47',story:'你准备睡觉时，手机弹出一条内容，意外勾起了一段非常难受的往事。你第一反应更接近：',cluster:'B',options:[['把手机扣下，先感受呼吸和脚踩地面的感觉',0],['快速划走，但脑中仍反复闪回那段画面',2],['停住不动，像重新回到了当时',4]]},
@@ -116,13 +124,26 @@ function renderLauncher(){
   }
 }
 
-function resetRun(){state.index=0;state.answers=[];state.emojiFound=0;state.emojiSeen=0;state.rushSignals={};state.lastReflection='';state.chapterSeen={};}
+function resetRun(){
+  state.index=0;
+  state.answers=[];
+  state.emojiFound=0;
+  state.emojiSeen=0;
+  state.rushSignals={};
+  state.lastReflection='';
+  state.chapterSeen={};
+  state.expSignals={};
+  state.psychoMemory=[];
+  state.psychoScore=0;
+}
 function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
 function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
 function progress(done,total){$('#progressBar').style.width=`${Math.min(100,done/total*100)}%`;$('#progressText').textContent=`${done}/${total}`;}
 function currentChapter(scale,item){return scale.chapters.find(c=>c.key===item.cluster)}
 
 function renderStep(){
+  const modeHandler=MODE_HANDLERS[state.mode]?.renderStep;
+  if(modeHandler) return modeHandler();
   if(state.mode==='rush') return renderRush();
   const scale=SCALES[state.scale], item=scale.items[state.index];
   if(!item) return finishStandard();

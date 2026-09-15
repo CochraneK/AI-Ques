@@ -1,18 +1,22 @@
 // Scenario-based experimental modes for AI-Ques.
 // These are research prototypes. They are intentionally kept separate from validated scale scoring.
 
-const LEGACY_MODES = {...MODES};
-Object.keys(MODES).forEach(k => delete MODES[k]);
-Object.assign(MODES, {
-  original: LEGACY_MODES.original,
-  itemscene: {name:'逐题情景化', desc:'每一道当前问卷题对应一个生活情景，仍保留一题一映射，便于和直接问卷条件逐题比较。', tag:'一题 ↔ 一情景'},
-  construct: {name:'构念情景化', desc:'不追求逐题对应，围绕 B/C/D/E 或 PI/BE/PA 构念设计多个独立决策情境。', tag:'构念级 SJT'},
-  aisjt: {name:'AI-SJT', desc:'用 AI 生成思路制作多个校园 SJT 变体；当前 Pages 版使用预生成题库，不调用在线模型。', tag:'低成本 AI 题库'},
-  psychogat: {name:'PsychoGAT-lite', desc:'把量表节点串成连续互动小说：故事会记住你的选择，下一幕继续推进。', tag:'LLM Agent 范式'},
-  vassip: LEGACY_MODES.vassip,
-  emoji: LEGACY_MODES.emoji,
-  rush: LEGACY_MODES.rush
-});
+registerMode('itemscene',
+  {name:'逐题情景化', desc:'每一道当前问卷题对应一个生活情景，仍保留一题一映射，便于和直接问卷条件逐题比较。', tag:'一题 ↔ 一情景'},
+  {renderStep: renderItemScene}
+);
+registerMode('construct',
+  {name:'构念情景化', desc:'不追求逐题对应，围绕 B/C/D/E 或 PI/BE/PA 构念设计多个独立决策情境。', tag:'构念级 SJT'},
+  {renderStep: renderConstructScene}
+);
+registerMode('aisjt',
+  {name:'AI-SJT', desc:'用 AI 生成思路制作多个校园 SJT 变体；当前 Pages 版使用预生成题库，不调用在线模型。', tag:'低成本 AI 题库'},
+  {renderStep: renderAISJT}
+);
+registerMode('psychogat',
+  {name:'PsychoGAT-lite', desc:'把量表节点串成连续互动小说：故事会记住你的选择，下一幕继续推进。', tag:'LLM Agent 范式'},
+  {renderStep: renderPsychoGAT}
+);
 
 const ITEM_SCENES = {
   pcl5:[
@@ -119,19 +123,6 @@ const PSYCHOGAT_NODES = {
     ['PA','窗边','余光里好像有个身影闪过。',['回头确认后把它视为可能的视觉错觉',0],['确信自己看见了别人看不到的人或东西',1]],
     ['PI','故事的出口','第二天有人问你昨晚怎么了。',['愿意说“有些体验我还不确定，需要再确认”',0],['认为这些线索已经足以证明别人正在针对自己',1]]
   ]
-};
-
-state.expSignals={}; state.psychoMemory=[]; state.psychoScore=0;
-const baseResetRun = resetRun;
-resetRun = function(){baseResetRun();state.expSignals={};state.psychoMemory=[];state.psychoScore=0;};
-
-const baseRenderStep = renderStep;
-renderStep = function(){
-  if(state.mode==='itemscene') return renderItemScene();
-  if(state.mode==='construct') return renderConstructScene();
-  if(state.mode==='aisjt') return renderAISJT();
-  if(state.mode==='psychogat') return renderPsychoGAT();
-  return baseRenderStep();
 };
 
 function renderItemScene(){
