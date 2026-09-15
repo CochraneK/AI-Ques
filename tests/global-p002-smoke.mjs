@@ -9,9 +9,11 @@ const portal=read('portal/app.js');
 const admin=read('admin/app.js');
 const core=read('shared/core.js');
 const p004Adapter=read('p004/global-adapter.js');
+const p005Adapter=read('future-me/global-adapter.js');
 
 assert.equal(new Set(registry.projects.map(x=>x.id)).size, registry.projects.length, 'project ids must be unique');
-assert.ok(registry.projects.find(x=>x.id==='P001'&&x.status==='active'));
+assert.ok(registry.projects.find(x=>x.id==='P001'));
+assert.ok(registry.projects.find(x=>x.id==='P005'&&x.status==='active'&&x.route.includes('future-me')));
 assert.ok(registry.projects.find(x=>x.id==='P002'&&x.status==='active'));
 
 assert.match(core,/participant_id/);
@@ -42,9 +44,11 @@ assert.match(admin,/rapid_under_800ms_n/);
 assert.match(core,/aiques\.global\.profile\.v1/);
 assert.match(p004Adapter,/AIQ\.startSession\('P004'/);
 assert.match(p004Adapter,/chat_user_message/);
+assert.match(p005Adapter,/AIQ\.startSession\('P005'/);
+assert.match(p005Adapter,/capsule_saved/);
 assert.match(p2,/criterion_a_established:false/);
 
-for (const [name,src] of [['p002',p2],['portal',portal],['admin',admin],['core',core],['p004-adapter',p004Adapter]]) {
+for (const [name,src] of [['p002',p2],['portal',portal],['admin',admin],['core',core],['p004-adapter',p004Adapter],['p005-adapter',p005Adapter]]) {
   new Function(src);
   console.log('syntax ok:',name);
 }
