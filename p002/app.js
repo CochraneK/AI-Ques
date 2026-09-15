@@ -1,4 +1,4 @@
-const VERSION = "p002-0.1.0";
+const VERSION = "p002-0.2.0";
 const nowIso = () => new Date().toISOString();
 
 const CONDITIONS = {
@@ -87,7 +87,8 @@ const state = {
   rows:[],
   pendingFrequency:null,
   pendingDistress:null,
-  finishedAt:null
+  finishedAt:null,
+  completed:false
 };
 
 const $ = s => document.querySelector(s);
@@ -148,6 +149,7 @@ startBtn.onclick=function(){
   state.rows=[];
   state.startedAt=nowIso();
   state.finishedAt=null;
+  state.completed=false;
   launcher.classList.add("hidden");
   result.classList.add("hidden");
   assessment.classList.remove("hidden");
@@ -156,6 +158,9 @@ startBtn.onclick=function(){
 };
 
 $("#exitBtn").onclick=function(){
+  if(state.session && !state.completed){
+    AIQ.recordEvent("session_exited",{scale_id:state.scaleId,condition_id:state.conditionId,answered_items:state.rows.length,total_items:SCALES[state.scaleId].items.length},{project_id:"P002",session_id:state.sessionId});
+  }
   assessment.classList.add("hidden");
   launcher.classList.remove("hidden");
   window.scrollTo({top:0,behavior:"smooth"});
@@ -178,18 +183,22 @@ function renderQuestion(){
 
   const cluster=s.clusters[item.cluster];
   document.body.dataset.presentation=state.conditionId;
+  document.body.dataset.cluster=state.conditionId==="guided" ? item.cluster : "neutral";
   const contextCard=$("#contextCard");
   if(contextCard)contextCard.classList.toggle("hidden",state.conditionId==="standard");
   const layout=document.querySelector(".question-layout");
   if(layout)layout.classList.toggle("single",state.conditionId==="standard");
-  $("#progressLabel").textContent=(state.index+1) + " / " + s.items.length;
+  $("#progressLabel").textContent=(state.index+1) + " / " + s.items.length + " · " + Math.round(state.index/s.items.length*100) + "%";
   $("#scaleLabel").textContent=s.name;
+  $("#conditionLabel").textContent=CONDITIONS[state.conditionId].name;
+  $("#clusterCode").textContent=item.cluster;
+  $("#sessionChip").textContent=state.sessionId||"";
   $("#progressBar").style.width=(state.index/s.items.length*100) + "%";
   $("#weatherGlyph").textContent=cluster.glyph;
   $("#clusterTitle").textContent=cluster.title;
   $("#clusterDesc").textContent=cluster.desc;
   $("#windowChip").textContent=s.id==="pcl5" ? "时间窗口 · 过去 1 个月" : "时间窗口 · 过去 3 个月";
-  $("#questionIndex").textContent=s.name + " · ITEM " + String(item.id).padStart(2,"0") + " · " + item.cluster;
+  $("#questionIndex").textContent=s.name + " · ITEM " + String(item.id).padStart(2,"0") + (state.conditionId==="guided" ? " · " + item.cluster : "");
   $("#questionText").textContent=item.text;
   $("#questionPrompt").textContent=s.prompt;
   distressBlock.classList.add("hidden");
@@ -268,6 +277,11 @@ function mean(arr){
   return arr.length ? arr.reduce(function(a,b){return a+b},0)/arr.length : null;
 }
 
+function median(values){
+  if(!values.length)return null;
+  const a=[...values].sort((x,y)=>x-y),m=Math.floor(a.length/2);
+  return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
 function summarize(){
   const s=SCALES[state.scaleId];
   const rows=state.rows;
@@ -287,11 +301,25 @@ function summarize(){
     }
   });
 
+  const timing={
+    median_response_ms:median(rows.map(r=>r.response_ms)),
+    rapid_under_800ms_n:rows.filter(r=>r.response_ms<800).length,
+    total_response_ms:rows.reduce((a,r)=>a+r.response_ms,0)
+  };
   if(s.id==="pcl5"){
+    const provisional={
+      B:clusters.B.endorsed_ge2>=1,
+      C:clusters.C.endorsed_ge2>=1,
+      D:clusters.D.endorsed_ge2>=2,
+      E:clusters.E.endorsed_ge2>=2
+    };
     return {
       total:rows.reduce(function(a,r){return a+r.frequency_or_severity},0),
       max:80,
-      clusters:clusters
+      clusters:clusters,
+      dsm_cluster_pattern:provisional,
+      dsm_cluster_pattern_all:Object.values(provisional).every(Boolean),
+      timing:timing
     };
   }
 
@@ -301,11 +329,14 @@ function summarize(){
     frequency_mean:mean(rows.map(function(r){return r.frequency_or_severity})),
     distress_mean_endorsed:mean(endorsed.map(function(r){return r.distress})),
     endorsed_n:endorsed.length,
-    clusters:clusters
+    clusters:clusters,
+    timing:timing
   };
 }
 
 function finish(){
+  if(state.completed)return;
+  state.completed=true;
   state.finishedAt=nowIso();
   assessment.classList.add("hidden");
   result.classList.remove("hidden");
@@ -397,3 +428,15 @@ $("#downloadCsv").onclick=function(){
 
   download("P002_" + state.scaleId + "_" + state.sessionId + ".csv","\ufeff"+csv,"text/csv;charset=utf-8");
 };
+
+document.addEventListener("keydown",function(e){
+  if(assessment.classList.contains("hidden"))return;
+  if(e.target && ["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName))return;
+  const n=Number(e.key);
+  if(Number.isInteger(n) && n>=1 && n<=5){
+    const choices=[...document.querySelectorAll("#answerOptions .answer")];
+    if(choices[n-1])choices[n-1].click();
+    return;
+  }
+  if(e.key==="Enter" && !nextBtn.disabled)nextBtn.click();
+});
