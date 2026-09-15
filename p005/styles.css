@@ -548,3 +548,55 @@ h1,h2{letter-spacing:-.05em}
   .api-actions{grid-template-columns:auto 1fr}
   .api-actions .secondary,.api-actions .primary{grid-row:2}
 }
+
+
+/* V0.6.1 · simplify optional model capabilities */
+.api-primary-model b{
+  margin-left:6px;
+  color:var(--violet);
+  font-size:8px;
+  font-weight:700;
+}
+.api-advanced{
+  margin-top:2px;
+  border-top:1px solid var(--line);
+  padding-top:14px;
+}
+.api-advanced summary{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  list-style:none;
+  color:#4f4f55;
+  font-size:11px;
+  font-weight:650;
+}
+.api-advanced summary::-webkit-details-marker{display:none}
+.api-advanced summary:after{
+  content:"+";
+  margin-left:auto;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:400;
+}
+.api-advanced[open] summary:after{content:"−"}
+.api-advanced summary span{
+  color:var(--faint);
+  font-size:9px;
+  font-weight:500;
+}
+.api-advanced-note{
+  margin:12px 0 16px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.65;
+}
+.api-advanced-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px 20px;
+}
+@media(max-width:680px){
+  .api-advanced-grid{grid-template-columns:1fr}
+}
