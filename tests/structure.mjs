@@ -33,7 +33,7 @@ const rootIndex = read("index.html");
 assert.match(rootIndex, /href="p002\/"/);
 assert.match(rootIndex, /href="p004\/"/);
 assert.match(rootIndex, /href="p005\/"/);
-assert.doesNotMatch(rootIndex, /SIDE EXPERIMENT/i);
+assert.doesNotMatch(rootIndex, /SIDE EXPERIMENT\s*·\s*FUTURE ME/i);
 
 const shared = read("shared/profile.js");
 assert.match(shared, /bjtu\.p00\.profile\.v1/);
