@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 
-const VERSION='2.0.0';
+const VERSION='2.1.0';
 const K={chars:'bjtu.p004.characters.v2',threads:'bjtu.p004.threads.v2',memory:'bjtu.p004.memory.v2',observer:'bjtu.p004.observer.v2',active:'bjtu.p004.active.v2',p005:'bjtu.p005.state.v1'};
 const adminMode=new URLSearchParams(location.search).get('admin')==='1';
 const $=id=>document.getElementById(id);
@@ -22,12 +22,14 @@ const DEFAULTS=[
 ];
 
 const RELATIONSHIPS=[
-  {value:'老朋友',emoji:'☕',desc:'有默契，也敢说真话',identity:'认识你很久的老朋友'},
-  {value:'亦师亦友',emoji:'↗',desc:'会给判断，但不居高临下',identity:'比你多走过一点路的亦师亦友'},
-  {value:'欢喜冤家',emoji:'⚡',desc:'会抬杠，也会护着你',identity:'和你针锋相对却很有默契的欢喜冤家'},
-  {value:'长期搭档',emoji:'◫',desc:'一起做事，也一起复盘',identity:'与你长期并肩做事的搭档'},
-  {value:'神秘陌生人',emoji:'◌',desc:'保留距离，也保留未知',identity:'偶然进入你生活、仍带着未知感的陌生人'},
-  {value:'远方笔友',emoji:'✉',desc:'不必天天出现，但总能聊深',identity:'与你保持长期文字往来的远方笔友'}
+  {value:'亲密关系',emoji:'♡',desc:'恋人 · 伴侣 · 暧昧对象',identity:'与你有明确亲密情感连接的人'},
+  {value:'家庭关系',emoji:'⌂',desc:'家人 · 手足 · 长辈 / 晚辈',identity:'与你有家庭角色连接的人'},
+  {value:'朋友关系',emoji:'☕',desc:'朋友 · 知己 · 老友',identity:'与你平等相处、彼此熟悉的朋友'},
+  {value:'同伴关系',emoji:'◫',desc:'同学 · 同事 · 队友 · 搭档',identity:'与你处在共同环境或共同任务中的同伴'},
+  {value:'引导关系',emoji:'↗',desc:'导师 · 前辈 · 教练 · 顾问',identity:'对你承担指导、启发或反馈角色的人'},
+  {value:'专业关系',emoji:'◇',desc:'顾客 / 服务方 · 专家 · 助手',identity:'与你通过明确专业职责发生互动的人'},
+  {value:'竞争 / 对立',emoji:'⚡',desc:'对手 · 竞争者 · 宿敌',identity:'与你存在明确竞争、冲突或对立张力的人'},
+  {value:'陌生 / 未定',emoji:'◌',desc:'初识 · 偶遇 · 虚构世界相识',identity:'与你尚未建立稳定关系、关系仍在形成的人'}
 ];
 
 const STRENGTH_GROUPS=[
@@ -113,7 +115,7 @@ function renderRelationshipGrid(){
     const emoji=document.createElement('span');emoji.className='choice-emoji';emoji.textContent=item.emoji;
     const strong=document.createElement('b');strong.textContent=item.value;
     const small=document.createElement('small');small.textContent=item.desc;
-    b.append(emoji,strong,small);b.onclick=()=>{creatorDraft.relationship=item.value;renderCreatorStudio()};box.append(b);
+    b.append(emoji,strong,small);b.onclick=()=>{creatorDraft.relationship=item.value;renderCreatorStudio();window.setTimeout(()=>{if(creatorStep===0)setCreatorStep(1)},180)};box.append(b);
   });
 }
 
@@ -172,12 +174,14 @@ function creatorAuto(){
   const identity=relation.identity+(extra?'。'+extra:'');
   const scenario='你们的故事主要发生在「'+world.value+'」里。'+world.desc+'。';
   const firstTemplates={
-    '老朋友':'你来了。今天想从哪件小事开始？',
-    '亦师亦友':'先别急着给自己答案。最近哪件事最值得我们认真想一遍？',
-    '欢喜冤家':'终于出现了。说吧，这次又有什么结论想让我拆？',
-    '长期搭档':'来，对一下近况。最近哪件事最需要我们一起往前推？',
-    '神秘陌生人':'我们好像还不算认识。那就从一件你平时不会随便告诉别人的小事开始？',
-    '远方笔友':'信收到了。最近你的生活里，有哪一幕值得写下来？'
+    '亲密关系':'你来了。今天最想让我先听哪一件事？',
+    '家庭关系':'回来了。最近有什么事，你一直想找个家里人说说？',
+    '朋友关系':'你来了。今天想先聊点轻松的，还是直接进正题？',
+    '同伴关系':'来，对一下近况。最近哪件事最值得我们一起往前推？',
+    '引导关系':'先不急着下结论。最近哪件事最值得我们认真拆一遍？',
+    '专业关系':'好，我们从你现在最需要解决的事情开始。',
+    '竞争 / 对立':'终于来了。说吧，这次我们要在哪件事上分个高下？',
+    '陌生 / 未定':'我们还不算真正认识。那就从一件你愿意让我知道的小事开始？'
   };
   return {personality,style,identity,scenario,first:firstTemplates[relation.value]||'嗨。今天想聊什么？',world:world.value,relationship:relation.value};
 }
@@ -219,7 +223,7 @@ function openEditor(id){
   const existing=id?chars.find(x=>x.id===id):null;
   creatorDraft=emptyCreatorDraft();
   if(existing){
-    creatorDraft.relationship=existing.relationship||RELATIONSHIPS.find(x=>(existing.identity||'').includes(x.value))?.value||'老朋友';
+    creatorDraft.relationship=existing.relationship||RELATIONSHIPS.find(x=>(existing.identity||'').includes(x.value))?.value||'朋友关系';
     creatorDraft.traits=Array.isArray(existing.traits)?existing.traits.slice(0,6):matchingStrengths(existing.personality).slice(0,6);
     creatorDraft.styleTags=Array.isArray(existing.styleTags)?existing.styleTags.slice(0,4):matchingStyles((existing.style||'')+' '+(existing.personality||'')).slice(0,4);
     creatorDraft.initiative=existing.initiative||INITIATIVES.find(x=>(existing.style||'').includes(x))||'';
@@ -258,7 +262,7 @@ function randomizeCharacter(){
 
 function saveCharacter(){
   const name=text($('charName').value);if(!name){setCreatorStep(3);toast('最后给 TA 一个名字');return}
-  if(!creatorDraft.relationship)creatorDraft.relationship='老朋友';
+  if(!creatorDraft.relationship)creatorDraft.relationship='朋友关系';
   if(!creatorDraft.world)creatorDraft.world='现实日常';
   creatorDraft.extra=text($('charExtra').value);
   const auto=creatorAuto();
@@ -335,13 +339,37 @@ function openApiSettings(){
 function apiCandidate(){return{baseUrl:text($('apiBaseUrl').value),apiKey:text($('apiKeyInput').value),model:text($('apiModel').value)}}
 function validateApiCandidate(x){if(!x.baseUrl)return'需要 Base URL';if(!x.apiKey)return'需要 API Key';if(!x.model)return'需要 Model';return''}
 
+function formatApiTestError(error){
+  const e=error||{};
+  const head=e.status?('HTTP '+e.status+(e.statusText?' '+e.statusText:'')):(e.kind==='timeout'?'TIMEOUT':e.kind==='network'?'NETWORK':'ERROR');
+  const lines=['连接失败 · '+head];
+  if(e.endpoint)lines.push('Endpoint: '+e.endpoint);
+  if(e.message)lines.push('Message: '+e.message);
+  if(e.detail)lines.push('Detail: '+short(e.detail,1200));
+  if(e.kind==='network')lines.push('Hint: 常见原因是 CORS、网络/DNS、证书问题，或该兼容服务不允许浏览器直连。');
+  if(e.status===401||e.status===403)lines.push('Hint: 检查 API Key、账户权限或服务商鉴权格式。');
+  if(e.status===404)lines.push('Hint: 检查 Base URL；通常应填到 /v1，系统会自动补 /chat/completions。');
+  if(e.status===429)lines.push('Hint: 可能是额度、限流或账户余额问题。');
+  return lines.join('\n');
+}
+
 async function testApi(){
   const candidate=apiCandidate(),problem=validateApiCandidate(candidate),box=$('apiTestResult');
   if(problem){box.textContent=problem;box.classList.remove('hidden');box.classList.add('error');return}
-  $('testApiBtn').disabled=true;box.classList.remove('hidden','error');box.textContent='正在发一个极小的测试请求…';
-  try{const r=await window.P004_API.testDirect(candidate);box.textContent=r.ok?'连接成功 · '+(r.reply||'OK'):'接口已返回，但没有拿到文本';box.classList.toggle('error',!r.ok)}
-  catch(e){box.textContent='连接失败 · '+short(e.message||String(e),160);box.classList.add('error')}
-  finally{$('testApiBtn').disabled=false}
+  $('testApiBtn').disabled=true;box.classList.remove('hidden','error');box.textContent='正在测试…\n会发送一条“只回复 OK”的最小请求。';
+  try{
+    const r=await window.P004_API.testDirect(candidate);
+    if(r&&r.ok){
+      box.textContent=['连接成功 ✓','Endpoint: '+(r.endpoint||candidate.baseUrl),'Model: '+candidate.model,'Reply: '+(r.reply||'OK')].join('\n');
+      box.classList.remove('error');
+    }else{
+      box.textContent=formatApiTestError(r&&r.error?r.error:{message:'接口已返回，但没有拿到可用文本'});
+      box.classList.add('error');
+    }
+  }catch(e){
+    box.textContent=formatApiTestError({kind:'client',message:e.message||String(e)});
+    box.classList.add('error');
+  }finally{$('testApiBtn').disabled=false}
 }
 
 function saveApi(){
