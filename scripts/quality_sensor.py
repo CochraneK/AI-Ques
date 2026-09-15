@@ -190,6 +190,18 @@ def scan_repo() -> list[dict]:
             "Keep participant copy limited to task context, instructions and required safety language.",
         ))
 
+    if '"emoji"' in p002_manifest and '"modes"' in p002_manifest:
+        try:
+            _p002m = json.loads(p002_manifest)
+            if "emoji" in _p002m.get("modes", {}):
+                findings.append(finding(
+                    "p002-taxonomy-level-mix", "P0", "p002/study-manifest.json",
+                    "Emoji Game has returned as a primary measurement mode.",
+                    "Keep Emoji as an optional adherence mechanic, not a peer of questionnaire/gamified questionnaire/scenario assessment.",
+                ))
+        except json.JSONDecodeError:
+            pass
+
     if "aiques.global.profile.v1" in p004_app:
         findings.append(finding(
             "p004-legacy-global-storage", "P0", "p004/app.js",
