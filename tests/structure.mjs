@@ -56,7 +56,7 @@ assert.match(p004Index, /NVWA/);
 assert.doesNotMatch(p004Index, /清除本次画像/);
 
 const p004Manifest = JSON.parse(read("p004/module-manifest.json"));
-assert.equal(p004Manifest.version, "2.0.0");
+assert.equal(p004Manifest.version, "2.1.0");
 assert.equal(p004Manifest.user_experience.clinical_labels_visible, false);
 assert.equal(p004Manifest.user_experience.nvwa_distillation_optional, true);
 assert.equal(p004Manifest.user_experience.openai_compatible_byok, true);
