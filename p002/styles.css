@@ -81,13 +81,9 @@ h1 span{color:var(--muted);font-weight:530}
 .choice h3{margin:0 24px 4px 0;font-size:13px;letter-spacing:-.01em}
 .choice p{margin:0;color:var(--muted);font-size:9.5px;line-height:1.5}
 .launch-bar{
-  min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  min-height:66px;display:flex;align-items:center;justify-content:flex-end;gap:16px;
   padding:11px 14px 11px 24px;border-top:1px solid var(--line);background:#fbfbfa
 }
-.selected-summary{min-width:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:10px}
-.selection-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 9px;border-radius:999px;background:var(--surface-subtle);color:var(--text);font-size:9px;font-weight:700}
-.selection-plus{color:var(--faint)}
-.selection-empty{color:var(--faint)}
 .primary,.secondary,.ghost{border:0;cursor:pointer}
 .primary{
   display:inline-flex;align-items:center;justify-content:center;gap:16px;
