@@ -62,11 +62,19 @@ const SCALES = {
 };
 
 const MODES = {
-  original:{name:'原题',desc:'不加故事、不加 Emoji、不做情景改写；直接完成标准题目，作为对照组。',tag:'对照基线'},
+  original:{name:'直接问卷',desc:'不加故事、不加 Emoji、不做情景改写；直接按当前原型题干作答。用于界面对照，不视为验证版心理测量金标准。',tag:'直接呈现条件'},
   vassip:{name:'VASSIP 式',desc:'故事化 + 沉浸 + 不计分小游戏；核心题目和评分不改变。',tag:'最适合第一版'},
   emoji:{name:'Emoji Game 式',desc:'量表保持原样，只加入“找 Emoji”任务，提高完成过程的轻松感。',tag:'成本最低'},
   rush:{name:'HEXACO-RUSH 式',desc:'把构念改写成连续情景决策；输出实验性行为画像，不冒充标准量表分数。',tag:'创新最高 / 需验证'}
 };
+
+const MODE_HANDLERS = {};
+
+function registerMode(id, meta, handlers={}){
+  if(!id || !meta?.name) throw new Error('registerMode requires a mode id and metadata');
+  MODES[id]=meta;
+  MODE_HANDLERS[id]=handlers;
+}
 
 const RUSH = {
   pcl5:[
@@ -116,13 +124,26 @@ function renderLauncher(){
   }
 }
 
-function resetRun(){state.index=0;state.answers=[];state.emojiFound=0;state.emojiSeen=0;state.rushSignals={};state.lastReflection='';state.chapterSeen={};}
+function resetRun(){
+  state.index=0;
+  state.answers=[];
+  state.emojiFound=0;
+  state.emojiSeen=0;
+  state.rushSignals={};
+  state.lastReflection='';
+  state.chapterSeen={};
+  state.expSignals={};
+  state.psychoMemory=[];
+  state.psychoScore=0;
+}
 function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
 function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
 function progress(done,total){$('#progressBar').style.width=`${Math.min(100,done/total*100)}%`;$('#progressText').textContent=`${done}/${total}`;}
 function currentChapter(scale,item){return scale.chapters.find(c=>c.key===item.cluster)}
 
 function renderStep(){
+  const modeHandler=MODE_HANDLERS[state.mode]?.renderStep;
+  if(modeHandler) return modeHandler();
   if(state.mode==='rush') return renderRush();
   const scale=SCALES[state.scale], item=scale.items[state.index];
   if(!item) return finishStandard();
@@ -131,9 +152,9 @@ function renderStep(){
   if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
   const emojiActive=state.mode==='emoji' && [1,3,5,7,9,11,13,16,19].includes(state.index);
   if(emojiActive) state.emojiSeen++;
-  const modeKicker=state.mode==='original'?'原题模式':state.mode==='vassip'?'故事中的真实量表题':'Emoji Check-in';
-  const modeTitle=state.mode==='original'?'按原题直接作答':state.mode==='vassip'?ch.title:'找到小表情，也完成一次自我观察';
-  const modeStory=state.mode==='original'?'不添加任何游戏化元素，直接按照量表时间窗口与题目内容作答。':state.mode==='vassip'?storyLine(scale,item):'题目与评分逻辑保持不变；Emoji 只是额外的寻找任务，不影响答案。';
+  const modeKicker=state.mode==='original'?'直接问卷':state.mode==='vassip'?'故事中的直接问卷题':'Emoji Check-in';
+  const modeTitle=state.mode==='original'?'直接按题干作答':state.mode==='vassip'?ch.title:'找到小表情，也完成一次自我观察';
+  const modeStory=state.mode==='original'?'不添加任何游戏化元素，直接按照当前原型题干与时间窗口作答；该条件用于交互比较，不代表验证版量表基线。':state.mode==='vassip'?storyLine(scale,item):'题目与评分逻辑保持不变；Emoji 只是额外的寻找任务，不影响答案。';
   $('#gameBody').innerHTML=`<div class="scene">
     ${chapterStart && state.mode==='vassip'?`<div class="chapter-card"><span class="scene-kicker">${ch.key} · ${scale.window}</span><h2>${ch.title}</h2><p>${ch.desc}</p></div>`:''}
     <div class="scene-kicker">${modeKicker} · ${scale.name}</div>
@@ -205,6 +226,6 @@ function finishRush(){
   $('#result').innerHTML=`<p class="eyebrow">完成 · HEXACO-RUSH 式原型</p><h2>情景决策信号图</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>实验性结果，不是 ${SCALES[state.scale].name} 分数。</strong> 这一模式故意把量表构念改造成 SJT 式选择，因此必须通过“同一批参与者完成标准量表 + 情景版”的研究重新建立信度、效度、因子结构与阈值。在完成验证前，不应给出 PTSD、精神病风险或任何诊断性反馈。</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
   window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
 }
-function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>原题：作为标准对照基线。VASSIP：保留原量表项目与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见仓库 README 的 Sources。</p></div>`}
+function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，但当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见仓库 README 的 Sources。</p></div>`}
 
 $('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();

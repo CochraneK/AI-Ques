@@ -4,7 +4,7 @@ AI + 心理健康教育的低成本交互原型仓库。
 
 当前版本把同一心理测评做成 **8 种不同完成方式**，重点比较：改编得越有趣，测量形式究竟改变了多少。
 
-> 研究原型，不用于诊断。除“原题”外，任何重写、情景化、自动生成或游戏化版本都应先视为实验测验，不能直接继承原量表的效度、阈值或诊断解释。
+> 研究原型，不用于诊断。当前中文直接问卷本身也是原型转述；任何直接呈现、重写、情景化、自动生成或游戏化版本都不能在未经验证时直接继承原量表的效度、阈值或诊断解释。
 
 ## 当前量表
 
@@ -25,15 +25,15 @@ AI + 心理健康教育的低成本交互原型仓库。
 
 ## 八种模式
 
-### 1. 原题（baseline）
+### 1. 直接问卷（baseline-like control）
 
-不加故事、不加 Emoji、不改写题目，作为所有实验模式的对照基线。
+不加故事、不加 Emoji，不额外情景化；直接呈现仓库当前的原型题干。它是交互研究中的 baseline-like control，而不是验证版心理测量金标准。PCL-5 中文和 CAPE-P15 中文在本仓库都仍属于原型转述。
 
-### 2. 原题逐题情景化（item-level scenario）
+### 2. 逐题情景化（item-level scenario）
 
-每一个原题都对应一个具体生活情景，保持“一题 ↔ 一情景”的映射。
+每一道当前直接问卷题都对应一个具体生活情景，保持“一题 ↔ 一情景”的映射。
 
-适合研究：同一参与者完成原题和情景版后，逐题比较相关、均值偏移、回答分布与测量等价性。
+适合研究：同一参与者完成直接问卷条件和情景版后，逐题比较相关、均值偏移、回答分布与测量等价性。
 
 ### 3. 构念情景化（construct-level SJT）
 
@@ -64,11 +64,11 @@ AI + 心理健康教育的低成本交互原型仓库。
 
 ### 6. VASSIP 式
 
-原题和反应格式保持不变，在外面增加 storyfication、immersion 和不计分小游戏。
+当前直接问卷题干和反应格式保持不变，在外面增加 storyfication、immersion 和不计分小游戏。
 
 ### 7. Emoji Game 式
 
-原题和评分不变，只加入寻找 Emoji 的轻任务；Emoji 收集与心理得分完全分离。
+当前直接问卷题干和评分逻辑不变，只加入寻找 Emoji 的轻任务；Emoji 收集与心理得分完全分离。
 
 ### 8. HEXACO-RUSH 式
 
@@ -77,7 +77,7 @@ AI + 心理健康教育的低成本交互原型仓库。
 ## 现在最值得比较的四个情景化层次
 
 ```text
-原题
+直接问卷（baseline-like）
   ↓
 逐题情景化        保留 item-level 对应
   ↓
@@ -102,11 +102,36 @@ python -m http.server 8000
 
 线上 Demo：<https://cochranek.github.io/AI-Ques/>
 
+## 研究版本清单
+
+当前研究/原型边界由 `study-manifest.json` 明确记录，包括：
+
+- 当前量表题数、编码与语言版本状态；
+- 8 种模式的研究角色和 Phase 1 / Phase 2 定位；
+- `formal_data_collection_authorized: false`；
+- 正式收数前必须冻结的版本字段与治理条件。
+
+修改题干、评分逻辑、模式角色或正式研究协议时，应同步更新 manifest。当前 manifest 明确标记为 **prototype_only**，不能被解释为已批准的正式研究版本。
+
+## 本地质量检查
+
+在提交研究逻辑或模式修改前运行：
+
+```bash
+node --check app.js
+node --check experiments.js
+node tests/smoke.mjs
+python scripts/quality_sensor.py --strict
+python scripts/next_quality_target.py
+```
+
+`tests/smoke.mjs` 会加载真实的 `app.js + experiments.js`，验证 2 个量表、8 种模式、manifest/registry 一致性，以及每个 scale × mode 的开始与结束路径至少能执行而不崩溃。
+
 ## 推荐验证路线
 
 1. **体验层**：完成率、耗时、漏答、主观负担、趣味性、沉浸感。
-2. **逐题层**：原题 vs 逐题情景版，检查 item-level 相关和系统偏差。
-3. **构念层**：原题 vs SJT / AI-SJT，检查内部一致性、收敛/区分效度、重测信度、因子结构。
+2. **逐题层**：直接问卷条件 vs 逐题情景版，检查 item-level 相关和系统偏差。
+3. **构念层**：直接问卷条件 vs SJT / AI-SJT，检查内部一致性、收敛/区分效度、重测信度、因子结构。
 4. **连续游戏层**：PsychoGAT / RUSH 需要单独建立计分模型，并预注册构念映射和验证方案。
 
 ## Sources

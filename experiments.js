@@ -1,18 +1,22 @@
-// Scenario-based experimental modes for AI-Uni.
+// Scenario-based experimental modes for AI-Ques.
 // These are research prototypes. They are intentionally kept separate from validated scale scoring.
 
-const LEGACY_MODES = {...MODES};
-Object.keys(MODES).forEach(k => delete MODES[k]);
-Object.assign(MODES, {
-  original: LEGACY_MODES.original,
-  itemscene: {name:'原题逐题情景化', desc:'每一道原题对应一个生活情景，仍保留一题一映射，便于和原题逐题比较。', tag:'一题 ↔ 一情景'},
-  construct: {name:'构念情景化', desc:'不追求逐题对应，围绕 B/C/D/E 或 PI/BE/PA 构念设计多个独立决策情境。', tag:'构念级 SJT'},
-  aisjt: {name:'AI-SJT', desc:'用 AI 生成思路制作多个校园 SJT 变体；当前 Pages 版使用预生成题库，不调用在线模型。', tag:'低成本 AI 题库'},
-  psychogat: {name:'PsychoGAT-lite', desc:'把量表节点串成连续互动小说：故事会记住你的选择，下一幕继续推进。', tag:'LLM Agent 范式'},
-  vassip: LEGACY_MODES.vassip,
-  emoji: LEGACY_MODES.emoji,
-  rush: LEGACY_MODES.rush
-});
+registerMode('itemscene',
+  {name:'逐题情景化', desc:'每一道当前问卷题对应一个生活情景，仍保留一题一映射，便于和直接问卷条件逐题比较。', tag:'一题 ↔ 一情景'},
+  {renderStep: renderItemScene}
+);
+registerMode('construct',
+  {name:'构念情景化', desc:'不追求逐题对应，围绕 B/C/D/E 或 PI/BE/PA 构念设计多个独立决策情境。', tag:'构念级 SJT'},
+  {renderStep: renderConstructScene}
+);
+registerMode('aisjt',
+  {name:'AI-SJT', desc:'用 AI 生成思路制作多个校园 SJT 变体；当前 Pages 版使用预生成题库，不调用在线模型。', tag:'低成本 AI 题库'},
+  {renderStep: renderAISJT}
+);
+registerMode('psychogat',
+  {name:'PsychoGAT-lite', desc:'把量表节点串成连续互动小说：故事会记住你的选择，下一幕继续推进。', tag:'LLM Agent 范式'},
+  {renderStep: renderPsychoGAT}
+);
 
 const ITEM_SCENES = {
   pcl5:[
@@ -121,25 +125,12 @@ const PSYCHOGAT_NODES = {
   ]
 };
 
-state.expSignals={}; state.psychoMemory=[]; state.psychoScore=0;
-const baseResetRun = resetRun;
-resetRun = function(){baseResetRun();state.expSignals={};state.psychoMemory=[];state.psychoScore=0;};
-
-const baseRenderStep = renderStep;
-renderStep = function(){
-  if(state.mode==='itemscene') return renderItemScene();
-  if(state.mode==='construct') return renderConstructScene();
-  if(state.mode==='aisjt') return renderAISJT();
-  if(state.mode==='psychogat') return renderPsychoGAT();
-  return baseRenderStep();
-};
-
 function renderItemScene(){
   const scale=SCALES[state.scale], item=scale.items[state.index];
-  if(!item) return finishMappedExperiment('原题逐题情景化');
+  if(!item) return finishMappedExperiment('逐题情景化');
   progress(state.index, scale.items.length);
   const scene=ITEM_SCENES[state.scale][state.index];
-  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">逐题映射 · ${scale.name} #${item.id}</div><h2>把这一题放进一个具体时刻</h2><p class="story">${scene}</p><div class="question-card"><div class="question-id">对应构念：${item.cluster} · 与原题一一映射</div><div class="question">回看 ${scale.window}，这种情形与你的真实体验有多接近？</div><div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i+(scale.scoreOffset||0)}</span></button>`).join('')}</div><div class="safe-note">这一版改变了题目呈现，因此这里的映射分数只用于与原题做研究比较，不能直接宣称等同于正式量表分数。</div></div></div>`;
+  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">逐题映射 · ${scale.name} #${item.id}</div><h2>把这一题放进一个具体时刻</h2><p class="story">${scene}</p><div class="question-card"><div class="question-id">对应构念：${item.cluster} · 与直接问卷题一一映射</div><div class="question">回看 ${scale.window}，这种情形与你的真实体验有多接近？</div><div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i+(scale.scoreOffset||0)}</span></button>`).join('')}</div><div class="safe-note">这一版改变了题目呈现，因此这里的映射分数只用于与直接问卷条件做研究比较，不能直接宣称等同于正式量表分数。</div></div></div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{state.answers.push(Number(b.dataset.score)+(scale.scoreOffset||0));state.index++;renderItemScene();});
 }
 
@@ -173,7 +164,7 @@ function finishMappedExperiment(label){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const s=SCALES[state.scale], total=state.answers.reduce((a,b)=>a+b,0), clusters={};
   s.items.forEach((it,i)=>clusters[it.cluster]=(clusters[it.cluster]||0)+(state.answers[i]||0));
-  $('#result').innerHTML=`<p class="eyebrow">完成 · ${label}</p><h2>逐题情景映射结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>情景映射总分，仅用于研究比较。</p><p>下一步最关键的是让同一参与者完成“原题 + 此版本”，逐题检查相关与系统偏差。</p></div><div class="result-card"><h3>映射维度</h3>${signalBars(clusters)}</div></div><div class="safe-note"><strong>不是正式 ${s.name} 分数。</strong> 题干已经情景化，必须重新检验测量等价性。</div>${experimentalSourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
+  $('#result').innerHTML=`<p class="eyebrow">完成 · ${label}</p><h2>逐题情景映射结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>情景映射总分，仅用于研究比较。</p><p>下一步最关键的是让同一参与者完成“直接问卷条件 + 此版本”，逐题检查相关与系统偏差。</p></div><div class="result-card"><h3>映射维度</h3>${signalBars(clusters)}</div></div><div class="safe-note"><strong>不是正式 ${s.name} 分数。</strong> 题干已经情景化，必须重新检验测量等价性。</div>${experimentalSourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
 }
 
 function finishSignalExperiment(label){
