@@ -1,6 +1,6 @@
 {
   "module": "P004",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "角色世界 / Character Conversations",
   "status": "prototype_only",
   "purpose": "NPC/character text conversations with optional NVWA distillation, local skill artifacts, long-term memory and administrator-only longitudinal personality inference.",
@@ -10,17 +10,30 @@
     "character_cards": true,
     "custom_npc": true,
     "long_term_memory": true,
-    "nvwa_distillation_optional": true
+    "nvwa_distillation_optional": true,
+    "openai_compatible_byok": true,
+    "playful_character_creator": true
   },
-  "evidence_sources": ["P004", "P005"],
+  "evidence_sources": [
+    "P004",
+    "P005"
+  ],
   "storage": {
     "characters": "localStorage",
     "threads": "localStorage",
     "memory": "localStorage",
     "skills": "IndexedDB",
-    "production_recommendation": "server-side encrypted storage + authenticated access controls"
+    "production_recommendation": "server-side encrypted storage + authenticated access controls",
+    "byok_api_key": "sessionStorage only; current browser tab"
   },
-  "api_contract": ["chat", "distill", "memory", "observe", "adminSnapshot"],
+  "api_contract": [
+    "chat",
+    "distill",
+    "memory",
+    "observe",
+    "adminSnapshot",
+    "openai-compatible:/chat/completions"
+  ],
   "research_boundary": "Open-ended conversational inference is experimental and must not be represented as validated scale scoring or clinical diagnosis.",
   "nvwa_reference": "https://github.com/xmg2024/nvwa-skill",
   "safety": {
