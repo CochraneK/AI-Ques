@@ -226,6 +226,6 @@ function finishRush(){
   $('#result').innerHTML=`<p class="eyebrow">完成 · HEXACO-RUSH 式原型</p><h2>情景决策信号图</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>实验性结果，不是 ${SCALES[state.scale].name} 分数。</strong> 这一模式故意把量表构念改造成 SJT 式选择，因此必须通过“同一批参与者完成标准量表 + 情景版”的研究重新建立信度、效度、因子结构与阈值。在完成验证前，不应给出 PTSD、精神病风险或任何诊断性反馈。</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
   window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
 }
-function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，但当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见仓库 README 的 Sources。</p></div>`}
+function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，但当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见本模块 p002/README.md 的主要来源。</p></div>`}
 
 $('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();
