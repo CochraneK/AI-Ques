@@ -6,6 +6,21 @@ function short(v,n=54){if(v==null)return "";const s=typeof v==="string"?v:JSON.s
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}
 function fmtTime(iso){if(!iso)return "—";try{return new Date(iso).toLocaleString("zh-CN",{hour12:false})}catch(e){return iso}}
 function completionEvents(){return allEvents.filter(e=>e.event_type==="session_completed")}
+function medianNum(values){
+  const a=values.filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);
+  if(!a.length)return null;
+  const m=Math.floor(a.length/2);
+  return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
+function meanNum(values){
+  const a=values.filter(v=>Number.isFinite(v));
+  return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+}
+function durationMs(e){
+  const a=Date.parse(e.payload?.started_at||"");
+  const b=Date.parse(e.payload?.finished_at||e.occurred_at||"");
+  return Number.isFinite(a)&&Number.isFinite(b)&&b>=a?b-a:null;
+}
 function startEvents(){return allEvents.filter(e=>e.event_type==="session_started")}
 
 function populateFilters(){
@@ -62,7 +77,7 @@ function p002Core(e){
   if(scale==="pcl5"){
     return {
       main:"PCL 总分 "+(summary.total??"—"),
-      sub:"B/C/D/E pattern: "+(summary.dsm_cluster_pattern_all?"all met":"not all met")
+      sub:"symptom-pattern only · B/C/D/E "+(summary.dsm_cluster_pattern_all?"pattern met":"pattern not fully met")
     };
   }
   return {
@@ -70,11 +85,36 @@ function p002Core(e){
     sub:"困扰均值 "+(summary.distress_mean_endorsed==null?"—":Number(summary.distress_mean_endorsed).toFixed(2))+" · endorsed "+(summary.endorsed_n??"—")
   };
 }
+function renderConditionCompare(rows){
+  const scales=["pcl5","cape15"], conditions=["standard","guided"], cards=[];
+  for(const scale of scales){
+    for(const condition of conditions){
+      const group=rows.filter(e=>{
+        const r=e.payload?.result||{};
+        return r.scale_id===scale && r.condition_id===condition;
+      });
+      const vals=group.map(e=>{
+        const s=e.payload?.result?.summary||{};
+        return scale==="pcl5"?Number(s.total):Number(s.frequency_mean);
+      }).filter(Number.isFinite);
+      const mean=meanNum(vals);
+      const dur=medianNum(group.map(durationMs));
+      cards.push('<div class="compare-card"><div class="compare-top"><span class="compare-scale">'+
+        (scale==="pcl5"?"PCL-5":"CAPE-P15")+
+        '</span><span class="compare-condition">'+condition+'</span></div><strong>'+
+        (mean==null?"—":mean.toFixed(2))+
+        '</strong><p>'+(scale==="pcl5"?"mean total severity":"mean frequency (0–3)")+
+        '</p><small>n='+group.length+' · median '+(dur==null?"—":Math.round(dur/1000))+' s</small></div>');
+    }
+  }
+  $("#conditionCompare").innerHTML=cards.join("");
+}
 function renderP002(){
   const rows=completionEvents().filter(e=>e.project_id==="P002").sort((a,b)=>String(b.occurred_at).localeCompare(String(a.occurred_at)));
   $("#p002Section").classList.toggle("hidden",!rows.length);
   if(!rows.length)return;
   $("#p002Count").textContent=rows.length+" completed";
+  renderConditionCompare(rows);
   $("#p002Rows").innerHTML=rows.map(e=>{
     const r=e.payload?.result||{}, s=r.summary||{}, t=s.timing||{}, core=p002Core(e);
     const itemN=r.item_count||0, rapid=t.rapid_under_800ms_n||0;
