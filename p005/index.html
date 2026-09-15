@@ -66,7 +66,7 @@
       <div class="portrait-shell">
         <p class="kicker">YOUR PRESENT SELF</p>
         <h2>放一张现在的照片。</h2>
-        <p class="section-copy">Future You 原系统会把这张照片年龄化到约 60 岁。照片可跳过；未连接图像后端时，我们不会伪造年龄化结果。</p>
+        <p class="section-copy">照片可跳过。系统会按管理员设定的未来时间做自然年龄变化；未连接图像后端时，我们不会伪造年龄化结果。</p>
 
         <div class="portrait-stage" id="currentPortraitFrame">
           <div class="portrait-placeholder" id="currentPortraitPlaceholder">
@@ -89,7 +89,7 @@
         <div class="time-mark">
           <span id="generateAgeNow">现在</span>
           <i></i>
-          <span>60</span>
+          <span id="generateAgeFuture">4 年后</span>
         </div>
         <h2 id="generateTitle">正在连接你的人生线索。</h2>
         <p id="generateSub">把过去、目标与可能经历组织成一段连续的 future memory。</p>
@@ -107,7 +107,7 @@
         </div>
 
         <p class="kicker">YOUR POSSIBLE FUTURE SELF</p>
-        <h2><span id="futureName">你</span>，60 岁。</h2>
+        <h2><span id="futureName">你</span>，<span id="futureTargetLabel">4 年后</span>。</h2>
         <p id="futureIntro" class="future-intro">一个由你现在的故事延伸出来的可能版本。</p>
         <div id="memorySummary" class="memory-summary"></div>
         <div id="branchPreview"></div>
@@ -119,7 +119,7 @@
 
         <details class="disclosure">
           <summary>这是怎么生成的？</summary>
-          <p>系统把你提供的现在经历、重要关系和未来目标组织成一段 synthetic / future memory，再让对话模型以 60 岁的“可能未来自我”回应。它不是预测，也不是事实。</p>
+          <p>系统把你提供的现在经历、重要关系和未来目标组织成一段 synthetic / future memory，再让对话模型以管理员设定时间点的“可能未来自我”回应。它不是预测，也不是事实。</p>
         </details>
       </div>
     </section>
@@ -130,7 +130,7 @@
           <button class="text-button" data-prev="ready" type="button">← 返回</button>
           <div class="chat-person">
             <div class="chat-avatar" id="chatAvatar">F</div>
-            <div><b id="chatName">Future Me · 60</b><small id="chatModeNote">可能未来 · 文字模式</small></div>
+            <div><b id="chatName">Future Me</b><small id="chatModeNote">4 年后 · 文字模式</small></div>
           </div>
           <div class="chat-tools">
             <button class="quiet-action" id="voiceModeBtn" type="button">语音</button>
@@ -199,6 +199,7 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script src="../shared/profile.js?v=1"></script>
-  <script src="app.js?v=20260915-fy2"></script>
+  <script src="runtime-config.js?v=1"></script>
+  <script src="app.js?v=20260915-fix3"></script>
 </body>
 </html>
