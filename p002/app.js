@@ -2,6 +2,7 @@ const SCALES = {
   pcl5: {
     id:'pcl5', name:'PCL-5', subtitle:'PTSD Checklist for DSM-5 · 20题', window:'过去一个月', publicDomain:true,
     note:'PCL-5 由美国 VA National Center for PTSD 开发，公开说明为 public domain。这里的中文为原型转述；研究部署应替换为目标语言的合规/验证版本。',
+    instruction:'请始终以同一段最困扰的压力经历为参照。你不需要在这里描述事件内容。过去一个月，这些问题在多大程度上困扰到你？',
     choices:['完全没有','有一点','中等程度','相当多','非常严重'],
     chapters:[
       {key:'B',title:'回声',desc:'一些经历会以记忆、梦境或身体反应的方式重新出现。',range:[1,5]},
@@ -35,6 +36,7 @@ const SCALES = {
   cape15: {
     id:'cape15', name:'Current CAPE-P15', subtitle:'近期精神病性样体验 · 15题', window:'过去三个月', publicDomain:false,
     note:'Current CAPE-P15 的公开论文描述为 15 题、三个维度，并可在体验出现后追加困扰度。本仓库不把自译文本冒充正式中文版；以下为基于构念的研究原型转述。',
+    instruction:'过去三个月，你是否有过以下体验？请选择最接近实际情况的出现频率。若至少出现过“有时”，会再询问这项体验带来的困扰程度。',
     scoringScheme:'current-cape-p15-original-0-3', choices:['从未','有时','经常','几乎总是'], distressChoices:['完全不困扰','有一点困扰','比较困扰','非常困扰'],
     chapters:[
       {key:'PI',title:'读空气',desc:'人与人之间的信息有时会显得格外有指向性。',range:[1,5]},
@@ -62,10 +64,10 @@ const SCALES = {
 };
 
 const MODES = {
-  original:{name:'直接问卷',desc:'不加故事、不加 Emoji、不做情景改写；直接按当前原型题干作答。用于界面对照，不视为验证版心理测量金标准。',tag:'直接呈现条件'},
-  vassip:{name:'VASSIP 式',desc:'故事化 + 沉浸 + 不计分小游戏；核心题目和评分不改变。',tag:'最适合第一版'},
-  emoji:{name:'Emoji Game 式',desc:'量表保持原样，只加入“找 Emoji”任务，提高完成过程的轻松感。',tag:'成本最低'},
-  rush:{name:'HEXACO-RUSH 式',desc:'把构念改写成连续情景决策；输出实验性行为画像，不冒充标准量表分数。',tag:'创新最高 / 需验证'}
+  original:{name:'直接问卷',desc:'按题干与原反应格式完成。'},
+  vassip:{name:'VASSIP 式',desc:'保留核心题目，加入故事氛围与不计分互动。'},
+  emoji:{name:'Emoji Game 式',desc:'保留核心题目，加入独立的 Emoji 搜索任务。'},
+  rush:{name:'HEXACO-RUSH / SJT 式',desc:'通过叙事情境与选择产生实验性构念信号。'}
 };
 
 const MODE_HANDLERS = {};
@@ -95,25 +97,27 @@ const RUSH = {
   ]
 };
 
-const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,rushSignals:{},lastReflection:'',chapterSeen:{}};
+const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,rushSignals:{},chapterSeen:{}};
 const $=s=>document.querySelector(s);
-const SHOW_SOURCE=typeof location!=='undefined' && String(location.search||'').includes('source=1');
+const QUERY=typeof location!=='undefined'?new URLSearchParams(location.search||''):new URLSearchParams();
+const SHOW_SOURCE=QUERY.get('source')==='1';
+const SHOW_RESEARCH=QUERY.get('research')==='1';
+const ASSIGNED_MODE=QUERY.get('mode');
 
 function renderLauncher(){
+  if(ASSIGNED_MODE && MODES[ASSIGNED_MODE]) state.mode=ASSIGNED_MODE;
   $('#scaleChoices').innerHTML=Object.values(SCALES).map(s=>`<button class="choice ${state.scale===s.id?'active':''}" data-scale="${s.id}" aria-pressed="${state.scale===s.id}">
     <h3>${s.name}</h3>
     <p>${s.subtitle}<br>时间窗口：${s.window}</p>
-    <span class="tag">${s.id==='pcl5'?'保留 0–4 反应格式':'原始 0–3 + 条件式困扰度'}</span>
   </button>`).join('');
 
   $('#modeChoices').innerHTML=Object.entries(MODES).map(([id,m])=>`<button class="choice ${state.mode===id?'active':''}" data-mode="${id}" aria-pressed="${state.mode===id}">
     <h3>${m.name}</h3>
     <p>${m.desc}</p>
-    <span class="tag">${m.tag}</span>
   </button>`).join('');
 
   document.querySelectorAll('[data-scale]').forEach(b=>b.onclick=()=>{state.scale=b.dataset.scale;renderLauncher();});
-  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;renderLauncher();});
+  document.querySelectorAll('[data-mode]').forEach(b=>{if(ASSIGNED_MODE)b.disabled=true;else b.onclick=()=>{state.mode=b.dataset.mode;renderLauncher();};});
 
   const ready=state.scale&&state.mode;
   $('#startBtn').disabled=!ready;
@@ -132,7 +136,6 @@ function resetRun(){
   state.emojiFound=0;
   state.emojiSeen=0;
   state.rushSignals={};
-  state.lastReflection='';
   state.chapterSeen={};
   state.expSignals={};
   state.psychoMemory=[];
@@ -142,6 +145,17 @@ function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').
 function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
 function progress(done,total){$('#progressBar').style.width=`${Math.min(100,done/total*100)}%`;$('#progressText').textContent=`${done}/${total}`;}
 function currentChapter(scale,item){return scale.chapters.find(c=>c.key===item.cluster)}
+function publicChapter(key){
+  return {
+    B:{title:'第一段',desc:'沿着一条安静的路继续往前。'},
+    C:{title:'第二段',desc:'前方出现几条通往同一目的地的路线。'},
+    D:{title:'第三段',desc:'走廊里出现一些熟悉又陌生的片段。'},
+    E:{title:'第四段',desc:'最后一段路经过明暗交替的窗。'},
+    PI:{title:'第一段',desc:'周围有人来往，也有零散的信息出现。'},
+    BE:{title:'第二段',desc:'你进入一个安静的房间，继续向前。'},
+    PA:{title:'第三段',desc:'天色慢慢暗下来，周围有声音和光影。'}
+  }[key]||{title:'下一段',desc:'继续向前。'};
+}
 
 function renderStep(){
   const modeHandler=MODE_HANDLERS[state.mode]?.renderStep;
@@ -154,21 +168,18 @@ function renderStep(){
   if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
   const emojiActive=state.mode==='emoji' && [1,3,5,7,9,11,13,16,19].includes(state.index);
   if(emojiActive) state.emojiSeen++;
-  const modeKicker=state.mode==='original'?'直接问卷':state.mode==='vassip'?'故事中的直接问卷题':'Emoji Check-in';
-  const modeTitle=state.mode==='original'?'直接按题干作答':state.mode==='vassip'?ch.title:'找到小表情，也完成一次自我观察';
-  const modeStory=state.mode==='original'?'不添加任何游戏化元素，直接按照当前原型题干与时间窗口作答；该条件用于交互比较，不代表验证版量表基线。':state.mode==='vassip'?storyLine(scale,item):'题目与评分逻辑保持不变；Emoji 只是额外的寻找任务，不影响答案。';
+  const pub=publicChapter(item.cluster);
+  const firstItem=state.index===0;
   $('#gameBody').innerHTML=`<div class="scene">
-    ${chapterStart && state.mode==='vassip'?`<div class="chapter-card"><span class="scene-kicker">${ch.key} · ${scale.window}</span><h2>${ch.title}</h2><p>${ch.desc}</p></div>`:''}
-    <div class="scene-kicker">${modeKicker} · ${scale.name}</div>
-    <h2>${modeTitle}</h2>
-    <p class="story">${modeStory}</p>
+    ${chapterStart && state.mode==='vassip'?`<div class="chapter-card"><span class="scene-kicker">${scale.window}</span><h2>${pub.title}</h2><p>${pub.desc}</p></div>`:''}
+    ${firstItem?`<p class="instrument-instruction">${scale.instruction}</p>`:''}
     <div class="question-card">
       ${emojiActive?`<button class="emoji-clue" id="emojiClue" aria-label="找到隐藏表情">${['🪐','🫧','🦊','🌱','🧩','🐳'][state.index%6]}</button>`:''}
       <div class="question-id">${scale.name} · ${item.id}/${scale.items.length}${state.mode==='vassip'?` · ${item.cluster}`:''}</div>
-      <div class="question">${scale.window}，${item.text}</div>
+      <div class="question">${item.text}</div>
       ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
       <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
-      ${state.mode==='emoji'?`<div class="emoji-counter">已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分</div>`:''}
+      ${state.mode==='emoji'?`<div class="emoji-counter">Emoji ${state.emojiFound} / ${state.emojiSeen}</div>`:''}
     </div>
   </div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{
@@ -182,7 +193,7 @@ function renderStep(){
     state.index++;
     renderStep();
   });
-  const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';$('.emoji-counter').textContent=`已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分`; } };
+  const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';$('.emoji-counter').textContent=`Emoji ${state.emojiFound} / ${state.emojiSeen}`; } };
 }
 
 function renderCapeDistress(scale,item,frequencyScore){
@@ -214,7 +225,8 @@ function renderVassipIntro(scale,ch){
     BE:['触碰控制台','先读说明书','观察屏幕变化'],
     PA:['戴上耳机','打开一盏小灯','先确认周围环境']
   }[ch.key] || ['继续向前','先观察一下','换一条路'];
-  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">VASSIP 式 · 不计分互动</span><h2>${ch.title}</h2><p>${ch.desc}</p></div><p class="story">进入这一章节前，选一个你此刻更想做的小动作。它只改变故事氛围，<strong>不会进入任何量表计分</strong>。</p><div class="rush-options">${choices.map((c,i)=>`<button class="rush-option" data-vassip-choice="${i}">${c}</button>`).join('')}</div></div>`;
+  const pub=publicChapter(ch.key);
+  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一个此刻更想做的小动作。</p><div class="rush-options">${choices.map((c,i)=>`<button class="rush-option" data-vassip-choice="${i}">${c}</button>`).join('')}</div></div>`;
   document.querySelectorAll('[data-vassip-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=Number(b.dataset.vassipChoice);renderStep();});
 }
 
@@ -227,11 +239,10 @@ function renderRush(){
   const scenarios=RUSH[state.scale], sc=scenarios[state.index];
   if(!sc) return finishRush();
   progress(state.index,scenarios.length);
-  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">实验性 SJT · ${SCALES[state.scale].name} 构念启发</div><h2>${sc.title}</h2><p class="story">${sc.story}</p><div class="rush-options">${sc.options.map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.lastReflection?`<div class="reflection">${state.lastReflection}</div>`:''}<div class="safe-note"><strong>重要：</strong>这一模式模仿 HEXACO-RUSH 的“情景判断”形式，但尚未经过效度验证。选择不会被换算成 PCL-5/CAPE-P15 的正式分数。</div></div>`;
+  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">实验性 SJT · ${SCALES[state.scale].name} 构念启发</div><h2>${sc.title}</h2><p class="story">${sc.story}</p><div class="rush-options">${sc.options.map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.index===0?'<p class="mode-note">请选择最接近你的反应。这里没有对错。</p>':''}</div>`;
   document.querySelectorAll('.rush-option').forEach(b=>b.onclick=()=>{
     const opt=sc.options[Number(b.dataset.i)];
     state.rushSignals[sc.cluster]=(state.rushSignals[sc.cluster]||0)+opt[1];
-    state.lastReflection=opt[1]>=4?'这个选择在原型里被标记为“高信号”，但它本身不能说明存在任何诊断。':opt[1]>=2?'这个选择在原型里被标记为“中等信号”，后续研究需要与标准量表对照验证。':'这个选择在原型里被标记为“低信号”；仍不能单凭一次情境决定心理状态。';
     state.index++;renderRush();
   });
 }
@@ -243,9 +254,15 @@ function finishStandard(){
   const max=s.id==='pcl5'?80:45;
   const endorsedDistress=state.distress.filter((v,i)=>state.answers[i]>=1 && v!=null);
   const distressMean=endorsedDistress.length?endorsedDistress.reduce((a,b)=>a+b,0)/endorsedDistress.length:null;
+  if(!SHOW_RESEARCH){
+    $('#result').innerHTML=participantCompletion();
+    return;
+  }
   const interpretation=s.id==='pcl5' ? pclInterpret(total,state.answers) : capeInterpret(total,clusters,distressMean);
-  $('#result').innerHTML=`<p class="eyebrow">完成 · ${MODES[state.mode].name}</p><h2>${s.name} 原型结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原始频率/严重度总分（本原型） / ${max}</p><p>${interpretation}</p>${s.id==='cape15'?`<p>困扰均值：<strong>${distressMean==null?'—':distressMean.toFixed(2)}</strong>（只对出现过的体验计算）</p>`:''}${state.mode==='emoji'?`<p>Emoji：找到 <strong>${state.emojiFound}</strong> / ${state.emojiSeen}</p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=s.id==='pcl5'?cnt*4:cnt*3,pct=maxc?v/maxc*100:0;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>不是诊断结果。</strong> ${s.note}</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
-  window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
+  $('#result').innerHTML=`<p class="eyebrow">Research view · ${MODES[state.mode].name}</p><h2>${s.name} 原型数据</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原型内部总分 / ${max}</p><p>${interpretation}</p>${s.id==='cape15'?`<p>困扰均值：<strong>${distressMean==null?'—':distressMean.toFixed(2)}</strong></p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=s.id==='pcl5'?cnt*4:cnt*3,pct=maxc?v/maxc*100:0;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>研究检查视图。</strong> ${s.note}</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
+}
+function participantCompletion(){
+  return '<div class="completion"><p class="eyebrow">完成</p><h2>这次体验已完成。</h2><p>这里不提供诊断、风险等级或临床解释。</p><button class="primary" onclick="backHome()">返回</button></div>';
 }
 function pclInterpret(total,a){
   const B=a.slice(0,5).filter(x=>x>=2).length,C=a.slice(5,7).filter(x=>x>=2).length,D=a.slice(7,14).filter(x=>x>=2).length,E=a.slice(14,20).filter(x=>x>=2).length;
