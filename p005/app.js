@@ -863,7 +863,7 @@ function renderReady(){
 
 $('#agePortraitBtn').addEventListener('click',async()=>{
   if(!state.currentPortrait){showToast('先加入一张现在的照片');show('portrait');return}
-  if(!apiConfig('imageApi')){showToast('尚未连接年龄化图像 API');return}
+  if(!((window.P005_API&&window.P005_API.configured)||apiConfig('imageApi'))){showToast('尚未连接年龄化图像 API');return}
   const button=$('#agePortraitBtn'),old=button.textContent;
   button.disabled=true;button.textContent='生成中…';
   const ok=await requestFuturePortrait();
