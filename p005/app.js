@@ -215,6 +215,18 @@ function migrateLegacy() {
     state.futurePortrait = legacy.futurePortrait || '';
     state.capsules = legacy.capsules || [];
     state.settings = Object.assign({}, state.settings, legacy.settings || {});
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        profile: state.profile,
+        memory: state.memory,
+        messages: state.messages,
+        currentPortrait: state.currentPortrait,
+        futurePortrait: state.futurePortrait,
+        capsules: state.capsules,
+        settings: state.settings,
+        screen: legacy.screen || 'welcome'
+      }));
+    } catch (e) {}
     break;
   }
 }
