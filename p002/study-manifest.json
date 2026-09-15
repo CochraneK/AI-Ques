@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.2.0-prototype",
+  "study_version": "0.6.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "manifest_date": "2026-09-15",
@@ -18,15 +18,17 @@
       "response_encoding": "0-4",
       "source_status": "public-domain source instrument; Chinese wording in this repo is prototype paraphrase",
       "distress_layer": null,
-      "formal_baseline": false
+      "formal_baseline": false,
+      "response_instruction": "keep one worst/stressful experience in mind; rate how much each problem bothered the participant in the past month"
     },
     "cape15": {
       "label": "Current CAPE-P15",
       "items": 15,
-      "response_encoding": "1-4 frequency only",
+      "response_encoding": "0-3 frequency + conditional 0-3 distress",
       "source_status": "construct-based prototype paraphrase; not a validated Chinese version",
-      "distress_layer": "not implemented",
-      "formal_baseline": false
+      "distress_layer": "implemented for core-item modes when frequency >= 1",
+      "formal_baseline": false,
+      "scoring_scheme": "current-cape-p15-original-0-3"
     }
   },
   "modes": {
@@ -38,37 +40,20 @@
     "vassip": {
       "public_label": "VASSIP 式",
       "research_role": "low-transformation experience layer",
-      "phase": "phase-1 candidate"
+      "phase": "phase-1 candidate",
+      "evidence_doi": "10.1371/journal.pone.0302429"
     },
     "emoji": {
       "public_label": "Emoji Game 式",
       "research_role": "low-transformation engagement layer",
-      "phase": "phase-1 candidate"
-    },
-    "itemscene": {
-      "public_label": "逐题情景化",
-      "research_role": "item-level scenario transformation",
-      "phase": "phase-1 candidate"
-    },
-    "construct": {
-      "public_label": "构念情景化",
-      "research_role": "construct-level SJT",
-      "phase": "phase-2"
-    },
-    "aisjt": {
-      "public_label": "AI-SJT",
-      "research_role": "frozen AI-style SJT bank",
-      "phase": "phase-2"
-    },
-    "psychogat": {
-      "public_label": "PsychoGAT-lite",
-      "research_role": "continuous interactive-fiction signal",
-      "phase": "phase-2"
+      "phase": "phase-1 candidate",
+      "evidence_doi": "10.1037/pas0001371"
     },
     "rush": {
-      "public_label": "HEXACO-RUSH 式",
+      "public_label": "HEXACO-RUSH / SJT 式",
       "research_role": "continuous scenario-decision signal",
-      "phase": "phase-2"
+      "phase": "phase-2",
+      "evidence_doi": "10.1016/j.chb.2024.108467"
     }
   },
   "versioning_policy": {
@@ -88,5 +73,45 @@
     "ethics_review_required_before_formal_research": true,
     "consent_and_withdrawal_flow_required": true,
     "risk_escalation_plan_required_for_screening_use": true
+  },
+  "presentation_rules": {
+    "baseline_construct_codes_visible": false,
+    "source_text_visible_by_default": false,
+    "source_debug_query": "?source=1",
+    "participant_result_default": "completion_only",
+    "research_detail_query": "?research=1",
+    "no_item_level_score_feedback": true,
+    "no_construct_codes_in_baseline": true,
+    "assigned_mode_query": "?mode=<mode_id>"
+  },
+  "mode_taxonomy": {
+    "policy": "one baseline plus four evidence-backed primary interaction mechanisms",
+    "user_facing_modes": [
+      "original",
+      "vassip",
+      "emoji",
+      "rush"
+    ],
+    "removed_as_independent_modes": [
+      "itemscene",
+      "construct",
+      "aisjt",
+      "psychogat_static"
+    ],
+    "ai_sjt_role": "authoring_method_for_sjt_not_user_facing_condition",
+    "mece_scope": "mutually exclusive within P002 experimental arms; not claimed exhaustive of all gamified assessment literature",
+    "planned_paradigms": {
+      "psychogat": {
+        "status": "disabled_until_faithful_agent_implementation",
+        "evidence_doi": "10.18653/v1/2024.acl-long.779",
+        "reason": "static fixed-path version lacked defining LLM-agent generation/control/evaluator mechanisms and overlapped the SJT arm"
+      }
+    }
+  },
+  "mode_quality": {
+    "vassip_microtask": "construct-neutral navigation only",
+    "emoji_game": "one emoji placement per session",
+    "rush": "single-construct scenarios; no coping-skill scoring; no item-level signal feedback",
+    "psychogat": "disabled until a faithful LLM-agent implementation exists"
   }
 }
