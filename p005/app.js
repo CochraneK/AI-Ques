@@ -673,14 +673,12 @@ function buildMemory(){
     {age:futureAge,tag:'Future Me',text:'到'+futurePhrase+'，你生活在'+futureLocation+'。普通的一天是：'+daily+'。关系上，你希望'+family+'；个人生活更接近：'+personalLife+'。'}
   ];
 
-  const branch=null;
 
   return {
     summary:'这是 '+clean(p.name,'你')+' 从现在走向'+futurePhrase+'的一种可能版本。它围绕“'+project+'”、'+career+'，以及你不想丢掉的“'+values+'”展开。',
     futureVignette:futurePhrase+'的你住在'+futureLocation+'。生活没有完全按计划发生，但“'+values+'”仍然能在日常里被看见。',
     memories,
     timeline,
-    branch,
     voiceAnchors:{values,people,career,project,challenge}
   };
 }
@@ -752,7 +750,7 @@ async function generateSequence(){
     $('#generateTitle').textContent='Future Me 已经准备好了。';
     $('#generateSub').textContent='它不是你的真实未来，只是一个足够具体、可以与之对话的可能版本。';
     $('#meetBtn').classList.remove('hidden');
-    emitSessionEvent('future_generated',{hasBranch:Boolean(state.memory&&state.memory.branch)});
+    emitSessionEvent('future_generated',{target:targetPhrase()});
     syncAdmin('future_generated');
   },1150);
 }
@@ -789,7 +787,6 @@ function renderReady(){
     '<p class="future-summary">'+escapeHtml(state.memory.summary||'')+'</p>'+
     '<div class="memory-glimpse">'+memories.map((x)=>'<p>'+escapeHtml(x)+'</p>').join('')+'</div>';
 
-  $('#branchPreview').innerHTML='';
   save();
 }
 
