@@ -1,6 +1,5 @@
 const VERSION = "p002-0.1.0";
 const nowIso = () => new Date().toISOString();
-const uid = () => "S-" + crypto.getRandomValues(new Uint32Array(2)).join("-");
 
 const SCALES = {
   pcl5: {
@@ -72,7 +71,9 @@ const SCALES = {
 
 const state = {
   participantId:"",
-  sessionId:uid(),
+  sessionId:null,
+  session:null,
+  profile:null,
   scaleId:null,
   index:0,
   startedAt:null,
@@ -87,7 +88,6 @@ const $ = s => document.querySelector(s);
 const launcher = $("#launcher");
 const assessment = $("#assessment");
 const result = $("#result");
-const participantId = $("#participantId");
 const scaleChoices = $("#scaleChoices");
 const startBtn = $("#startBtn");
 const distressBlock = $("#distressBlock");
@@ -111,9 +111,23 @@ function updateReady(){startBtn.disabled=!state.scaleId}
 renderScaleChoices();
 updateReady();
 
+state.profile=AIQ.ensureProfile({portalUrl:"../portal/",returnTo:location.href});
+if(state.profile){
+  state.participantId=state.profile.participant_id;
+  const summary=$("#profileSummary");
+  if(summary){
+    const bits=[state.profile.name||"参与者",state.profile.age?state.profile.age+" 岁":"",state.profile.location||"",state.profile.currentWork||""].filter(Boolean);
+    summary.innerHTML="<strong>"+bits.join(" · ")+"</strong><span class=\"id-chip\">"+state.profile.participant_id+"</span>";
+  }
+}
+
+
 startBtn.onclick=function(){
-  state.participantId=participantId.value.trim();
-  state.sessionId=uid();
+  state.profile=AIQ.getProfile();
+  if(!state.profile){AIQ.ensureProfile({portalUrl:"../portal/",returnTo:location.href});return}
+  state.participantId=state.profile.participant_id;
+  state.session=AIQ.startSession("P002",VERSION,{scale_id:state.scaleId});
+  state.sessionId=state.session.session_id;
   state.index=0;
   state.rows=[];
   state.startedAt=nowIso();
@@ -208,7 +222,7 @@ nextBtn.onclick=function(){
   const item=s.items[state.index];
   const responseMs=Math.round(performance.now()-state.itemStartedAt);
 
-  state.rows.push({
+  const row={
     participant_id:state.participantId || null,
     session_id:state.sessionId,
     study_version:VERSION,
@@ -220,7 +234,9 @@ nextBtn.onclick=function(){
     distress:s.id==="cape15" ? state.pendingDistress : null,
     response_ms:responseMs,
     answered_at:nowIso()
-  });
+  };
+  state.rows.push(row);
+  AIQ.recordEvent("item_response",row,{project_id:"P002",session_id:state.sessionId});
 
   state.index++;
   renderQuestion();
@@ -276,6 +292,9 @@ function finish(){
   const s=SCALES[state.scaleId];
   const summary=summarize();
   const cards=$("#resultCards");
+  if(state.session){
+    AIQ.completeSession(state.session,{scale_id:s.id,scale_name:s.name,summary:summary,item_count:state.rows.length});
+  }
 
   if(s.id==="pcl5"){
     cards.innerHTML =
