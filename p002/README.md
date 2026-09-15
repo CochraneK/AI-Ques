@@ -25,3 +25,12 @@ P002 聚焦 PCL-5 与 Current CAPE-P15 的研究型数字测量。
 ## 当前定位
 
 这是 prototype-only 研究界面，不是医疗器械，也不提供诊断或治疗建议。
+
+## Phase 1 presentation conditions
+
+P002 currently supports two low-transformation conditions:
+
+- `standard`: baseline-like presentation. No construct/cluster hints are shown during item answering.
+- `guided`: same item wording, response options and scoring, with dimension cards and visual chapter guidance.
+
+`condition_id` is stored at session and item level so engagement/completion differences can be tested without changing the measurement content.
