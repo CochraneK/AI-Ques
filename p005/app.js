@@ -1,1070 +1,828 @@
+(() => {
+'use strict';
+
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.1.0';
+const MODULE_VERSION = '0.2.0';
 
-const screens = ['welcome', 'identity', 'present', 'future', 'generate', 'ready', 'chat', 'capsule'];
-const stepNames = {
+const SCREENS = ['welcome', 'survey', 'portrait', 'generate', 'ready', 'chat', 'capsule'];
+const STEP_NAMES = {
   welcome: '开始',
-  identity: '现在',
-  present: '经历',
-  future: '未来',
+  survey: '人生故事',
+  portrait: '现在的你',
   generate: '生成',
-  ready: '见面',
+  ready: '未来的你',
   chat: '对话',
-  capsule: '时间胶囊'
+  capsule: '之后'
 };
+
+const QUESTIONS = [
+  { section:'现在的你', key:'name', question:'希望未来的你怎么称呼你？', hint:'用你平时最习惯的称呼。', type:'text', placeholder:'例如：小林', required:true },
+  { section:'现在的你', key:'age', question:'你现在几岁？', hint:'Future Me 会以 60 岁为时间锚点。', type:'number', placeholder:'22', required:true },
+  { section:'现在的你', key:'pronouns', question:'你希望未来的自己怎样称呼你？', hint:'可选。用于让未来自我的叙述更自然。', type:'text', placeholder:'例如：TA / 她 / 他' },
+  { section:'现在的你', key:'location', question:'你现在生活在哪里？', hint:'城市或一个你认同的地方都可以。', type:'text', placeholder:'例如：北京' },
+  { section:'现在的你', key:'currentWork', question:'现在，什么占据了你大部分时间？', hint:'学习、工作、研究、照顾家人，或者一段过渡期。', type:'textarea', placeholder:'说几句你现在的生活状态……' },
+
+  { section:'人生故事', key:'people', question:'现在对你最重要的人是谁？', hint:'他们为什么重要？你们的关系是什么样？', type:'textarea', placeholder:'家人、伴侣、朋友、老师……' },
+  { section:'人生故事', key:'proud', question:'哪一个时刻，让你真正为自己骄傲？', hint:'不需要宏大。一个只有你知道意义的时刻也可以。', type:'textarea', placeholder:'那天发生了什么？' },
+  { section:'人生故事', key:'lowPoint', question:'你经历过的一段低谷是什么？', hint:'只写你愿意写的部分。', type:'textarea', placeholder:'最难的是什么？它后来怎样影响了你？' },
+  { section:'人生故事', key:'turningPoint', question:'哪件事明显改变了你的方向？', hint:'一次选择、一个人、一场失败或偶然都可以。', type:'textarea', placeholder:'从那之后，什么不一样了？' },
+  { section:'人生故事', key:'challenge', question:'现在最想跨过去的难题是什么？', hint:'Future Me 会把它当作未来记忆中的一个重要张力。', type:'textarea', placeholder:'例如：害怕失败、职业选择、关系边界……' },
+
+  { section:'未来的你', key:'lifeProject', question:'如果有一件事值得投入很多年，会是什么？', hint:'事业、研究、家庭、创作、公益或一种生活方式。', type:'textarea', placeholder:'我希望长期投入……' },
+  { section:'未来的你', key:'career', question:'到 60 岁时，你希望自己做过什么？', hint:'想象职业和成就，但不要只写职位。', type:'textarea', placeholder:'我希望曾经……' },
+  { section:'未来的你', key:'finance', question:'那时，怎样的财务状态会让你觉得足够？', hint:'不是数字比赛。可以写安全感、自由度或责任。', type:'textarea', placeholder:'我希望钱能让我……' },
+  { section:'未来的你', key:'family', question:'那时，你希望亲密关系和家庭是什么样？', hint:'没有标准答案，也可以选择独居或非传统家庭。', type:'textarea', placeholder:'我希望身边……' },
+  { section:'未来的你', key:'futureLocation', question:'60 岁时，你想在哪里生活？', hint:'写地点，也可以写一种环境。', type:'textarea', placeholder:'也许在……' },
+  { section:'未来的你', key:'dailyLife', question:'想象那时一个很普通的星期二。', hint:'你几点起床？做什么？和谁吃饭？什么让一天值得？', type:'textarea', placeholder:'早上我会……' },
+  { section:'未来的你', key:'values', question:'无论未来怎么变，什么最好不要丢？', hint:'这是 Future Me 最重要的连续性线索。', type:'textarea', placeholder:'好奇、自由、关系、创造、诚实……' },
+  { section:'可能的分岔', key:'decision', question:'有一个你现在拿不准的 A / B 决定吗？', hint:'可选。当前 Future You 也在探索“两个可能未来”的决策路径。', type:'decision' }
+];
 
 const state = {
-  screen: 'welcome',
-  profile: {},
-  memory: null,
-  messages: [],
-  currentPortrait: '',
-  futurePortrait: '',
-  capsules: [],
-  generated: false,
-  settings: {
-    voiceMode: false,
-    unlockMonths: 12
-  }
+  screen:'welcome',
+  surveyIndex:0,
+  profile:{},
+  memory:null,
+  messages:[],
+  currentPortrait:'',
+  futurePortrait:'',
+  capsules:[],
+  generated:false,
+  settings:{ voiceMode:false, unlockMonths:12 }
 };
 
-const $ = function (selector) { return document.querySelector(selector); };
-const $$ = function (selector) { return Array.from(document.querySelectorAll(selector)); };
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
-function parseJson(value) {
-  try { return JSON.parse(value); } catch (e) { return null; }
+function parseJson(value){ try{return JSON.parse(value)}catch(_){return null} }
+function clean(value,fallback=''){ const text=String(value||'').trim(); return text||fallback }
+function firstClause(value,fallback=''){
+  const source=clean(value,fallback).split(/[。！？.!?\n]/)[0];
+  return source.length>62 ? source.slice(0,62)+'…' : source;
 }
-
-function clean(value, fallback) {
-  const text = String(value || '').trim();
-  return text || (fallback || '');
+function escapeHtml(value){
+  return String(value==null?'':value)
+    .replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))
+    .replace(/\n/g,'<br>');
 }
-
-function firstClause(value, fallback) {
-  const source = clean(value, fallback || '').split(/[。！？.!?\n]/)[0];
-  return source.length > 52 ? source.slice(0, 52) + '…' : source;
+function hash(value){
+  let h=2166136261;
+  for(const ch of String(value||'')){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619) }
+  return h>>>0;
 }
+function pick(list,seed){ return list[hash(seed)%list.length] }
 
-function hash(value) {
-  let h = 2166136261;
-  const text = String(value || '');
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function pick(list, seed) {
-  return list[hash(seed) % list.length];
-}
-
-function escapeHtml(value) {
-  return String(value == null ? '' : value)
-    .replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c];
-    })
-    .replace(/\n/g, '<br>');
-}
-
-function apiConfig(name) {
-  const config = window.P005_FUTURE_ME_CONFIG || {};
-  const directMap = {
-    chatApi: window.FUTURE_ME_API,
-    imageApi: window.FUTURE_ME_IMAGE_API,
-    voiceApi: window.FUTURE_ME_VOICE_API,
-    adminApi: window.P00_ADMIN_API
+function apiConfig(name){
+  const config=window.P005_FUTURE_ME_CONFIG||{};
+  const direct={
+    chatApi:window.FUTURE_ME_API,
+    memoryApi:window.FUTURE_ME_MEMORY_API,
+    imageApi:window.FUTURE_ME_IMAGE_API,
+    voiceApi:window.FUTURE_ME_VOICE_API,
+    adminApi:window.P00_ADMIN_API
   };
-  return directMap[name] || config[name] || '';
+  return direct[name]||config[name]||'';
 }
 
-function showToast(message) {
-  const toast = $('#toast');
-  if (!toast) return;
-  toast.textContent = message;
+function showToast(message){
+  const toast=$('#toast');
+  if(!toast)return;
+  toast.textContent=message;
   toast.classList.add('show');
   clearTimeout(window.__p005ToastTimer);
-  window.__p005ToastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+  window.__p005ToastTimer=setTimeout(()=>toast.classList.remove('show'),1800);
 }
 
-function sharedProfile() {
-  if (window.BJTU_PROFILE && typeof window.BJTU_PROFILE.getFlat === 'function') {
-    return window.BJTU_PROFILE.getFlat();
+function sharedProfile(){
+  if(window.BJTU_PROFILE&&typeof window.BJTU_PROFILE.getFlat==='function')return window.BJTU_PROFILE.getFlat();
+  return (window.P00_CONTEXT&&window.P00_CONTEXT.profile)||{};
+}
+function mapSharedIntoProfile(shared){
+  const allowed=['name','age','origin','location','currentWork','values'];
+  for(const key of allowed){
+    if(!state.profile[key]&&shared&&shared[key])state.profile[key]=shared[key];
   }
-  return (window.P00_CONTEXT && window.P00_CONTEXT.profile) || {};
 }
-
-function mapSharedIntoProfile(shared) {
-  const map = {
-    nickname: 'name',
-    displayName: 'name',
-    userName: 'name',
-    hometown: 'origin',
-    city: 'location',
-    currentCity: 'location',
-    occupation: 'currentWork',
-    currentRole: 'currentWork',
-    coreValues: 'values'
-  };
-  Object.keys(shared || {}).forEach(function (key) {
-    const target = map[key] || key;
-    if (['name', 'age', 'origin', 'location', 'currentWork', 'values'].indexOf(target) >= 0 && !state.profile[target]) {
-      state.profile[target] = shared[key];
-    }
-  });
-}
-
-function writeSharedProfile() {
-  if (!window.BJTU_PROFILE || typeof window.BJTU_PROFILE.update !== 'function') return;
+function writeSharedProfile(){
+  if(!window.BJTU_PROFILE||typeof window.BJTU_PROFILE.update!=='function')return;
   window.BJTU_PROFILE.update({
-    name: state.profile.name || '',
-    age: state.profile.age || '',
-    origin: state.profile.origin || '',
-    location: state.profile.location || '',
-    currentWork: state.profile.currentWork || '',
-    values: state.profile.values || ''
-  }, MODULE_ID);
+    name:state.profile.name||'',
+    age:state.profile.age||'',
+    origin:state.profile.origin||'',
+    location:state.profile.location||'',
+    currentWork:state.profile.currentWork||'',
+    values:state.profile.values||''
+  },MODULE_ID);
 }
 
-function snapshot(includeMedia) {
-  const data = {
-    module: MODULE_ID,
-    version: MODULE_VERSION,
-    profile: state.profile,
-    syntheticMemory: state.memory,
-    messages: state.messages,
-    capsules: state.capsules,
-    settings: state.settings,
-    screen: state.screen,
-    media: {
-      hasCurrentPortrait: Boolean(state.currentPortrait),
-      hasFuturePortrait: Boolean(state.futurePortrait)
-    },
-    exportedAt: new Date().toISOString()
+function normalizedScreen(name){
+  if(['identity','present','future'].includes(name))return 'survey';
+  if(name==='generate')return state.memory?'ready':'survey';
+  return SCREENS.includes(name)?name:'welcome';
+}
+
+function snapshot(includeMedia=false){
+  const data={
+    module:MODULE_ID,
+    version:MODULE_VERSION,
+    profile:state.profile,
+    syntheticMemory:state.memory,
+    messages:state.messages,
+    capsules:state.capsules,
+    settings:state.settings,
+    screen:state.screen,
+    surveyIndex:state.surveyIndex,
+    media:{hasCurrentPortrait:Boolean(state.currentPortrait),hasFuturePortrait:Boolean(state.futurePortrait)},
+    exportedAt:new Date().toISOString()
   };
-  if (includeMedia) {
-    data.media.currentPortrait = state.currentPortrait || '';
-    data.media.futurePortrait = state.futurePortrait || '';
+  if(includeMedia){
+    data.media.currentPortrait=state.currentPortrait||'';
+    data.media.futurePortrait=state.futurePortrait||'';
   }
   return data;
 }
+function emitSessionEvent(type,payload={}){
+  try{
+    window.dispatchEvent(new CustomEvent('p00:session',{detail:{module:MODULE_ID,type,payload,snapshot:snapshot(false)}}));
+  }catch(_){}
+}
+async function syncAdmin(type){
+  const endpoint=apiConfig('adminApi');
+  if(!endpoint)return;
+  try{
+    await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      module:MODULE_ID,version:MODULE_VERSION,event:type,occurredAt:new Date().toISOString(),data:snapshot(false)
+    })});
+  }catch(error){console.warn('P005 admin sync unavailable',error)}
+}
 
-function emitSessionEvent(type, payload) {
-  try {
-    window.dispatchEvent(new CustomEvent('p00:session', {
-      detail: {
-        module: MODULE_ID,
-        type: type,
-        payload: payload || {},
-        snapshot: snapshot(false)
-      }
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({
+      profile:state.profile,
+      memory:state.memory,
+      messages:state.messages,
+      currentPortrait:state.currentPortrait,
+      futurePortrait:state.futurePortrait,
+      capsules:state.capsules,
+      settings:state.settings,
+      screen:state.screen,
+      surveyIndex:state.surveyIndex
     }));
-  } catch (e) {}
-}
-
-async function syncAdmin(type) {
-  const endpoint = apiConfig('adminApi');
-  if (!endpoint) return;
-  try {
-    await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        module: MODULE_ID,
-        version: MODULE_VERSION,
-        event: type,
-        occurredAt: new Date().toISOString(),
-        data: snapshot(false)
-      })
-    });
-  } catch (e) {
-    console.warn('P005 admin sync unavailable', e);
-  }
-}
-
-function save() {
-  const payload = {
-    profile: state.profile,
-    memory: state.memory,
-    messages: state.messages,
-    currentPortrait: state.currentPortrait,
-    futurePortrait: state.futurePortrait,
-    capsules: state.capsules,
-    settings: state.settings,
-    screen: state.screen
-  };
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     writeSharedProfile();
-  } catch (e) {
-    console.warn('P005 local save failed', e);
-  }
+  }catch(error){console.warn('P005 local save failed',error)}
 }
-
-function migrateLegacy() {
-  if (localStorage.getItem(STORAGE_KEY)) return;
-  for (const key of LEGACY_KEYS) {
-    const legacy = parseJson(localStorage.getItem(key) || '');
-    if (!legacy) continue;
-    state.profile = legacy.profile || {};
-    state.memory = legacy.memory || null;
-    state.messages = legacy.messages || [];
-    state.currentPortrait = legacy.currentPortrait || '';
-    state.futurePortrait = legacy.futurePortrait || '';
-    state.capsules = legacy.capsules || [];
-    state.settings = Object.assign({}, state.settings, legacy.settings || {});
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        profile: state.profile,
-        memory: state.memory,
-        messages: state.messages,
-        currentPortrait: state.currentPortrait,
-        futurePortrait: state.futurePortrait,
-        capsules: state.capsules,
-        settings: state.settings,
-        screen: legacy.screen || 'welcome'
-      }));
-    } catch (e) {}
+function migrateLegacy(){
+  if(localStorage.getItem(STORAGE_KEY))return;
+  for(const key of LEGACY_KEYS){
+    const legacy=parseJson(localStorage.getItem(key)||'');
+    if(!legacy)continue;
+    const migrated={
+      profile:legacy.profile||{},
+      memory:legacy.memory||null,
+      messages:legacy.messages||[],
+      currentPortrait:legacy.currentPortrait||'',
+      futurePortrait:legacy.futurePortrait||'',
+      capsules:legacy.capsules||[],
+      settings:Object.assign({},state.settings,legacy.settings||{}),
+      screen:normalizedScreen(legacy.screen),
+      surveyIndex:0
+    };
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(migrated))}catch(_){}
     break;
   }
 }
 
-function fillForms() {
-  Object.keys(state.profile).forEach(function (key) {
-    const field = document.querySelector('[name="' + key + '"]');
-    if (field && field.value !== String(state.profile[key] || '')) field.value = state.profile[key] || '';
-  });
-  if ($('#heroAge')) $('#heroAge').textContent = state.profile.age ? String(state.profile.age) : '今天';
-}
-
-function collect() {
-  ['identityForm', 'presentForm', 'futureForm'].forEach(function (id) {
-    const form = $('#' + id);
-    if (!form) return;
-    new FormData(form).forEach(function (value, key) {
-      state.profile[key] = String(value || '').trim();
-    });
-  });
-  fillForms();
-  save();
-}
-
-function restorePortraits() {
-  if (state.currentPortrait) {
-    $('#currentPortraitFrame').classList.add('has-image');
-    $('#currentPortraitImg').src = state.currentPortrait;
-  }
-  renderFuturePortrait();
-}
-
-function load() {
+function load(){
   migrateLegacy();
-  const saved = parseJson(localStorage.getItem(STORAGE_KEY) || '');
-  if (saved) {
-    state.profile = saved.profile || state.profile || {};
-    state.memory = saved.memory || null;
-    state.messages = saved.messages || [];
-    state.currentPortrait = saved.currentPortrait || '';
-    state.futurePortrait = saved.futurePortrait || '';
-    state.capsules = saved.capsules || [];
-    state.settings = Object.assign({}, state.settings, saved.settings || {});
-    state.screen = saved.screen || 'welcome';
-    state.generated = Boolean(state.memory);
+  const saved=parseJson(localStorage.getItem(STORAGE_KEY)||'');
+  if(saved){
+    state.profile=saved.profile||{};
+    state.memory=saved.memory||null;
+    state.messages=saved.messages||[];
+    state.currentPortrait=saved.currentPortrait||'';
+    state.futurePortrait=saved.futurePortrait||'';
+    state.capsules=saved.capsules||[];
+    state.settings=Object.assign({},state.settings,saved.settings||{});
+    state.screen=normalizedScreen(saved.screen);
+    state.surveyIndex=Math.max(0,Math.min(QUESTIONS.length-1,Number(saved.surveyIndex)||0));
+    state.generated=Boolean(state.memory);
   }
   mapSharedIntoProfile(sharedProfile());
-  fillForms();
   restorePortraits();
+  renderSurvey();
   updateVoiceUI();
   renderCapsules();
-  setUnlockMonths(state.settings.unlockMonths || 12, false);
-
-  const hasProgress = Boolean(saved && (
-    Object.keys(state.profile).length || state.messages.length || state.memory || state.currentPortrait || state.capsules.length
-  ));
-  if ($('#resumeBtn')) $('#resumeBtn').style.display = hasProgress ? '' : 'none';
+  setUnlockMonths(state.settings.unlockMonths||12,false);
+  const hasProgress=Boolean(saved&&(Object.keys(state.profile).length||state.memory||state.messages.length||state.currentPortrait||state.capsules.length));
+  if($('#resumeBtn'))$('#resumeBtn').classList.toggle('hidden',!hasProgress);
+  if($('#generateAgeNow'))$('#generateAgeNow').textContent=state.profile.age?state.profile.age:'现在';
 }
 
-function renderDots() {
-  const index = Math.max(0, screens.indexOf(state.screen));
-  $('#stepLabel').textContent = stepNames[state.screen] || '';
-  $('#stepDots').innerHTML = [0, 1, 2, 3, 4, 5].map(function (_, i) {
-    return '<i class="' + (index >= Math.min(7, i + 1) ? 'active' : '') + '"></i>';
-  }).join('');
+function updateProgress(){
+  const label=$('#stepLabel');
+  const fill=$('#progressFill');
+  if(label)label.textContent=STEP_NAMES[state.screen]||'';
+  let ratio=SCREENS.indexOf(state.screen)/(SCREENS.length-1);
+  if(state.screen==='survey')ratio=.06+.35*((state.surveyIndex+1)/QUESTIONS.length);
+  if(fill)fill.style.width=Math.round(Math.max(0,Math.min(1,ratio))*100)+'%';
 }
 
-function show(name) {
-  collect();
-  state.screen = name;
-  $$('.screen').forEach(function (node) { node.classList.remove('active'); });
-  const target = $('#screen-' + name);
-  if (target) target.classList.add('active');
-  renderDots();
-
-  if (name === 'generate') generateSequence();
-  if (name === 'ready') renderReady();
-  if (name === 'chat') startChat();
-  if (name === 'capsule') {
-    renderLetter();
-    renderCapsules();
-  }
-
+function show(name){
+  state.screen=normalizedScreen(name);
+  $$('.screen').forEach((node)=>node.classList.remove('active'));
+  const target=$('#screen-'+state.screen);
+  if(target)target.classList.add('active');
+  if(state.screen==='survey')renderSurvey();
+  if(state.screen==='portrait')restorePortraits();
+  if(state.screen==='generate')generateSequence();
+  if(state.screen==='ready')renderReady();
+  if(state.screen==='chat')startChat();
+  if(state.screen==='capsule'){renderLetter();renderCapsules()}
+  updateProgress();
   save();
-  emitSessionEvent('screen_view', { screen: name });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  emitSessionEvent('screen_view',{screen:state.screen});
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-$$('[data-next]').forEach(function (button) {
-  button.addEventListener('click', function () {
-    const formId = button.dataset.validate;
-    if (formId && !$('#' + formId).reportValidity()) return;
-    show(button.dataset.next);
-  });
-});
+$$('[data-next]').forEach((button)=>button.addEventListener('click',()=>show(button.dataset.next)));
+$$('[data-prev]').forEach((button)=>button.addEventListener('click',()=>show(button.dataset.prev)));
 
-$$('[data-prev]').forEach(function (button) {
-  button.addEventListener('click', function () { show(button.dataset.prev); });
-});
+function renderSurvey(){
+  const q=QUESTIONS[state.surveyIndex];
+  if(!q)return;
+  $('#surveySection').textContent=q.section;
+  $('#surveyCount').textContent=(state.surveyIndex+1)+' / '+QUESTIONS.length;
+  $('#surveyQuestion').textContent=q.question;
+  $('#surveyHint').textContent=q.hint||'';
 
-$('#resumeBtn').addEventListener('click', function () {
-  let destination = state.screen;
-  if (!destination || destination === 'welcome' || destination === 'generate') {
-    destination = state.memory ? 'ready' : (Object.keys(state.profile).length ? 'identity' : 'welcome');
+  const root=$('#surveyInput');
+  if(q.type==='decision'){
+    root.innerHTML=
+      '<div class="decision-inputs">'+
+      '<label><span>我正在决定</span><input id="decisionMain" placeholder="例如：继续读博，还是去工作"></label>'+
+      '<div class="decision-options">'+
+      '<label><span>Option A</span><input id="decisionA" placeholder="继续读博"></label>'+
+      '<label><span>Option B</span><input id="decisionB" placeholder="去工作"></label>'+
+      '</div></div>';
+    $('#decisionMain').value=state.profile.decision||'';
+    $('#decisionA').value=state.profile.optionA||'';
+    $('#decisionB').value=state.profile.optionB||'';
+    setTimeout(()=>$('#decisionMain').focus(),60);
+  }else{
+    const tag=q.type==='textarea'?'textarea':'input';
+    const type=q.type==='number'?'number':'text';
+    root.innerHTML=tag==='textarea'
+      ? '<textarea id="surveyField" rows="4" placeholder="'+escapeHtml(q.placeholder||'')+'"></textarea>'
+      : '<input id="surveyField" type="'+type+'" '+(q.type==='number'?'min="16" max="100" inputmode="numeric"':'')+' placeholder="'+escapeHtml(q.placeholder||'')+'">';
+    $('#surveyField').value=state.profile[q.key]||'';
+    setTimeout(()=>$('#surveyField').focus(),60);
   }
+  $('#surveyBackBtn').textContent=state.surveyIndex===0?'返回首页':'上一题';
+  $('#surveyNextBtn').textContent=state.surveyIndex===QUESTIONS.length-1?'继续':'下一题';
+  updateProgress();
+}
+
+function captureSurvey(){
+  const q=QUESTIONS[state.surveyIndex];
+  if(!q)return true;
+  if(q.type==='decision'){
+    state.profile.decision=clean($('#decisionMain').value,'');
+    state.profile.optionA=clean($('#decisionA').value,'');
+    state.profile.optionB=clean($('#decisionB').value,'');
+    save();
+    return true;
+  }
+  const field=$('#surveyField');
+  const value=clean(field.value,'');
+  if(q.required&&!value){
+    field.focus();
+    showToast('先回答这一题');
+    return false;
+  }
+  if(q.key==='age'){
+    const age=Number(value);
+    if(!Number.isFinite(age)||age<16||age>100){
+      showToast('请输入 16–100 之间的年龄');
+      field.focus();
+      return false;
+    }
+  }
+  state.profile[q.key]=value;
+  save();
+  return true;
+}
+$('#surveyNextBtn').addEventListener('click',()=>{
+  if(!captureSurvey())return;
+  if(state.surveyIndex>=QUESTIONS.length-1){show('portrait');return}
+  state.surveyIndex+=1;
+  renderSurvey();
+});
+$('#surveyBackBtn').addEventListener('click',()=>{
+  captureSurvey();
+  if(state.surveyIndex===0){show('welcome');return}
+  state.surveyIndex-=1;
+  renderSurvey();
+});
+$('#surveyInput').addEventListener('keydown',(event)=>{
+  if(event.key==='Enter'&&!event.shiftKey&&event.target.tagName==='INPUT'&&state.surveyIndex<QUESTIONS.length-1){
+    event.preventDefault();
+    $('#surveyNextBtn').click();
+  }
+});
+
+$('#resumeBtn').addEventListener('click',()=>{
+  const destination=state.memory?(state.messages.length?'chat':'ready'):(Object.keys(state.profile).length?'survey':'welcome');
   show(destination);
 });
-
-$('#resetBtn').addEventListener('click', function () {
-  if (!confirm('清空本地的 P005 回答、照片、对话和时间胶囊，重新开始？')) return;
+$('#resetBtn').addEventListener('click',()=>{
+  if(!confirm('清空 P005 在此浏览器中的回答、照片、对话和时间胶囊？'))return;
   localStorage.removeItem(STORAGE_KEY);
-  LEGACY_KEYS.forEach(function (key) { localStorage.removeItem(key); });
+  LEGACY_KEYS.forEach((key)=>localStorage.removeItem(key));
   location.reload();
 });
-
-$('#exportBtn').addEventListener('click', function () {
-  collect();
-  const blob = new Blob([JSON.stringify(snapshot(true), null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = 'P005-Future-Me-' + new Date().toISOString().slice(0, 10) + '.json';
-  anchor.click();
-  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  emitSessionEvent('export', {});
-  showToast('已导出 P005 本地数据');
+$('#exportBtn').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(snapshot(true),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='P005-Future-Me-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),600);
+  emitSessionEvent('export',{});
+  showToast('已导出');
 });
 
-async function compressImage(file) {
-  const dataUrl = await new Promise(function (resolve, reject) {
-    const reader = new FileReader();
-    reader.onload = function () { resolve(reader.result); };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+async function compressImage(file){
+  const dataUrl=await new Promise((resolve,reject)=>{
+    const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);
   });
-
-  const image = await new Promise(function (resolve, reject) {
-    const img = new Image();
-    img.onload = function () { resolve(img); };
-    img.onerror = reject;
-    img.src = dataUrl;
+  const image=await new Promise((resolve,reject)=>{
+    const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=dataUrl;
   });
-
-  const maxSide = 1024;
-  const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(image.width * scale));
-  canvas.height = Math.max(1, Math.round(image.height * scale));
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.82);
+  const maxSide=1024,scale=Math.min(1,maxSide/Math.max(image.width,image.height));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+  canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
+  return canvas.toDataURL('image/jpeg',.82);
 }
-
-$('#portraitUploadBtn').addEventListener('click', function () { $('#portraitInput').click(); });
-$('#portraitInput').addEventListener('change', async function (event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) {
-    showToast('请选择图片文件');
-    return;
+function restorePortraits(){
+  const frame=$('#currentPortraitFrame'),img=$('#currentPortraitImg');
+  if(frame&&img){
+    frame.classList.toggle('has-image',Boolean(state.currentPortrait));
+    if(state.currentPortrait)img.src=state.currentPortrait; else img.removeAttribute('src');
   }
-  if (file.size > 12 * 1024 * 1024) {
-    showToast('图片太大，请选择 12MB 以下的照片');
-    return;
-  }
-  try {
-    state.currentPortrait = await compressImage(file);
-    state.futurePortrait = '';
-    $('#currentPortraitFrame').classList.add('has-image');
-    $('#currentPortraitImg').src = state.currentPortrait;
-    renderFuturePortrait();
+  const presentMonogram=$('#presentMonogram');
+  if(presentMonogram)presentMonogram.textContent=(clean(state.profile.name,'你').charAt(0)||'你').toUpperCase();
+  renderFuturePortrait();
+}
+$('#portraitUploadBtn').addEventListener('click',()=>$('#portraitInput').click());
+$('#portraitInput').addEventListener('change',async(event)=>{
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  if(!file.type.startsWith('image/')){showToast('请选择图片');return}
+  if(file.size>12*1024*1024){showToast('请选择 12MB 以下图片');return}
+  try{
+    state.currentPortrait=await compressImage(file);
+    state.futurePortrait='';
+    restorePortraits();
     save();
-    emitSessionEvent('portrait_added', {});
-    showToast('照片已在本地保存');
-  } catch (e) {
-    console.error(e);
-    showToast('照片读取失败');
-  }
+    emitSessionEvent('portrait_added',{});
+  }catch(error){console.error(error);showToast('照片读取失败')}
 });
 
-function buildMemory() {
-  const p = state.profile;
-  const age = Number(p.age) || 22;
-  const gap = Math.max(1, 60 - age);
-  const y1 = Math.min(6, Math.max(2, Math.round(gap * 0.18)));
-  const y2 = Math.min(16, Math.max(y1 + 3, Math.round(gap * 0.48)));
+function buildMemory(){
+  const p=state.profile;
+  const age=Number(p.age)||22;
+  const values=firstClause(p.values,'好奇、关系与自主');
+  const people=firstClause(p.people,'重要的人');
+  const career=firstClause(p.career,'找到一种更适合自己的工作方式');
+  const project=firstClause(p.lifeProject,'持续投入一件真正重要的长期事情');
+  const challenge=firstClause(p.challenge,'学会在不确定里继续行动');
+  const low=firstClause(p.lowPoint,'一段并不轻松的时期');
+  const turning=firstClause(p.turningPoint,'一个改变方向的时刻');
+  const futureLocation=firstClause(p.futureLocation,p.location||'一个让自己安稳的地方');
+  const daily=firstClause(p.dailyLife,'有工作，也有留给生活和关系的时间');
+  const family=firstClause(p.family,'和重要的人保持真实而稳定的关系');
 
-  const challenge = firstClause(p.challenge, '学会在不确定里继续行动');
-  const project = firstClause(p.lifeProject, '持续投入一件真正重要的长期事情');
-  const career = firstClause(p.career, '逐渐找到更适合自己的工作方式');
-  const people = firstClause(p.people, '重要的人');
-  const values = firstClause(p.values, '好奇、关系与自主');
-  const futureLocation = firstClause(p.futureLocation, p.location || '一个让自己感到安稳的地方');
-  const daily = firstClause(p.dailyLife, '有工作，也有稳定留给生活和关系的时间');
-  const proud = firstClause(p.proud, '曾经做成一件自己真正认可的事');
-  const low = firstClause(p.lowPoint, '经历过一段并不轻松的时期');
-  const turning = firstClause(p.turningPoint, '一次让方向发生变化的选择');
-
-  const timeline = [
-    {
-      age: age,
-      tag: '现在',
-      text: '你带着“' + values + '”这些仍很重要的东西出发。你已经' + proud + '，也' + low + '，并经历过' + turning + '。'
-    },
-    {
-      age: Math.min(60, age + y1),
-      tag: '第一段变化',
-      text: '你没有一次解决所有问题，而是开始把“' + challenge + '”拆成更小的行动。你和' + people + '的关系也在这个阶段重新调整。'
-    },
-    {
-      age: Math.min(60, age + y2),
-      tag: '方向逐渐成形',
-      text: '围绕“' + project + '”，你积累了更稳定的能力、关系和作品。职业上，' + career + '。有些计划没有按原样发生，但价值排序变得更清楚。'
-    },
-    {
-      age: 60,
-      tag: 'Future Me',
-      text: '你生活在' + futureLocation + '。一个普通的理想日常是：' + daily + '。回头看，这条路更像许多小选择叠加的结果，而不是某个命中注定的答案。'
-    }
+  const memories=[
+    '有一年，我突然发现“'+project+'”已经不再只是一个计划。最有满足感的不是结果，而是终于看见长期积累开始有自己的形状。',
+    '我也经历过“'+challenge+'”反复回来。后来真正帮到我的，是把它变成能重复的小动作，而不是等自己彻底不害怕。',
+    '最大的意外，是很多当年以为会决定一生的事后来只是路口；反而是“'+values+'”和与'+people+'的关系，慢慢决定了生活长成什么样。'
   ];
 
-  const lessons = [
-    '不是所有担心都需要先消失，才有资格开始。',
-    '真正保留下来的不只是成就，还有“' + values + '”。',
-    '关系和长期项目都靠反复回到现场，而不是靠一次完美决定。',
-    '未来没有替你证明“当初选对了”，它只是让你更会承担选择。'
+  const timeline=[
+    {age,tag:'现在',text:'你带着“'+values+'”出发，也已经经历过'+low+'和'+turning+'。'},
+    {age:Math.min(60,age+Math.max(4,Math.round((60-age)*.3))),tag:'变化',text:'你开始围绕“'+project+'”积累作品、能力和关系，职业方向逐渐靠近“'+career+'”。'},
+    {age:60,tag:'Future Me',text:'你生活在'+futureLocation+'。普通的一天是：'+daily+'。关系上，你希望'+family+'。'}
   ];
 
-  let branch = null;
-  const decision = firstClause(p.decision, '');
-  const optionA = firstClause(p.optionA, '');
-  const optionB = firstClause(p.optionB, '');
-  if (decision && optionA && optionB) {
-    branch = {
-      decision: decision,
-      a: {
-        label: optionA,
-        text: '如果走向“' + optionA + '”，你可能更早得到某些确定性，同时也需要主动保护“' + values + '”与长期项目“' + project + '”不被惯性吞掉。'
-      },
-      b: {
-        label: optionB,
-        text: '如果走向“' + optionB + '”，你可能面对更高的不确定性，但也得到重新组织职业、关系与生活节奏的机会。关键仍是用真实反馈修正，而不是把一次决定当成终局。'
-      }
+  let branch=null;
+  if(clean(p.decision)&&clean(p.optionA)&&clean(p.optionB)){
+    branch={
+      decision:firstClause(p.decision),
+      a:{label:firstClause(p.optionA),text:'这条路可能更早带来某种确定性；真正要观察的是，它是否仍给“'+values+'”留下空间。'},
+      b:{label:firstClause(p.optionB),text:'这条路可能带来更多未知；真正要观察的是，它是否让你获得更真实的新信息。'}
     };
   }
 
   return {
-    timeline: timeline,
-    lessons: lessons,
-    branch: branch,
-    summary: '这是 ' + clean(p.name, '你') + ' 从 ' + age + ' 岁走向 60 岁的一种可能版本。核心线索包括：' + challenge + '、' + project + '、' + career + '，以及“' + values + '”。',
-    voiceAnchors: {
-      values: values,
-      people: people,
-      challenge: challenge,
-      project: project,
-      career: career
-    }
+    summary:'这是 '+clean(p.name,'你')+' 从 '+age+' 岁走向 60 岁的一种可能版本。它围绕“'+project+'”、'+career+'，以及你不想丢掉的“'+values+'”展开。',
+    futureVignette:'60 岁的你住在'+futureLocation+'。生活没有完全按计划发生，但“'+values+'”仍然能在日常里被看见。',
+    memories,
+    timeline,
+    branch,
+    voiceAnchors:{values,people,career,project,challenge}
   };
 }
 
-function generateSequence() {
-  collect();
-  state.memory = buildMemory();
-  state.generated = true;
-  save();
-
-  const lines = [
-    '读取现在的你：' + clean(state.profile.name, '你') + '，' + clean(state.profile.age, '?') + ' 岁。',
-    '找到重要关系：' + firstClause(state.profile.people, '你在意的人') + '。',
-    '连接高点、低谷与转折点。',
-    '加入未来挑战：' + firstClause(state.profile.challenge, '一个尚未解决的挑战') + '。',
-    '加入长期项目：' + firstClause(state.profile.lifeProject, '一个值得长期投入的项目') + '。',
-    state.memory.branch ? '识别到一个 A / B 决策分支，同时保留两条可能路径。' : '生成从现在到 60 岁的可能经历。',
-    'Future Me 已准备好。'
-  ];
-
-  const stream = $('#memoryStream');
-  stream.innerHTML = '';
-  $('#meetBtn').classList.add('hidden');
-  $('#generateTitle').textContent = '正在把人生线索连接起来……';
-  $('#generateSub').textContent = '不是预测，而是构造一个与你的信息相连、内部尽量一致的“可能未来”。';
-
-  lines.forEach(function (text, i) {
-    setTimeout(function () {
-      const item = document.createElement('div');
-      item.className = 'memory-line';
-      item.textContent = text;
-      stream.appendChild(item);
-      if (i === lines.length - 1) {
-        $('#generateTitle').textContent = 'Future Me 已经带着一段未来记忆回来了。';
-        $('#generateSub').textContent = '先看一眼这条可能路径，再决定你想问什么。';
-        $('#meetBtn').classList.remove('hidden');
-        emitSessionEvent('future_generated', { hasBranch: Boolean(state.memory.branch) });
-        syncAdmin('future_generated');
-      }
-    }, i * 260);
-  });
+async function generateMemory(){
+  const endpoint=apiConfig('memoryApi');
+  if(!endpoint)return buildMemory();
+  try{
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      module:MODULE_ID,profile:state.profile,targetAge:60,
+      instruction:'Create one plausible future memory, not a prediction. Return JSON with summary, futureVignette, memories[3], timeline, and optional branch. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
+    })});
+    if(!response.ok)throw new Error('memory api '+response.status);
+    const result=await response.json();
+    if(result&&result.summary)return result;
+  }catch(error){console.warn('Future memory API unavailable; using local fallback',error)}
+  return buildMemory();
 }
 
-$('#meetBtn').addEventListener('click', function () { show('ready'); });
-
-function renderFuturePortrait() {
-  const frame = $('#futurePortrait');
-  const image = $('#futurePortraitImg');
-  const monogram = $('#futureMonogram');
-  const status = $('#portraitStatus');
-  const initial = (clean(state.profile.name, 'F').charAt(0) || 'F').toUpperCase();
-  if (monogram) monogram.textContent = initial;
-
-  if (state.futurePortrait) {
-    frame.classList.add('has-image');
-    image.src = state.futurePortrait;
-    status.textContent = '未来头像 · API 结果';
-  } else {
-    frame.classList.remove('has-image');
-    image.removeAttribute('src');
-    status.textContent = state.currentPortrait ? '已收到当前照片 · 待年龄化' : '未来头像未生成';
-  }
-}
-
-$('#agePortraitBtn').addEventListener('click', async function () {
-  collect();
-  if (!state.currentPortrait) {
-    showToast('先在“现在的我”里加入一张照片');
-    show('identity');
-    return;
-  }
-
-  const endpoint = apiConfig('imageApi');
-  if (!endpoint) {
-    $('#futurePortrait').classList.add('has-image');
-    $('#futurePortraitImg').src = state.currentPortrait;
-    $('#portraitStatus').textContent = '当前照片占位 · 未连接年龄化 API';
-    showToast('图像 API 未连接，暂用当前照片占位');
-    return;
-  }
-
-  const button = $('#agePortraitBtn');
-  const oldText = button.textContent;
-  button.disabled = true;
-  button.textContent = '正在生成…';
-
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image: state.currentPortrait,
-        currentAge: Number(state.profile.age) || null,
-        targetAge: 60,
-        instruction: 'Preserve identity. Create a respectful, photorealistic age-progressed portrait at approximately age 60. Do not alter race, gender presentation, or core facial identity unless implied by natural aging.'
-      })
-    });
-    if (!response.ok) throw new Error('image api ' + response.status);
-    const result = await response.json();
-    const imageValue = result.imageUrl || result.url || (result.imageBase64 ? 'data:image/png;base64,' + result.imageBase64 : '');
-    if (!imageValue) throw new Error('missing image result');
-    state.futurePortrait = imageValue;
-    renderFuturePortrait();
+async function requestFuturePortrait(){
+  const endpoint=apiConfig('imageApi');
+  if(!endpoint||!state.currentPortrait)return false;
+  try{
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:60,
+      instruction:'Preserve identity. Create a respectful photorealistic portrait at approximately age 60. Natural aging only; do not alter race, gender presentation, or core facial identity.'
+    })});
+    if(!response.ok)throw new Error('image api '+response.status);
+    const result=await response.json();
+    const imageValue=result.imageUrl||result.url||(result.imageBase64?'data:image/png;base64,'+result.imageBase64:'');
+    if(!imageValue)throw new Error('missing image result');
+    state.futurePortrait=imageValue;
     save();
-    emitSessionEvent('future_portrait_generated', {});
+    emitSessionEvent('future_portrait_generated',{});
     syncAdmin('future_portrait_generated');
-    showToast('Future Me 头像已生成');
-  } catch (e) {
-    console.error(e);
-    showToast('未来头像生成失败，已保留原照片');
-  } finally {
-    button.disabled = false;
-    button.textContent = oldText;
+    return true;
+  }catch(error){console.warn('Future portrait unavailable',error);return false}
+}
+
+let generationToken=0;
+async function generateSequence(){
+  const token=++generationToken;
+  $('#meetBtn').classList.add('hidden');
+  $('#memoryStream').innerHTML='';
+  $('#generateTitle').textContent='正在连接你的人生线索。';
+  $('#generateSub').textContent='把过去、目标与可能经历组织成一段连续的 future memory。';
+  $('#generateAgeNow').textContent=clean(state.profile.age,'现在');
+
+  const lines=['读取现在的你','连接高点、低谷与转折','延伸目标与价值','生成未来记忆'];
+  lines.forEach((text,i)=>setTimeout(()=>{
+    if(token!==generationToken||state.screen!=='generate')return;
+    const line=document.createElement('div');line.className='memory-line';line.textContent=text;$('#memoryStream').appendChild(line);
+  },i*260));
+
+  const portraitPromise=requestFuturePortrait();
+  state.memory=await generateMemory();
+  state.generated=true;
+  save();
+  await portraitPromise;
+
+  setTimeout(()=>{
+    if(token!==generationToken||state.screen!=='generate')return;
+    $('#generateTitle').textContent='Future Me 已经准备好了。';
+    $('#generateSub').textContent='它不是你的真实未来，只是一个足够具体、可以与之对话的可能版本。';
+    $('#meetBtn').classList.remove('hidden');
+    emitSessionEvent('future_generated',{hasBranch:Boolean(state.memory&&state.memory.branch)});
+    syncAdmin('future_generated');
+  },1150);
+}
+$('#meetBtn').addEventListener('click',()=>show('ready'));
+
+function renderFuturePortrait(){
+  const frame=$('#futurePortrait'),image=$('#futurePortraitImg'),mono=$('#futureMonogram'),status=$('#portraitStatus');
+  if(!frame||!image||!mono||!status)return;
+  mono.textContent=(clean(state.profile.name,'F').charAt(0)||'F').toUpperCase();
+  if(state.futurePortrait){
+    frame.classList.add('has-image');image.src=state.futurePortrait;status.textContent='可能的 60 岁头像';
+  }else{
+    frame.classList.remove('has-image');image.removeAttribute('src');
+    status.textContent=state.currentPortrait?'未连接年龄化结果':'未上传照片';
   }
-});
+}
 
-function renderReady() {
-  if (!state.memory) state.memory = buildMemory();
-  collect();
-
-  const p = state.profile;
-  const initial = (clean(p.name, 'F').charAt(0) || 'F').toUpperCase();
-  $('#futureName').textContent = clean(p.name, '你');
-  $('#chatName').textContent = clean(p.name, 'Future Me') + ' · 60';
-  $('#chatAvatar').textContent = initial;
-  $('#futureMonogram').textContent = initial;
+function renderReady(){
+  if(!state.memory)state.memory=buildMemory();
+  $('#futureName').textContent=clean(state.profile.name,'你');
+  $('#futureMonogram').textContent=(clean(state.profile.name,'F').charAt(0)||'F').toUpperCase();
+  $('#chatAvatar').textContent=(clean(state.profile.name,'F').charAt(0)||'F').toUpperCase();
+  $('#chatName').textContent=clean(state.profile.name,'Future Me')+' · 60';
+  $('#futureIntro').textContent=state.memory.futureVignette||'一个由你现在的故事延伸出来的可能版本。';
   renderFuturePortrait();
 
-  const timelineHtml = state.memory.timeline.map(function (x) {
-    return '<div class="milestone"><b>' + escapeHtml(x.age) + ' 岁 · ' + escapeHtml(x.tag) + '</b><p>' + escapeHtml(x.text) + '</p></div>';
-  }).join('');
+  const memories=Array.isArray(state.memory.memories)&&state.memory.memories.length
+    ? state.memory.memories.slice(0,3)
+    : (state.memory.timeline||[]).slice(1).map((x)=>x.text);
 
-  const lessonsHtml = state.memory.lessons.map(function (item) {
-    return '<div class="lesson">' + escapeHtml(item) + '</div>';
-  }).join('');
+  $('#memorySummary').innerHTML=
+    '<p class="future-summary">'+escapeHtml(state.memory.summary||'')+'</p>'+
+    '<div class="memory-glimpse">'+memories.map((x)=>'<p>'+escapeHtml(x)+'</p>').join('')+'</div>';
 
-  $('#memorySummary').innerHTML =
-    '<p class="future-summary">' + escapeHtml(state.memory.summary) + '</p>' +
-    '<div class="timeline">' + timelineHtml + '</div>' +
-    '<div class="section-kicker"><span>可能学到的几件事</span><i></i></div>' +
-    '<div class="lesson-grid">' + lessonsHtml + '</div>';
-
-  if (state.memory.branch) {
-    $('#branchPreview').innerHTML =
-      '<div class="branch-card">' +
-      '<h3>分岔路口 · ' + escapeHtml(state.memory.branch.decision) + '</h3>' +
-      '<div class="branch-options">' +
-      '<div class="branch-option"><small>OPTION A · ' + escapeHtml(state.memory.branch.a.label) + '</small><p>' + escapeHtml(state.memory.branch.a.text) + '</p></div>' +
-      '<div class="branch-option"><small>OPTION B · ' + escapeHtml(state.memory.branch.b.label) + '</small><p>' + escapeHtml(state.memory.branch.b.text) + '</p></div>' +
+  if(state.memory.branch){
+    $('#branchPreview').innerHTML=
+      '<div class="branch-card"><h3>'+escapeHtml(state.memory.branch.decision)+'</h3><div class="branch-options">'+
+      '<div class="branch-option"><small>A · '+escapeHtml(state.memory.branch.a.label)+'</small><p>'+escapeHtml(state.memory.branch.a.text)+'</p></div>'+
+      '<div class="branch-option"><small>B · '+escapeHtml(state.memory.branch.b.label)+'</small><p>'+escapeHtml(state.memory.branch.b.text)+'</p></div>'+
       '</div></div>';
-  } else {
-    $('#branchPreview').innerHTML = '';
-  }
-
+  }else $('#branchPreview').innerHTML='';
   save();
 }
 
-function ensureGreeting() {
-  if (state.messages.length) return;
-  const p = state.profile;
+$('#agePortraitBtn').addEventListener('click',async()=>{
+  if(!state.currentPortrait){showToast('先加入一张现在的照片');show('portrait');return}
+  if(!apiConfig('imageApi')){showToast('尚未连接年龄化图像 API');return}
+  const button=$('#agePortraitBtn'),old=button.textContent;
+  button.disabled=true;button.textContent='生成中…';
+  const ok=await requestFuturePortrait();
+  renderFuturePortrait();
+  button.disabled=false;button.textContent=old;
+  showToast(ok?'未来头像已更新':'生成失败');
+});
+
+function ensureGreeting(){
+  if(state.messages.length)return;
+  const p=state.profile,m=state.memory||buildMemory(),a=m.voiceAnchors||{};
   state.messages.push({
-    role: 'future',
-    text: '嗨，' + clean(p.name, '年轻的我') + '。我是 60 岁的你。先说明：我不是真正发生过的未来，只是从你刚才写下的目标、关系与经历长出来的一种可能版本。\n\n如果你愿意，我们可以聊工作、家人、后悔、意外，或者你现在最难做的决定。'
+    role:'future',
+    text:'嗨，'+clean(p.name,'年轻的我')+'。我是一个 60 岁的你——先说清楚，这只是可能的未来，人生完全可能走成别的样子。'
+  });
+  state.messages.push({
+    role:'future',
+    text:'我像你这么大时，也在想“'+firstClause(p.career,'以后到底会成为什么样的人')+'”。后来有些事情按预期发生，也有很多没有。真正留下来的，是我一直没舍得丢掉“'+firstClause(p.values,'真正重要的东西')+'”。'
+  });
+  state.messages.push({
+    role:'future',
+    text:'你知道吗，回头看这几十年，我最珍惜的往往不是某个头衔，而是'+firstClause(p.people,'重要的人')+'和那些慢慢长出来的日常。你现在最想问我什么？'
   });
   save();
 }
 
-function renderMessages() {
-  const box = $('#messages');
-  box.innerHTML = state.messages.map(function (message) {
-    const roleLabel = message.role === 'future' ? 'Future Me · 60' : '现在的我';
-    return '<div class="message ' + escapeHtml(message.role) + '"><span class="meta">' + roleLabel + '</span>' + escapeHtml(message.text) + '</div>';
+function renderMessages(){
+  const box=$('#messages');
+  box.innerHTML=state.messages.map((message)=>{
+    const role=message.role==='future'?'future':'user';
+    return '<div class="message '+role+'"><span class="meta">'+(role==='future'?'Future Me · 60':'现在的我')+'</span>'+escapeHtml(message.text)+'</div>';
   }).join('');
-  box.scrollTop = box.scrollHeight;
+  box.scrollTop=box.scrollHeight;
+  const exchanged=state.messages.filter((m)=>m.text!=='…').length;
+  $('#finishChatBtn').classList.toggle('hidden',exchanged<16);
+  if(exchanged>3)$('#promptChips').classList.add('hidden');
 }
 
-function startChat() {
-  ensureGreeting();
-  renderMessages();
-  updateVoiceUI();
-}
+function startChat(){ensureGreeting();renderMessages();updateVoiceUI();updateChatModeNote()}
 
-function localFutureReply(input) {
-  const p = state.profile;
-  const q = input.toLowerCase();
-  const memory = state.memory || buildMemory();
-  const anchors = memory.voiceAnchors || {};
-  const values = anchors.values || firstClause(p.values, '真正重要的东西');
-  const project = anchors.project || firstClause(p.lifeProject, '长期投入的事情');
-  const challenge = anchors.challenge || firstClause(p.challenge, '眼前这个挑战');
+function localFutureReply(input){
+  const p=state.profile,m=state.memory||buildMemory(),a=m.voiceAnchors||{};
+  const values=a.values||firstClause(p.values,'真正重要的东西');
+  const project=a.project||firstClause(p.lifeProject,'长期投入的事情');
+  const challenge=a.challenge||firstClause(p.challenge,'眼前这个难题');
+  const q=input.toLowerCase();
 
-  const replies = {
-    happy: [
-      '如果你问“幸福”是不是一直很稳定，答案是否定的。真正变化的是，我不再把幸福当成某个终点。后来最踏实的部分，反而来自' + firstClause(p.dailyLife, '普通而有节奏的日常') + '。',
-      '有一些阶段我很快乐，也有一些阶段并不轻松。到 60 岁，我更珍惜的是：生活和“' + values + '”没有完全脱节。'
+  const groups={
+    happy:[
+      '并不是一直开心。到 60 岁以后，我更在意的不是“幸福有没有到达”，而是生活有没有长期偏离“'+values+'”。',
+      '有快乐，也有很普通甚至很难的几年。真正稳定下来的，是我终于不再要求每个阶段都证明自己走对了。'
     ],
-    career: [
-      '职业没有完全照着最初的剧本走。但“' + firstClause(p.career, '想做的事') + '”一直像一根线。后来我发现，比职位更重要的是持续累积能带走的能力、关系和作品。',
-      '你现在很容易把职业看成一次选对就结束。其实后来更像连续实验：做一段、复盘、换假设，再做一段。围绕“' + project + '”的投入，反而比某个头衔更稳定。'
+    career:[
+      '当年我把职业看得像一道单选题。后来才知道它更像连续实验。围绕“'+project+'”积累下来的能力和关系，比某个职位更能带走。',
+      '“'+firstClause(p.career,'想做的事')+'”最后没有完全照剧本发生，但它一直像一根线，帮我判断哪些机会值得投入。'
     ],
-    family: [
-      '关于家人和重要的人，我最想告诉你的是：不要总等“忙完这一阵”。你曾经写下' + firstClause(p.people, '重要的人') + '，后来这些关系真正留下来的，都是一次次具体的联系。',
-      '未来的家庭没有必要长成某一种模板。重要的是你有没有让关系里的人知道：他们对你重要。'
+    people:[
+      '我最想提醒你的，是别总等“忙完这一阵”再联系重要的人。后来真正留下来的关系，都是一次次很具体的出现。',
+      '关系没有自动变好。它们是被时间、道歉、边界和反复回来慢慢做出来的。'
     ],
-    money: [
-      '钱后来更像一种选择权，而不是分数。你写下的理想状态是“' + firstClause(p.finance, '更有安全感和自主性') + '”。真正有效的是把它变成长期习惯，而不是等收入到了某个数字才开始。'
+    regret:[
+      '当然有遗憾。但大多数遗憾后来都变成信息，不再是判决。真正难受的通常不是“选错”，而是当时没有诚实面对自己在意什么。',
+      '我没有得到一条零后悔的人生。好消息是，人可以在错误之后继续成为别的人。'
     ],
-    regret: [
-      '当然有后悔。有些机会错过了，有些关系处理得不够好。但最有用的后悔，不是“当初为什么没选另一条”，而是让我看清：以后遇到类似时，我想成为什么样的人。',
-      '我最后没有得到一条“零后悔路径”。好消息是，大多数后悔后来都变成了信息，而不是判决。'
+    fear:[
+      '我记得这种不确定。焦虑常常在要求你提前拿到未来的保证，但未来很少给这种保证。你能做的是让下一步更小、更真实、更可撤回。',
+      '关于“'+challenge+'”，真正的变化不是某天突然不怕了，而是害怕时仍然能完成一个足够小的动作。'
     ],
-    challenge: [
-      '你现在写下想跨过去的是“' + challenge + '”。后来真正起作用的不是某一天突然想通，而是把它拆得小到可以重复练习。你不用等自己完全不怕。',
-      '关于“' + challenge + '”，未来的我没法替你保证结果。但我可以告诉你：最关键的变化通常发生在你愿意多做一次真实尝试之后。'
+    decision:[
+      m.branch
+        ? '关于“'+m.branch.decision+'”，我不会假装从 60 岁知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
+        : '如果你卡在一个选择里，我会问三个问题：我真正重视什么？哪种代价我愿意承担？哪个下一步能让我获得更多真实信息？'
     ],
-    fear: [
-      '我记得那种不确定。后来我才懂，焦虑经常是在要求你提前拿到未来的保证。但人生很少给这种保证。我们能做的是让下一步更小、更真实、更可撤回。',
-      '你不需要证明自己不会失败。你只需要让失败不再等于“我完了”。你经历过' + firstClause(p.lowPoint, '低谷') + '，那已经说明你有重新组织生活的能力。'
+    surprise:[
+      '最大的意外是：很多当年觉得会决定一生的事，后来只是路口；一些很小的习惯和关系，反而慢慢复利成了人生。',
+      '未来最常见的不是戏剧性反转，而是一些当时不起眼的选择，几年后突然显出差异。'
     ],
-    surprise: [
-      '最大的意外是：很多当年以为会决定一生的事，后来只是一个路口；而一些当时很小的习惯和关系，反而滚成了很大的差异。',
-      '我没想到“' + firstClause(p.turningPoint, '某个转折点') + '”之后的影响会持续那么久。未来最常见的不是戏剧性反转，而是小东西慢慢复利。'
-    ],
-    decision: [
-      memory.branch
-        ? '关于“' + memory.branch.decision + '”，我不会从 60 岁假装知道 A 或 B 哪个一定更好。真正值得比较的是：哪条路更符合“' + values + '”，哪条路能更快给你真实反馈，以及哪种代价是你愿意承担的。'
-        : '如果你正卡在一个选择里，不妨把它拆成三个问题：我真正重视什么？我能承受哪种代价？哪个下一步能让我获得更多真实信息？'
-    ],
-    hello: [
-      '你好，' + clean(p.name, '年轻的我') + '。我们只是站在不同时间尺度看同一组问题。你最想先问哪一件事？'
-    ],
-    advice: [
-      '如果只能留一句：别把未来的自己当裁判，把他当队友。今天先做一个能让明天多一点信息的小动作。',
-      '先别追求“正确人生”。问一个更实用的问题：哪一个下一步既符合“' + values + '”，又能让你更了解现实？去做那个。'
+    default:[
+      '当我把这个问题从 60 岁往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
+      '我能给你的不是答案，而是一点时间距离。很多问题放到几十年的尺度里，会从“必须马上选对”变成“先做一次真实尝试”。'
     ]
   };
 
-  let key = 'advice';
-  if (/开心|幸福|快乐|happy/.test(q)) key = 'happy';
-  else if (/工作|职业|事业|career|专业|学校|学习/.test(q)) key = 'career';
-  else if (/家人|家庭|父母|朋友|伴侣|爱情|关系/.test(q)) key = 'family';
-  else if (/钱|财务|收入|财富|money/.test(q)) key = 'money';
-  else if (/后悔|遗憾|regret/.test(q)) key = 'regret';
-  else if (/挑战|困难|跨过|克服/.test(q)) key = 'challenge';
-  else if (/焦虑|害怕|担心|恐惧|怕/.test(q)) key = 'fear';
-  else if (/意外|没想到|unexpected|惊讶/.test(q)) key = 'surprise';
-  else if (/选择|决定|纠结|option|选哪/.test(q)) key = 'decision';
-  else if (/你好|hi|hello|嗨/.test(q)) key = 'hello';
+  let key='default';
+  if(/开心|幸福|快乐|happy/.test(q))key='happy';
+  else if(/工作|职业|事业|career|学习|专业/.test(q))key='career';
+  else if(/家人|家庭|朋友|伴侣|关系|父母/.test(q))key='people';
+  else if(/后悔|遗憾|regret/.test(q))key='regret';
+  else if(/焦虑|害怕|担心|恐惧|压力/.test(q))key='fear';
+  else if(/选择|决定|纠结|option|选哪/.test(q))key='decision';
+  else if(/意外|惊讶|没想到|unexpected/.test(q))key='surprise';
 
-  const reply = pick(replies[key], input + JSON.stringify(p));
-  const tail = pick([
-    '如果把这个问题拉回今天，你觉得最难的是哪一小部分？',
-    '你现在脑中有没有一个具体场景，让这个问题特别真实？',
+  const reply=pick(groups[key],input+JSON.stringify(p));
+  const tail=pick([
+    '如果把它拉回今天，你最想先弄清哪一小部分？',
+    '你为什么会在现在这个时候问我这件事？',
     '如果明天只能试一个很小的动作，你会选什么？',
-    '我更想听听你为什么现在会问这个。'
-  ], input + 'tail');
-
-  return reply + '\n\n' + tail;
+    '这件事里，哪一种代价是你最不愿意承受的？'
+  ],input+'tail');
+  return reply+'\n\n'+tail;
 }
 
-async function getFutureReply(input) {
-  const endpoint = apiConfig('chatApi');
-  if (endpoint) {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          module: MODULE_ID,
-          profile: state.profile,
-          syntheticMemory: state.memory,
-          messages: state.messages.filter(function (item) { return item.text !== '…'; }),
-          userMessage: input,
-          instruction: 'Act as one plausible 60-year-old future self grounded in the supplied biography and synthetic memory. Never claim certainty, prophecy, diagnosis, or therapeutic authority.'
-        })
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.reply) return String(result.reply);
+async function getFutureReply(input){
+  const endpoint=apiConfig('chatApi');
+  if(endpoint){
+    try{
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        module:MODULE_ID,
+        profile:state.profile,
+        syntheticMemory:state.memory,
+        messages:state.messages.filter((item)=>item.text!=='…'),
+        userMessage:input,
+        instruction:'Act as one plausible 60-year-old future self grounded in the supplied life story and future memory. Speak autobiographically using continuity cues such as "when I was your age" when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
+      })});
+      if(response.ok){
+        const result=await response.json();
+        if(result.reply)return String(result.reply);
       }
-    } catch (e) {
-      console.warn('Future Me chat API unavailable; using local fallback', e);
-    }
+    }catch(error){console.warn('Future Me chat API unavailable; using local fallback',error)}
   }
-  await new Promise(function (resolve) { setTimeout(resolve, 280); });
+  await new Promise((resolve)=>setTimeout(resolve,260));
   return localFutureReply(input);
 }
 
-async function speakText(text) {
-  if (!text) return;
-  const endpoint = apiConfig('voiceApi');
+$('#chatForm').addEventListener('submit',async(event)=>{
+  event.preventDefault();
+  const input=$('#chatInput'),text=input.value.trim();
+  if(!text)return;
+  state.messages.push({role:'user',text});input.value='';renderMessages();
+  const pending={role:'future',text:'…'};state.messages.push(pending);renderMessages();
+  const reply=await getFutureReply(text);
+  pending.text=reply;save();renderMessages();
+  emitSessionEvent('chat_turn',{userMessage:text,replyLength:reply.length});syncAdmin('chat_turn');
+  if(state.settings.voiceMode)speakText(reply);
+});
+$$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
+  $('#chatInput').value=button.textContent;$('#chatForm').requestSubmit();
+}));
+$('#finishChatBtn').addEventListener('click',()=>show('capsule'));
 
-  if (endpoint) {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: text,
-          voice: 'future-self',
-          language: 'zh-CN',
-          profile: { name: state.profile.name || '', targetAge: 60 }
-        })
-      });
-      if (response.ok) {
-        const result = await response.json();
-        const audioUrl = result.audioUrl || result.url || '';
-        if (audioUrl) {
-          const audio = new Audio(audioUrl);
-          await audio.play();
-          return;
-        }
+async function speakText(text){
+  if(!text)return;
+  const endpoint=apiConfig('voiceApi');
+  if(endpoint){
+    try{
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        text,voice:'future-self',language:'zh-CN',profile:{name:state.profile.name||'',targetAge:60}
+      })});
+      if(response.ok){
+        const result=await response.json(),url=result.audioUrl||result.url||'';
+        if(url){await new Audio(url).play();return}
       }
-    } catch (e) {
-      console.warn('Future Me voice API unavailable; using browser speech', e);
-    }
+    }catch(error){console.warn('Future voice API unavailable; using browser speech',error)}
   }
-
-  if (!('speechSynthesis' in window)) {
-    showToast('当前浏览器不支持语音朗读');
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'zh-CN';
-  utterance.rate = 0.96;
-  utterance.pitch = 0.92;
-  const voices = window.speechSynthesis.getVoices();
-  const zh = voices.find(function (voice) { return /zh|Chinese|Mandarin/i.test(voice.lang + ' ' + voice.name); });
-  if (zh) utterance.voice = zh;
-  window.speechSynthesis.speak(utterance);
+  if(!('speechSynthesis' in window)){showToast('当前浏览器不支持朗读');return}
+  speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.lang='zh-CN';utterance.rate=.96;utterance.pitch=.92;
+  const voice=speechSynthesis.getVoices().find((v)=>/zh|Chinese|Mandarin/i.test(v.lang+' '+v.name));
+  if(voice)utterance.voice=voice;
+  speechSynthesis.speak(utterance);
 }
 
-function updateVoiceUI() {
-  const active = Boolean(state.settings.voiceMode);
-  const button = $('#voiceModeBtn');
-  const voiceState = $('#voiceState');
-  if (button) button.textContent = active ? '关闭语音模式' : '开启语音模式';
-  if (voiceState) {
-    voiceState.classList.toggle('active', active);
-    const label = voiceState.querySelector('span');
-    if (label) label.textContent = active ? '语音模式 · 自动朗读回复' : '文字模式';
+function updateVoiceUI(){
+  const active=Boolean(state.settings.voiceMode);
+  $('#voiceModeBtn').textContent=active?'关闭语音':'语音';
+  const stateNode=$('#voiceState');
+  if(stateNode){
+    stateNode.classList.toggle('hidden',!active);
+    const label=stateNode.querySelector('span');if(label)label.textContent=active?'语音模式':'文字模式';
   }
+  updateChatModeNote();
 }
-
-$('#voiceModeBtn').addEventListener('click', function () {
-  state.settings.voiceMode = !state.settings.voiceMode;
-  updateVoiceUI();
-  save();
-  showToast(state.settings.voiceMode ? '已开启语音模式' : '已关闭语音模式');
+$('#voiceModeBtn').addEventListener('click',()=>{
+  state.settings.voiceMode=!state.settings.voiceMode;updateVoiceUI();save();
+  showToast(state.settings.voiceMode?'已开启自动朗读':'已关闭语音模式');
+});
+$('#speakLastBtn').addEventListener('click',()=>{
+  const last=state.messages.filter((x)=>x.role==='future'&&x.text!=='…').slice(-1)[0];
+  if(last)speakText(last.text);
 });
 
-$('#speakLastBtn').addEventListener('click', function () {
-  const last = state.messages.filter(function (item) { return item.role === 'future' && item.text !== '…'; }).slice(-1)[0];
-  if (!last) return;
-  speakText(last.text);
-});
-
-let recognition = null;
-let recognitionActive = false;
-
-function ensureRecognition() {
-  if (recognition) return recognition;
-  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Recognition) return null;
-  recognition = new Recognition();
-  recognition.lang = 'zh-CN';
-  recognition.interimResults = true;
-  recognition.continuous = false;
-
-  recognition.onstart = function () {
-    recognitionActive = true;
-    $('#micBtn').classList.add('listening');
-    $('#voiceListening').classList.remove('hidden');
+let recognition=null,recognitionActive=false;
+function ensureRecognition(){
+  if(recognition)return recognition;
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Recognition)return null;
+  recognition=new Recognition();recognition.lang='zh-CN';recognition.interimResults=true;recognition.continuous=false;
+  recognition.onstart=()=>{recognitionActive=true;$('#micBtn').classList.add('listening');$('#voiceListening').classList.remove('hidden')};
+  recognition.onresult=(event)=>{
+    let transcript='',final=false;
+    for(let i=event.resultIndex;i<event.results.length;i++){transcript+=event.results[i][0].transcript;if(event.results[i].isFinal)final=true}
+    $('#chatInput').value=transcript;
+    if(final&&state.settings.voiceMode&&transcript.trim())setTimeout(()=>$('#chatForm').requestSubmit(),120);
   };
-  recognition.onresult = function (event) {
-    let transcript = '';
-    let isFinal = false;
-    for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      transcript += event.results[i][0].transcript;
-      if (event.results[i].isFinal) isFinal = true;
-    }
-    $('#chatInput').value = transcript;
-    if (isFinal && state.settings.voiceMode && transcript.trim()) {
-      setTimeout(function () { $('#chatForm').requestSubmit(); }, 120);
-    }
-  };
-  recognition.onerror = function () {
-    showToast('语音识别未成功，可以继续打字');
-  };
-  recognition.onend = function () {
-    recognitionActive = false;
-    $('#micBtn').classList.remove('listening');
-    $('#voiceListening').classList.add('hidden');
-  };
+  recognition.onerror=()=>showToast('语音识别失败，可以继续打字');
+  recognition.onend=()=>{recognitionActive=false;$('#micBtn').classList.remove('listening');$('#voiceListening').classList.add('hidden')};
   return recognition;
 }
-
-$('#micBtn').addEventListener('click', function () {
-  const engine = ensureRecognition();
-  if (!engine) {
-    showToast('当前浏览器不支持语音听写');
-    return;
-  }
-  if (recognitionActive) {
-    engine.stop();
-  } else {
-    try { engine.start(); } catch (e) {}
-  }
+$('#micBtn').addEventListener('click',()=>{
+  const engine=ensureRecognition();
+  if(!engine){showToast('当前浏览器不支持语音听写');return}
+  if(recognitionActive)engine.stop(); else try{engine.start()}catch(_){}
 });
 
-$('#chatForm').addEventListener('submit', async function (event) {
-  event.preventDefault();
-  const input = $('#chatInput');
-  const text = input.value.trim();
-  if (!text) return;
-
-  state.messages.push({ role: 'user', text: text });
-  input.value = '';
-  renderMessages();
-
-  const pending = { role: 'future', text: '…' };
-  state.messages.push(pending);
-  renderMessages();
-
-  const reply = await getFutureReply(text);
-  pending.text = reply;
-  save();
-  renderMessages();
-  emitSessionEvent('chat_turn', { userMessage: text, replyLength: reply.length });
-  syncAdmin('chat_turn');
-
-  if (state.settings.voiceMode) speakText(reply);
-});
-
-$$('#promptChips button').forEach(function (button) {
-  button.addEventListener('click', function () {
-    $('#chatInput').value = button.textContent;
-    $('#chatForm').requestSubmit();
-  });
-});
-
-$('#finishChatBtn').addEventListener('click', function () { show('capsule'); });
-
-function letterHtml() {
-  collect();
-  const p = state.profile;
-  const action = clean($('#nextAction').value, '');
-  const latest = state.messages.filter(function (item) { return item.role === 'user'; }).slice(-1)[0];
-  const latestQuestion = latest ? firstClause(latest.text, '未来会怎样') : '未来会怎样';
-
-  return '<h3>给未来的 ' + escapeHtml(clean(p.name, '我')) + '</h3>' +
-    '<p>今天的我还在想“' + escapeHtml(latestQuestion) + '”。刚刚，我和一个 60 岁的可能版本聊了很久。它不能证明哪条路一定正确，但它让我把时间拉长了一点。</p>' +
-    '<p>我希望以后还记得三件事：第一，别丢掉 <strong>' + escapeHtml(firstClause(p.values, '真正重视的东西')) + '</strong>；第二，把“' + escapeHtml(firstClause(p.challenge, '那个难题')) + '”拆成能反复练习的小动作；第三，别只照顾计划，也照顾 ' + escapeHtml(firstClause(p.people, '重要的人')) + '。</p>' +
-    '<p>围绕“' + escapeHtml(firstClause(p.lifeProject, '长期投入的事情')) + '”的积累，也许会比很多短期得失更重要。城市、工作、关系可能都和现在想的不完全一样，但我希望未来的我仍然知道自己为什么出发。</p>' +
-    '<p>' + (action ? '这周我先做：<strong>' + escapeHtml(action) + '</strong>。不需要更宏大。' : '我还会给这周的自己留一个小到真的能做到的行动。') + '</p>' +
-    '<p>未来见。<br><strong>' + escapeHtml(clean(p.name, '现在的我')) + ' · ' + new Date().toLocaleDateString('zh-CN') + '</strong></p>';
+function updateChatModeNote(){
+  const bits=['可能未来'];
+  bits.push(apiConfig('chatApi')?'LLM':'本地原型');
+  if(state.settings.voiceMode)bits.push('语音');
+  $('#chatModeNote').textContent=bits.join(' · ');
 }
 
-function renderLetter() {
-  $('#futureLetter').innerHTML = letterHtml();
+function letterHtml(){
+  const p=state.profile,action=clean($('#nextAction').value,'');
+  const latest=state.messages.filter((x)=>x.role==='user').slice(-1)[0];
+  const latestQuestion=latest?firstClause(latest.text,'未来会怎样'):'未来会怎样';
+  return '<h3>给未来的 '+escapeHtml(clean(p.name,'我'))+'</h3>'+
+    '<p>今天的我还在想“'+escapeHtml(latestQuestion)+'”。刚才我和一个 60 岁的可能版本聊了一会儿。它没有告诉我答案，只是把时间拉长了一点。</p>'+
+    '<p>我希望以后还记得：别丢掉 <strong>'+escapeHtml(firstClause(p.values,'真正重视的东西'))+'</strong>，也别总等“以后”再照顾 '+escapeHtml(firstClause(p.people,'重要的人'))+'。</p>'+
+    '<p>'+(action?'这周我先做：<strong>'+escapeHtml(action)+'</strong>。':'我会给这周的自己留一个足够小、真的能做到的动作。')+'</p>'+
+    '<p>未来见。<br><strong>'+escapeHtml(clean(p.name,'现在的我'))+' · '+new Date().toLocaleDateString('zh-CN')+'</strong></p>';
 }
+function renderLetter(){if($('#futureLetter'))$('#futureLetter').innerHTML=letterHtml()}
+$('#nextAction').addEventListener('input',()=>{clearTimeout(window.__p005LetterTimer);window.__p005LetterTimer=setTimeout(renderLetter,150)});
 
-$('#nextAction').addEventListener('input', function () {
-  clearTimeout(window.__p005LetterTimer);
-  window.__p005LetterTimer = setTimeout(renderLetter, 180);
-});
-
-function addMonths(baseDate, months) {
-  const date = new Date(baseDate.getTime());
-  const day = date.getDate();
-  date.setDate(1);
-  date.setMonth(date.getMonth() + Number(months || 0));
-  const last = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  date.setDate(Math.min(day, last));
-  return date;
+function addMonths(baseDate,months){
+  const date=new Date(baseDate.getTime()),day=date.getDate();
+  date.setDate(1);date.setMonth(date.getMonth()+Number(months||0));
+  const last=new Date(date.getFullYear(),date.getMonth()+1,0).getDate();date.setDate(Math.min(day,last));return date;
 }
-
-function dateInputValue(date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
+function dateInputValue(date){
+  const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);return local.toISOString().slice(0,10);
 }
-
-function setUnlockMonths(months, shouldSave) {
-  state.settings.unlockMonths = Number(months) || 12;
-  $$('#unlockChips button').forEach(function (button) {
-    button.classList.toggle('active', Number(button.dataset.months) === state.settings.unlockMonths);
-  });
-  const date = addMonths(new Date(), state.settings.unlockMonths);
-  $('#unlockDate').value = dateInputValue(date);
-  $('#unlockDate').min = dateInputValue(new Date(Date.now() + 86400000));
-  if (shouldSave !== false) save();
+function setUnlockMonths(months,shouldSave=true){
+  state.settings.unlockMonths=Number(months)||12;
+  $$('#unlockChips button').forEach((button)=>button.classList.toggle('active',Number(button.dataset.months)===state.settings.unlockMonths));
+  $('#unlockDate').value=dateInputValue(addMonths(new Date(),state.settings.unlockMonths));
+  $('#unlockDate').min=dateInputValue(new Date(Date.now()+86400000));
+  if(shouldSave)save();
 }
+$$('#unlockChips button').forEach((button)=>button.addEventListener('click',()=>setUnlockMonths(Number(button.dataset.months))));
+$('#unlockDate').addEventListener('change',()=>$$('#unlockChips button').forEach((button)=>button.classList.remove('active')));
 
-$$('#unlockChips button').forEach(function (button) {
-  button.addEventListener('click', function () { setUnlockMonths(Number(button.dataset.months)); });
-});
-
-$('#unlockDate').addEventListener('change', function () {
-  $$('#unlockChips button').forEach(function (button) { button.classList.remove('active'); });
-});
-
-function capsuleStatus(capsule) {
-  const unlock = new Date(capsule.unlockAt);
-  const now = new Date();
-  if (unlock <= now) return '已解锁';
-  const days = Math.ceil((unlock.getTime() - now.getTime()) / 86400000);
-  if (days < 31) return '还有 ' + days + ' 天';
-  const months = Math.max(1, Math.round(days / 30.44));
-  return '约 ' + months + ' 个月后';
+function capsuleStatus(capsule){
+  const days=Math.ceil((new Date(capsule.unlockAt)-new Date())/86400000);
+  if(days<=0)return '已解锁';
+  if(days<31)return '还有 '+days+' 天';
+  return '约 '+Math.max(1,Math.round(days/30.44))+' 个月后';
 }
-
-function renderCapsules() {
-  const root = $('#savedCapsules');
-  if (!root) return;
-  if (!state.capsules.length) {
-    root.innerHTML = '';
-    return;
-  }
-
-  root.innerHTML = '<div class="section-kicker"><span>已封存</span><i></i></div>' +
-    state.capsules.slice().reverse().map(function (capsule) {
-      const unlocked = new Date(capsule.unlockAt) <= new Date();
-      return '<button class="saved-capsule" data-capsule-id="' + escapeHtml(capsule.id) + '" ' + (unlocked ? '' : 'disabled') + '>' +
-        '<span><b>' + (unlocked ? '时间胶囊已解锁' : '时间胶囊已锁定') + '</b><small>' + new Date(capsule.unlockAt).toLocaleDateString('zh-CN') + '</small></span>' +
-        '<small>' + capsuleStatus(capsule) + '</small></button>';
-    }).join('');
-
-  $$('[data-capsule-id]').forEach(function (button) {
-    button.addEventListener('click', function () {
-      const capsule = state.capsules.find(function (item) { return item.id === button.dataset.capsuleId; });
-      if (!capsule || new Date(capsule.unlockAt) > new Date()) return;
-      $('#futureLetter').innerHTML = capsule.letterHtml;
-      showToast('已打开这封过去写下的信');
-    });
-  });
+function renderCapsules(){
+  const root=$('#savedCapsules');if(!root)return;
+  if(!state.capsules.length){root.innerHTML='';return}
+  root.innerHTML=state.capsules.slice().reverse().map((capsule)=>{
+    const unlocked=new Date(capsule.unlockAt)<=new Date();
+    return '<button class="saved-capsule" data-capsule-id="'+escapeHtml(capsule.id)+'" '+(unlocked?'':'disabled')+'>'+
+      '<span><b>'+(unlocked?'已解锁':'已封存')+'</b><small>'+new Date(capsule.unlockAt).toLocaleDateString('zh-CN')+'</small></span>'+
+      '<small>'+capsuleStatus(capsule)+'</small></button>';
+  }).join('');
+  $$('[data-capsule-id]').forEach((button)=>button.addEventListener('click',()=>{
+    const capsule=state.capsules.find((x)=>x.id===button.dataset.capsuleId);
+    if(!capsule||new Date(capsule.unlockAt)>new Date())return;
+    $('#futureLetter').innerHTML=capsule.letterHtml;showToast('已打开');
+  }));
 }
-
-$('#saveCapsuleBtn').addEventListener('click', function () {
-  collect();
-  const value = $('#unlockDate').value;
-  if (!value) {
-    showToast('请选择解锁日期');
-    return;
-  }
-  const unlockAt = new Date(value + 'T09:00:00');
-  if (unlockAt <= new Date()) {
-    showToast('解锁日期需要在未来');
-    return;
-  }
-
-  const capsule = {
-    id: 'capsule_' + Date.now(),
-    createdAt: new Date().toISOString(),
-    unlockAt: unlockAt.toISOString(),
-    action: clean($('#nextAction').value, ''),
-    letterHtml: letterHtml()
+$('#saveCapsuleBtn').addEventListener('click',()=>{
+  const value=$('#unlockDate').value;if(!value){showToast('请选择日期');return}
+  const unlockAt=new Date(value+'T09:00:00');if(unlockAt<=new Date()){showToast('请选择未来日期');return}
+  const capsule={
+    id:'capsule_'+Date.now(),createdAt:new Date().toISOString(),unlockAt:unlockAt.toISOString(),
+    action:clean($('#nextAction').value,''),letterHtml:letterHtml()
   };
-  state.capsules.push(capsule);
-  save();
-  renderCapsules();
-  emitSessionEvent('capsule_saved', { unlockAt: capsule.unlockAt });
-  syncAdmin('capsule_saved');
-  showToast('时间胶囊已封存到当前浏览器');
+  state.capsules.push(capsule);save();renderCapsules();
+  emitSessionEvent('capsule_saved',{unlockAt:capsule.unlockAt});syncAdmin('capsule_saved');showToast('已封存');
 });
-
-function updateChatModeNote() {
-  const note = $('#chatModeNote');
-  if (!note) return;
-  note.textContent = apiConfig('chatApi') ? 'LLM 后端已配置' : '本地 fallback · 可配置 LLM API';
-}
 
 load();
-renderDots();
+updateProgress();
 updateChatModeNote();
+emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length)});
 
-if (state.screen !== 'welcome' && state.screen !== 'generate') {
-  const savedScreen = state.screen;
-  state.screen = 'welcome';
-  renderDots();
-  state.screen = savedScreen;
-}
-
-emitSessionEvent('loaded', { hasSavedProfile: Boolean(Object.keys(state.profile).length) });
+})();
