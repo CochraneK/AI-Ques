@@ -64,3 +64,24 @@
  .distance-game{padding:28px 16px}.distance-future-fixed{right:15px;top:19px;width:66px;height:66px}.distance-scale{margin:72px 80px 0 4px}.distance-axis{margin:12px 80px 0 4px}
  .poster-detail-grid{grid-template-columns:1fr}.future-metrics{grid-template-columns:1fr 100px 1fr}
 }
+/* ===== P001 v5.4 progress + curated report ===== */
+.swipe-progress{max-width:620px!important;width:100%;padding:8px 12px!important;border-radius:16px;background:rgba(255,255,255,.78);border:1px solid var(--line);box-shadow:0 8px 22px rgba(64,45,31,.05)}
+.swipe-progress>span{min-width:54px;font-weight:800;color:var(--ink)}
+.swipe-progress .facet-track{height:10px!important;background:#ece3da!important;border:1px solid rgba(111,83,62,.06);box-shadow:inset 0 1px 2px rgba(55,36,24,.05)}
+.swipe-progress .facet-track i{min-width:10px;box-shadow:0 0 12px rgba(158,139,255,.20)}
+.stj-bar{height:10px!important;border:1px solid rgba(111,83,62,.06);background:#ece3da!important}.stj-bar i{min-width:10px}
+.stage[data-stage="currentSwipe"] .swipe-progress,.stage[data-stage="idealSwipe"] .swipe-progress,.stage[data-stage="valueSwipe"] .swipe-progress{flex:0 0 auto}
+.share-poster.curated{min-height:unset!important;gap:12px!important;padding:34px!important}
+.share-poster.curated h2{font-size:44px!important;margin:6px 0 4px!important}
+.poster-self-grid.compact{grid-template-columns:1fr 38px 1fr}
+.poster-self-grid.compact .poster-self{min-height:160px}
+.poster-self-grid.compact .poster-self em{display:block;margin-top:12px;font-style:normal;font-size:10px;opacity:.56}
+.poster-self-grid.compact .poster-chip{padding:5px 8px;margin-top:6px}
+.poster-list-section.keep{border-left:4px solid #ff9a7d}.poster-list-section.grow{border-left:4px solid #86d9b8}.poster-list-section.values{border-left:4px solid #d8b15c}
+.poster-more{display:inline-grid;place-items:center;min-width:30px;height:30px;border-radius:999px;background:rgba(0,0,0,.07);font-size:11px;font-weight:800}
+.magazine .poster-more{background:rgba(255,255,255,.12)}
+@media(max-width:760px){
+ .swipe-progress{padding:6px 9px!important}.swipe-progress .facet-track{height:9px!important}
+ .share-poster.curated{padding:22px!important}.share-poster.curated h2{font-size:34px!important}
+ .poster-self-grid.compact{grid-template-columns:1fr 28px 1fr}.poster-self-grid.compact .poster-self{min-height:145px}
+}

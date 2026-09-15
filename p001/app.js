@@ -47,7 +47,7 @@ renderProfileHello();
 function renderLegend(){const domains=(sel,keys)=>$(sel).innerHTML=keys.map(k=>'<span><i class="domain-dot" style="background:'+DOMAINS[k].color+'"></i>'+k+' · '+DOMAINS[k].label+'</span>').join('');domains('#domainLegendCurrent',['N','E','O','A','C']);domains('#domainLegendIdeal',['E','O','A','C']);$('#valueLegend').innerHTML=Object.entries(VALUE_CATEGORIES).map(([k,v])=>'<span><i class="domain-dot" style="background:'+v.color+'"></i>'+v.label+'</span>').join('')}
 function swipeConfig(kind){if(kind==='current')return{deck:state.currentDeck,index:'currentSwipeIndex',history:'currentSwipeHistory',selected:'currentSelected',stack:'#currentSwipeStack',progress:'#currentSwipeProgress',bar:'#currentSwipeBar',count:'#currentSelectedCount',undo:'#undoCurrentSwipe',leftBtn:'#currentLeftBtn',rightBtn:'#currentRightBtn',left:'不像现在的我',right:'像现在的我'};if(kind==='ideal')return{deck:state.idealDeck,index:'idealSwipeIndex',history:'idealSwipeHistory',selected:'idealSelected',stack:'#idealSwipeStack',progress:'#idealSwipeProgress',bar:'#idealSwipeBar',count:'#idealSelectedCount',undo:'#undoIdealSwipe',leftBtn:'#idealLeftBtn',rightBtn:'#idealRightBtn',left:'不是我想靠近的',right:'我想靠近'};return{deck:state.valueDeck,index:'valueSwipeIndex',history:'valueSwipeHistory',selected:'valueSelected',stack:'#valueSwipeStack',progress:'#valueSwipeProgress',bar:'#valueSwipeBar',count:'#valueSelectedCount',undo:'#undoValueSwipe',leftBtn:'#valueLeftBtn',rightBtn:'#valueRightBtn',left:'没那么重要',right:'对我重要'}}
 function cardData(kind,item){if(kind!=='value')return{color:item.color,tag:item.domain+' · '+item.domain_label,title:item.label,desc:item.desc};const cat=VALUE_CATEGORIES[item.category];return{color:cat.color,tag:cat.label,title:item.label,desc:item.desc}}
-function renderSwipe(kind){const c=swipeConfig(kind),i=state[c.index],deck=c.deck,stack=$(c.stack);$(c.progress).textContent=Math.min(i+1,deck.length)+' / '+deck.length;$(c.bar).style.width=(Math.min(i,deck.length)/deck.length*100)+'%';$(c.count).textContent='已留下 '+state[c.selected].length+' 个';$(c.undo).disabled=state[c.history].length===0;if(i>=deck.length){finishSwipe(kind);return}const item=deck[i],d=cardData(kind,item);stack.innerHTML='';const card=document.createElement('article');card.className='swipe-card';card.style.setProperty('--facet-color',d.color);card.innerHTML='<span class="swipe-stamp left">'+c.left+'</span><span class="swipe-stamp right">'+c.right+'</span><span class="facet-domain"><i class="domain-dot" style="background:'+d.color+'"></i>'+d.tag+'</span><h3>'+d.title+'</h3><p>'+d.desc+'</p>';stack.appendChild(card);wireSwipeCard(card,kind,item);$(c.leftBtn).onclick=()=>triggerSwipe(kind,false,'button');$(c.rightBtn).onclick=()=>triggerSwipe(kind,true,'button');icons();try{window.VanillaTilt?.init(card,{max:2.5,speed:450,glare:true,'max-glare':.04})}catch(e){}}
+function renderSwipe(kind){const c=swipeConfig(kind),i=state[c.index],deck=c.deck,stack=$(c.stack);$(c.progress).textContent=Math.min(i+1,deck.length)+' / '+deck.length;$(c.bar).style.width=(Math.min(i+1,deck.length)/deck.length*100)+'%';$(c.count).textContent='已留下 '+state[c.selected].length+' 个';$(c.undo).disabled=state[c.history].length===0;if(i>=deck.length){finishSwipe(kind);return}const item=deck[i],d=cardData(kind,item);stack.innerHTML='';const card=document.createElement('article');card.className='swipe-card';card.style.setProperty('--facet-color',d.color);card.innerHTML='<span class="swipe-stamp left">'+c.left+'</span><span class="swipe-stamp right">'+c.right+'</span><span class="facet-domain"><i class="domain-dot" style="background:'+d.color+'"></i>'+d.tag+'</span><h3>'+d.title+'</h3><p>'+d.desc+'</p>';stack.appendChild(card);wireSwipeCard(card,kind,item);$(c.leftBtn).onclick=()=>triggerSwipe(kind,false,'button');$(c.rightBtn).onclick=()=>triggerSwipe(kind,true,'button');icons();try{window.VanillaTilt?.init(card,{max:2.5,speed:450,glare:true,'max-glare':.04})}catch(e){}}
 function wireSwipeCard(card,kind,item){let active=false,startX=0,startTs=0;card.onpointerdown=e=>{active=true;startX=e.clientX;startTs=performance.now();card.setPointerCapture(e.pointerId)};card.onpointermove=e=>{if(!active)return;const x=e.clientX-startX;card.style.transform='translateX('+x+'px) rotate('+(x/24)+'deg)';card.querySelector('.swipe-stamp.left').style.opacity=String(Math.max(0,Math.min(1,-x/90)));card.querySelector('.swipe-stamp.right').style.opacity=String(Math.max(0,Math.min(1,x/90)))};card.onpointerup=e=>{if(!active)return;active=false;const dx=e.clientX-startX;if(Math.abs(dx)>=82)commitSwipe(kind,dx>0,Math.round(performance.now()-startTs),item,'gesture');else resetCard(card)};card.onpointercancel=()=>{active=false;resetCard(card)}}
 function resetCard(card){card.style.transition='transform .24s ease';card.style.transform='';card.querySelectorAll('.swipe-stamp').forEach(x=>x.style.opacity='0');setTimeout(()=>card.style.transition='',260)}
 function triggerSwipe(kind,selected,input){const c=swipeConfig(kind),item=c.deck[state[c.index]],card=$(c.stack+' .swipe-card');if(!item||!card)return;commitSwipe(kind,selected,null,item,input)}
@@ -57,23 +57,149 @@ $('#undoCurrentSwipe').onclick=()=>undoSwipe('current');$('#undoIdealSwipe').onc
 function finishSwipe(kind){const arr=state[swipeConfig(kind).selected];if(kind==='current'){if(arr.length>=2){show('currentRank');runSTJ(arr,'current',$('#currentTournament'),'哪一个更像现在的我？',(rank,stats)=>{state.currentRank=rank;state.currentStats=stats;renderSwipe('ideal');show('idealSwipe')})}else{state.currentRank=[...arr];renderSwipe('ideal');show('idealSwipe')}}else if(kind==='ideal'){if(arr.length>=2){show('idealRank');runSTJ(arr,'ideal',$('#idealTournament'),'哪一个更接近理想的我？',(rank,stats)=>{state.idealRank=rank;state.idealStats=stats;renderSwipe('value');show('valueSwipe')})}else{state.idealRank=[...arr];renderSwipe('value');show('valueSwipe')}}else{if(arr.length>=2){show('valueRank');runSTJ(arr,'value',$('#valueTournament'),'哪一个更值得我先守住？',(rank,stats)=>{state.valueRank=rank;state.valueStats=stats;show('futureDistance');requestAnimationFrame(initDistance)})}else{state.valueRank=[...arr];show('futureDistance');requestAnimationFrame(initDistance)}}}
 
 function runSTJ(items,kind,mount,question,done){
- const stats={},pairCounts={},answers=[],undoStack=[];items.forEach(id=>stats[id]={rating:1000,matches:0,wins:0,rt_total:0});const uniquePairs=items.length*(items.length-1)/2,budget=Math.min(Number(state.settings.stj_budget||24),Math.max(1,uniquePairs));let seed=seededShuffle(items,state.participant_id+'-'+kind+'-king'),left=seed[0],right=seed[1],started=performance.now(),busy=false;
- const key=(a,b)=>[a,b].sort().join('|');const clone=o=>JSON.parse(JSON.stringify(o));
+ if(items.length<=1){done([...items],{});return}
+ const answers=[],undoStack=[],pairCounts={},matchCounts={},winCounts={},rtTotals={};
+ items.forEach(id=>{matchCounts[id]=0;winCounts[id]=0;rtTotals[id]=0});
+ const key=(a,b)=>[a,b].sort().join('|');
+ const clone=o=>JSON.parse(JSON.stringify(o));
+ const n=items.length,uniquePairs=n*(n-1)/2;
+ const requested=Number(state.settings.stj_budget||24);
+ const scientificFloor=Math.min(36,Math.ceil(n*1.5));
+ const budget=Math.min(uniquePairs,Math.max(requested,scientificFloor));
+ const order=seededShuffle(items,state.participant_id+'-'+kind+'-coverage-v2');
+ let coverage=[];
+ if(n===2)coverage=[[order[0],order[1]]];
+ else for(let i=0;i<n;i++)coverage.push([order[i],order[(i+1)%n]]);
+ let left=null,right=null,started=0,busy=false;
+
  function obj(id){return kind==='value'?valueMap[id]:facetMap[id]}
  function colorOf(o){return kind==='value'?VALUE_CATEGORIES[o.category].color:o.color}
  function tagOf(o){return kind==='value'?VALUE_CATEGORIES[o.category].label:(o.domain+' · '+o.domain_label)}
  function meaning(){return kind==='current'?'更像现在的我':kind==='ideal'?'更接近理想的我':'对我更重要'}
  function card(id,side){const o=obj(id),c=colorOf(o);return '<article class="pk-card persistent '+side+'" data-side="'+side+'" data-id="'+id+'" style="--facet-color:'+c+'"><span class="domain-tag"><i class="domain-dot" style="background:'+c+'"></i>'+tagOf(o)+'</span><h3>'+o.label+'</h3><p>'+(o.desc||'')+'</p><div class="choice-meaning">'+(side==='left'?'← ':'→ ')+meaning()+'</div></article>'}
  function wireCard(el){el.onclick=()=>pick(el.dataset.side,'click')}
- function updateMeta(){const counter=mount.querySelector('.stj-counter'),bar=mount.querySelector('.stj-bar i'),undo=mount.querySelector('.undoSTJ');if(counter)counter.textContent=(Math.min(answers.length+1,budget))+' / '+budget;if(bar)bar.style.width=(answers.length/budget*100)+'%';if(undo)undo.disabled=!answers.length}
- function render(){mount.innerHTML='<div class="stj-shell"><div class="stj-top"><span class="round-badge">留在场上的，会继续接受下一次选择</span><span class="stj-counter">'+(answers.length+1)+' / '+budget+'</span></div><div class="stj-bar"><i style="width:'+(answers.length/budget*100)+'%"></i></div><div class="stj-question">'+question+'</div><div class="stj-sub">← 左边 · → 右边 · ↑ 返回上一场</div><div class="pk-row persistent-row">'+card(left,'left')+'<div class="vs">VS</div>'+card(right,'right')+'</div><div class="stj-undo-row"><button class="tool-btn undoSTJ" '+(answers.length?'':'disabled')+'><kbd>↑</kbd> 返回上一场</button></div></div>';mount.querySelectorAll('.pk-card').forEach(wireCard);mount.querySelector('.undoSTJ').onclick=undo;icons();started=performance.now()}
- function selectChallenger(winner){const candidates=items.filter(id=>id!==winner);candidates.sort((a,b)=>{const pa=pairCounts[key(winner,a)]||0,pb=pairCounts[key(winner,b)]||0;if(pa!==pb)return pa-pb;if(stats[a].matches!==stats[b].matches)return stats[a].matches-stats[b].matches;return a.localeCompare(b)});return candidates[0]}
- function apply(w,l,rt){const expected=1/(1+Math.pow(10,(stats[l].rating-stats[w].rating)/400)),k=32;stats[w].rating+=k*(1-expected);stats[l].rating-=k*(1-expected);stats[w].wins++;stats[w].matches++;stats[l].matches++;if(rt!=null){stats[w].rt_total+=rt;stats[l].rt_total+=rt}pairCounts[key(w,l)]=(pairCounts[key(w,l)]||0)+1}
- function replaceLoser(loserSide,challenger){const old=mount.querySelector('.pk-card.'+loserSide);if(!old)return render();old.outerHTML=card(challenger,loserSide);const fresh=mount.querySelector('.pk-card.'+loserSide);wireCard(fresh);if(window.gsap)window.gsap.fromTo(fresh,{x:loserSide==='right'?260:-260,opacity:0,rotation:loserSide==='right'?8:-8},{x:0,opacity:1,rotation:0,duration:.28,ease:'power2.out'});started=performance.now();updateMeta();icons()}
- function pick(side,input){if(busy||answers.length>=budget)return;busy=true;const winner=side==='left'?left:right,loser=side==='left'?right:left,loserSide=side==='left'?'right':'left',rt=Math.round(performance.now()-started);undoStack.push({left,right,stats:clone(stats),pairCounts:clone(pairCounts),answers:clone(answers)});const ans={left_id:left,right_id:right,preferred_id:winner,rt_ms:rt,input};answers.push(ans);apply(winner,loser,rt);log(kind+'_pairwise',{...ans,comparison_index:answers.length,budget,interaction:'winner_stays'});const loserEl=mount.querySelector('.pk-card.'+loserSide),outX=loserSide==='right'?340:-340;const next=()=>{if(answers.length>=budget){busy=false;showComplete();return}const challenger=selectChallenger(winner);if(loserSide==='right')right=challenger;else left=challenger;replaceLoser(loserSide,challenger);busy=false};if(window.gsap)window.gsap.to(loserEl,{x:outX,y:260,opacity:0,rotation:loserSide==='right'?18:-18,duration:.32,ease:'power2.in',onComplete:next});else{loserEl.style.transition='all .32s ease';loserEl.style.transform='translate('+outX+'px,260px) rotate('+(loserSide==='right'?18:-18)+'deg)';loserEl.style.opacity='0';setTimeout(next,330)}}
- function undo(){if(!undoStack.length||busy)return;const snap=undoStack.pop();left=snap.left;right=snap.right;Object.keys(stats).forEach(k=>delete stats[k]);Object.assign(stats,snap.stats);Object.keys(pairCounts).forEach(k=>delete pairCounts[k]);Object.assign(pairCounts,snap.pairCounts);answers.splice(0,answers.length,...snap.answers);log(kind+'_pairwise_undo',{left_id:left,right_id:right});render()}
- function showComplete(){mount.innerHTML='<div class="stj-shell stj-complete"><div class="round-badge">这一轮完成了</div><div class="stj-question">已经做了 '+answers.length+' 次取舍</div><div class="stj-sub">如果最后一次选错，↑ 还能返回。</div><div class="stj-undo-row"><button class="tool-btn undoSTJ"><kbd>↑</kbd> 返回上一场</button><button class="btn primary finishSTJ">确认排位</button></div></div>';mount.querySelector('.undoSTJ').onclick=undo;mount.querySelector('.finishSTJ').onclick=finish;icons()}
- function finish(){const ranking=[...items].sort((a,b)=>stats[b].rating-stats[a].rating||stats[b].wins-stats[a].wins),clean={};for(const id of items)clean[id]={rating:Math.round(stats[id].rating*10)/10,matches:stats[id].matches,wins:stats[id].wins,mean_rt_ms:stats[id].matches?Math.round(stats[id].rt_total/stats[id].matches):null};log(kind+'_ranking_complete',{ranking,comparisons:answers.length,budget,stats:clean,interaction:'winner_stays'});stjController=null;done(ranking,clean)}
+ function rebuildCounts(){
+   Object.keys(matchCounts).forEach(id=>{matchCounts[id]=0;winCounts[id]=0;rtTotals[id]=0});
+   Object.keys(pairCounts).forEach(k=>delete pairCounts[k]);
+   for(const a of answers){
+     const w=a.preferred_id,l=w===a.left_id?a.right_id:a.left_id;
+     matchCounts[w]++;matchCounts[l]++;winCounts[w]++;rtTotals[w]+=a.rt_ms||0;rtTotals[l]+=a.rt_ms||0;
+     pairCounts[key(w,l)]=(pairCounts[key(w,l)]||0)+1;
+   }
+ }
+ function fitBT(){
+   const theta=Object.fromEntries(items.map(id=>[id,0])),lambda=.6;
+   for(let iter=0;iter<120;iter++){
+     const grad=Object.fromEntries(items.map(id=>[id,-lambda*theta[id]]));
+     for(const a of answers){
+       const i=a.left_id,j=a.right_id,y=a.preferred_id===i?1:0,d=theta[i]-theta[j],p=1/(1+Math.exp(-Math.max(-12,Math.min(12,d)))),err=y-p;
+       grad[i]+=err;grad[j]-=err;
+     }
+     const lr=.18/Math.sqrt(1+iter*.04);
+     for(const id of items)theta[id]+=lr*grad[id];
+     const mean=items.reduce((s,id)=>s+theta[id],0)/items.length;
+     for(const id of items)theta[id]-=mean;
+   }
+   const info=Object.fromEntries(items.map(id=>[id,lambda]));
+   for(const a of answers){
+     const i=a.left_id,j=a.right_id,d=theta[i]-theta[j],p=1/(1+Math.exp(-Math.max(-12,Math.min(12,d)))),v=p*(1-p);
+     info[i]+=v;info[j]+=v;
+   }
+   const se=Object.fromEntries(items.map(id=>[id,1/Math.sqrt(info[id])]));
+   return {theta,se};
+ }
+ function nextCoverage(winner){
+   if(!coverage.length)return null;
+   let idx=winner?coverage.findIndex(p=>p.includes(winner)):-1;
+   if(idx<0)idx=0;
+   return coverage.splice(idx,1)[0];
+ }
+ function nextAdaptive(winner){
+   const model=fitBT(),meanMatches=items.reduce((s,id)=>s+matchCounts[id],0)/items.length;
+   let best=null,bestScore=-Infinity,bestWithWinner=null,bestWinnerScore=-Infinity;
+   for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+     const a=items[i],b=items[j],repeat=pairCounts[key(a,b)]||0;
+     const exposure=1/(1+matchCounts[a])+1/(1+matchCounts[b]);
+     const uncertainty=model.se[a]+model.se[b];
+     const closeness=Math.exp(-Math.abs(model.theta[a]-model.theta[b]));
+     const score=3.2*exposure+2.1*uncertainty+1.8*closeness-4.5*repeat;
+     if(score>bestScore){bestScore=score;best=[a,b]}
+     if(winner&&(a===winner||b===winner)&&matchCounts[winner]<=meanMatches+1&&score>bestWinnerScore){bestWinnerScore=score;bestWithWinner=[a,b]}
+   }
+   return bestWithWinner&&bestWinnerScore>=bestScore*.82?bestWithWinner:best;
+ }
+ function chooseNext(winner){
+   if(answers.length>=budget)return null;
+   if(coverage.length)return nextCoverage(winner);
+   return nextAdaptive(winner);
+ }
+ function updateMeta(){
+   const counter=mount.querySelector('.stj-counter'),bar=mount.querySelector('.stj-bar i'),undo=mount.querySelector('.undoSTJ');
+   if(counter)counter.textContent=Math.min(answers.length+1,budget)+' / '+budget;
+   if(bar)bar.style.width=(answers.length/budget*100)+'%';
+   if(undo)undo.disabled=!answers.length
+ }
+ function render(){
+   mount.innerHTML='<div class="stj-shell"><div class="stj-top"><span class="round-badge">先保证每个候选都被看见，再重点比较难分的</span><span class="stj-counter">'+(answers.length+1)+' / '+budget+'</span></div><div class="stj-bar"><i style="width:'+(answers.length/budget*100)+'%"></i></div><div class="stj-question">'+question+'</div><div class="stj-sub">← 左边 · → 右边 · ↑ 返回上一场</div><div class="pk-row persistent-row">'+card(left,'left')+'<div class="vs">VS</div>'+card(right,'right')+'</div><div class="stj-undo-row"><button class="tool-btn undoSTJ" '+(answers.length?'':'disabled')+'><kbd>↑</kbd> 返回上一场</button></div></div>';
+   mount.querySelectorAll('.pk-card').forEach(wireCard);mount.querySelector('.undoSTJ').onclick=undo;icons();started=performance.now()
+ }
+ function transitionTo(nextPair,winner,loserSide){
+   if(!nextPair){busy=false;showComplete();return}
+   const winnerIsLeft=left===winner,winnerIsRight=right===winner;
+   if(nextPair.includes(winner)&&(winnerIsLeft||winnerIsRight)){
+     const challenger=nextPair[0]===winner?nextPair[1]:nextPair[0];
+     if(winnerIsLeft){right=challenger;replaceSide('right',challenger)}
+     else{left=challenger;replaceSide('left',challenger)}
+     busy=false;return;
+   }
+   left=nextPair[0];right=nextPair[1];
+   render();busy=false;
+   const cards=mount.querySelectorAll('.pk-card');
+   if(window.gsap)window.gsap.fromTo(cards,{y:18,opacity:0},{y:0,opacity:1,duration:.26,stagger:.04,ease:'power2.out'});
+ }
+ function replaceSide(side,id){
+   const old=mount.querySelector('.pk-card.'+side);if(!old){render();return}
+   old.outerHTML=card(id,side);const fresh=mount.querySelector('.pk-card.'+side);wireCard(fresh);
+   if(window.gsap)window.gsap.fromTo(fresh,{x:side==='right'?220:-220,opacity:0,rotation:side==='right'?7:-7},{x:0,opacity:1,rotation:0,duration:.28,ease:'power2.out'});
+   started=performance.now();updateMeta();icons()
+ }
+ function pick(side,input){
+   if(busy||answers.length>=budget)return;busy=true;
+   const winner=side==='left'?left:right,loser=side==='left'?right:left,loserSide=side==='left'?'right':'left',rt=Math.round(performance.now()-started);
+   undoStack.push({left,right,answers:clone(answers),coverage:clone(coverage)});
+   const ans={left_id:left,right_id:right,preferred_id:winner,rt_ms:rt,input};
+   answers.push(ans);rebuildCounts();
+   log(kind+'_pairwise',{...ans,comparison_index:answers.length,budget,model:'regularized_bradley_terry',scheduler:coverage.length?'coverage_then_adaptive':'adaptive_uncertainty'});
+   const loserEl=mount.querySelector('.pk-card.'+loserSide),outX=loserSide==='right'?340:-340;
+   const next=()=>{const pair=chooseNext(winner);transitionTo(pair,winner,loserSide)};
+   if(window.gsap)window.gsap.to(loserEl,{x:outX,y:260,opacity:0,rotation:loserSide==='right'?18:-18,duration:.32,ease:'power2.in',onComplete:next});
+   else{loserEl.style.transition='all .32s ease';loserEl.style.transform='translate('+outX+'px,260px) rotate('+(loserSide==='right'?18:-18)+'deg)';loserEl.style.opacity='0';setTimeout(next,330)}
+ }
+ function undo(){
+   if(!undoStack.length||busy)return;
+   const snap=undoStack.pop();left=snap.left;right=snap.right;coverage=snap.coverage;answers.splice(0,answers.length,...snap.answers);rebuildCounts();
+   log(kind+'_pairwise_undo',{left_id:left,right_id:right});render()
+ }
+ function showComplete(){
+   const model=fitBT();
+   const sorted=[...items].sort((a,b)=>model.theta[b]-model.theta[a]);
+   const uncertain=sorted.slice(0,Math.min(5,sorted.length)).some(id=>model.se[id]>.85);
+   mount.innerHTML='<div class="stj-shell stj-complete"><div class="round-badge">这一轮完成了</div><div class="stj-question">已经做了 '+answers.length+' 次取舍</div><div class="stj-sub">'+(uncertain?'有些候选仍然很接近，结果会按“Top”呈现，不做虚假的精细名次。':'核心优先顺序已经比较清楚。')+' ↑ 仍可返回上一场。</div><div class="stj-undo-row"><button class="tool-btn undoSTJ"><kbd>↑</kbd> 返回上一场</button><button class="btn primary finishSTJ">确认这一轮</button></div></div>';
+   mount.querySelector('.undoSTJ').onclick=undo;mount.querySelector('.finishSTJ').onclick=finish;icons()
+ }
+ function finish(){
+   const model=fitBT(),ranking=[...items].sort((a,b)=>model.theta[b]-model.theta[a]),clean={};
+   for(const id of items)clean[id]={
+     bt_score:Math.round(model.theta[id]*1000)/1000,
+     bt_se:Math.round(model.se[id]*1000)/1000,
+     comparisons:matchCounts[id]||0,
+     wins:winCounts[id]||0,
+     mean_rt_ms:matchCounts[id]?Math.round(rtTotals[id]/matchCounts[id]):null
+   };
+   log(kind+'_ranking_complete',{ranking,comparisons:answers.length,budget,stats:clean,model:'regularized_bradley_terry',scheduler:'balanced_coverage_then_adaptive_uncertainty'});
+   stjController=null;done(ranking,clean)
+ }
+ const first=chooseNext(null);left=first[0];right=first[1];
  stjController={pickSide:side=>pick(side,'keyboard'),undo};render();
 }
 

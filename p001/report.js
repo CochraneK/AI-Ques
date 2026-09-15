@@ -1,105 +1,76 @@
 (function(){
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const chips=(arr,cls='poster-chip')=>(arr||[]).map(x=>'<span class="'+cls+'">'+esc(x)+'</span>').join('');
-const numbered=arr=>(arr||[]).map((x,i)=>'<span class="poster-rank-chip"><b>'+(i+1)+'</b>'+esc(x)+'</span>').join('');
-const valuePills=items=>(items||[]).map(x=>'<span class="value-pill" style="--v:'+esc(x.color||'#d8b15c')+'"><i></i>'+esc(x.label)+'</span>').join('');
-const countLine=c=>['N','E','O','A','C'].map(k=>k+' '+(c?.[k]??0)).join(' · ');
-function quote(text,fallback){return esc((text||'').trim()||fallback)}
-function allRanked(rank,selected){
- const seen=new Set(), out=[];
- for(const x of (rank||[])){if(x&&!seen.has(x)){seen.add(x);out.push(x)}}
- for(const x of (selected||[])){if(x&&!seen.has(x)){seen.add(x);out.push(x)}}
- return out;
+const uniq=a=>[...new Set((a||[]).filter(Boolean))];
+const top=(a,n)=>uniq(a).slice(0,n);
+function compCount(stats){return Math.round(Object.values(stats||{}).reduce((s,x)=>s+Number(x.comparisons||x.matches||0),0)/2)}
+function weightedShared(cur,ideal,shared){
+ const ci=new Map(cur.map((x,i)=>[x,i])),ii=new Map(ideal.map((x,i)=>[x,i]));
+ return uniq(shared).sort((a,b)=>((ci.get(a)??99)+(ii.get(a)??99))-((ci.get(b)??99)+(ii.get(b)??99)));
 }
+function plusSummary(arr,n){const a=uniq(arr),shown=a.slice(0,n);return {shown,more:Math.max(0,a.length-shown.length)}}
+function chips(arr,cls='poster-chip'){return uniq(arr).map(x=>'<span class="'+cls+'">'+esc(x)+'</span>').join('')}
+function valuePills(items){return (items||[]).slice(0,3).map(x=>'<span class="value-pill" style="--v:'+esc(x.color||'#d8b15c')+'"><i></i>'+esc(x.label)+'</span>').join('')}
+function quote(text,fallback){return esc((text||'').trim()||fallback)}
+function digest(result){
+ const cur=uniq(result.current_rank_labels||result.current_selected_labels),ideal=uniq(result.ideal_rank_labels||result.ideal_selected_labels);
+ const shared=weightedShared(cur,ideal,result.shared_trait_labels||[]).slice(0,2);
+ const growth=uniq(result.ideal_only_labels||[]).sort((a,b)=>ideal.indexOf(a)-ideal.indexOf(b)).slice(0,2);
+ const values=(result.value_rank_items||[]).length?result.value_rank_items.slice(0,3):(result.value_rank_labels||[]).slice(0,3).map(x=>({label:x,color:'#d8b15c'}));
+ const scenes=plusSummary(result.future_context_labels||[],4),obstacles=plusSummary(result.obstacle_labels||[],2);
+ return {curTop:cur.slice(0,3),idealTop:ideal.slice(0,3),shared,growth,values,scenes,obstacles,
+   currentComparisons:compCount(result.current_stj_stats),idealComparisons:compCount(result.ideal_stj_stats),valueComparisons:compCount(result.value_stj_stats)};
+}
+function tagList(arr){return arr.length?chips(arr):'<span class="poster-empty">暂时没有特别突出的项目</span>'}
 function html(result,code,style='diary'){
- const hz=result.future_horizon_label||'未来';
- const cur=allRanked(result.current_rank_labels,result.current_selected_labels);
- const ideal=allRanked(result.ideal_rank_labels,result.ideal_selected_labels);
- const vals=(result.value_rank_items||[]).length?result.value_rank_items:(result.value_rank_labels||[]).map(x=>({label:x,color:'#d8b15c'}));
- const scenes=result.future_context_labels||[], obstacles=result.obstacle_labels||[];
- const shared=result.shared_trait_labels||[], idealOnly=result.ideal_only_labels||[];
- const distance=result.future_distance_0_100??'—', overlap=result.future_overlap_percent??'—';
- return '<div class="report-composite">'+
- '<article class="share-poster full-info '+style+'">'+
+ const hz=result.future_horizon_label||'未来',d=digest(result),distance=result.future_distance_0_100??'—',overlap=result.future_overlap_percent??'—';
+ return '<div class="report-composite"><article class="share-poster curated '+style+'">'+
  '<div class="poster-blob b1"></div><div class="poster-blob b2"></div>'+
  '<header><span class="poster-kicker">A NOTE ACROSS TIME</span><span class="poster-code">'+esc(code)+'</span></header>'+
- '<h2>现在的我，<br>正在走向怎样的自己？</h2>'+
- '<section class="poster-list-section"><small>01 · 现在的我 · 全部入选</small><div class="poster-rank-wrap">'+numbered(cur)+'</div><p class="poster-meta">五维来源：'+esc(countLine(result.domain_counts_current))+'</p></section>'+
- '<section class="poster-list-section ideal-block"><small>02 · 理想的我 · 全部入选</small><div class="poster-rank-wrap">'+numbered(ideal)+'</div><p class="poster-meta">理想自我候选默认不含 N 维负向特质 · '+esc(countLine(result.domain_counts_ideal))+'</p></section>'+
- '<div class="poster-detail-grid">'+
- '<section class="poster-list-section"><small>03 · 两边都保留</small><div class="poster-chip-wrap">'+(chips(shared)||'<span class="poster-empty">暂无</span>')+'</div></section>'+
- '<section class="poster-list-section"><small>04 · 理想方向中新出现</small><div class="poster-chip-wrap">'+(chips(idealOnly)||'<span class="poster-empty">暂无</span>')+'</div></section>'+
- '</div>'+
- '<section class="poster-list-section"><small>05 · 我最看重</small><div class="poster-chip-wrap">'+valuePills(vals)+'</div></section>'+
- '<section class="poster-list-section future-block"><small>06 · 我和'+esc(hz)+'的连接</small><div class="future-metrics"><div><b>'+esc(distance)+'</b><span>距离 / 100</span></div><div class="poster-orbits"><i class="mini-now"></i><i class="mini-future" style="margin-left:'+(Math.min(100,Number(overlap)||0)*-.20)+'px"></i></div><div><b>'+esc(overlap)+'%</b><span>圆形重叠</span></div></div></section>'+
- '<section class="poster-list-section"><small>07 · '+esc(hz)+'的一天</small><div class="poster-chip-wrap">'+(chips(scenes)||'<span class="poster-empty">暂无</span>')+'</div></section>'+
- '<section class="poster-list-section"><small>08 · 可能卡住我的地方</small><div class="poster-chip-wrap">'+(chips(obstacles)||'<span class="poster-empty">暂无</span>')+'</div><p class="poster-action">卡住时，我先：<b>'+esc(result.action_label||'—')+'</b></p></section>'+
- '<section class="poster-message"><small>09 · 我想送给'+esc(hz)+'的自己</small><p>“'+quote(result.future_message,'继续往前，也别忘了照顾自己。')+'”</p></section>'+
- '<section class="poster-message reply"><small>10 · 我希望'+esc(hz)+'的自己对现在的我说</small><p>“'+quote(result.future_reply,'你已经走得比想象中远了。')+'”</p></section>'+
- '<footer>写给'+esc(hz)+'的我 · '+esc(code)+'</footer>'+
- '</article></div>';
+ '<h2>我现在是谁，<br>又想成为谁？</h2>'+
+ '<div class="poster-self-grid compact"><section class="poster-self now"><small>现在的我 · Top 3</small><strong>'+esc(d.curTop[0]||'仍在认识自己')+'</strong><div>'+chips(d.curTop.slice(1))+'</div><em>'+d.currentComparisons+' 次取舍</em></section><div class="poster-arrow">→</div><section class="poster-self ideal"><small>理想的我 · Top 3</small><strong>'+esc(d.idealTop[0]||'仍在想象')+'</strong><div>'+chips(d.idealTop.slice(1))+'</div><em>'+d.idealComparisons+' 次取舍</em></section></div>'+
+ '<div class="poster-detail-grid"><section class="poster-list-section keep"><small>想保留的</small><div class="poster-chip-wrap">'+tagList(d.shared)+'</div></section><section class="poster-list-section grow"><small>最想长成的方向</small><div class="poster-chip-wrap">'+tagList(d.growth)+'</div></section></div>'+
+ '<section class="poster-list-section values"><small>我最看重 · Top 3</small><div class="poster-chip-wrap">'+valuePills(d.values)+'</div></section>'+
+ '<section class="poster-list-section future-block"><small>我和'+esc(hz)+'的连接</small><div class="future-metrics"><div><b>'+esc(distance)+'</b><span>距离 / 100</span></div><div class="poster-orbits"><i class="mini-now"></i><i class="mini-future" style="margin-left:'+(Math.min(100,Number(overlap)||0)*-.20)+'px"></i></div><div><b>'+esc(overlap)+'%</b><span>圆形重叠</span></div></div></section>'+
+ '<div class="poster-detail-grid"><section class="poster-list-section"><small>'+esc(hz)+'的一天</small><div class="poster-chip-wrap">'+tagList(d.scenes.shown)+(d.scenes.more?'<span class="poster-more">+'+d.scenes.more+'</span>':'')+'</div></section><section class="poster-list-section"><small>最容易卡住</small><div class="poster-chip-wrap">'+tagList(d.obstacles.shown)+(d.obstacles.more?'<span class="poster-more">+'+d.obstacles.more+'</span>':'')+'</div><p class="poster-action">先做：<b>'+esc(result.action_label||'—')+'</b></p></section></div>'+
+ '<section class="poster-message"><small>我想送给'+esc(hz)+'的自己</small><p>“'+quote(result.future_message,'继续往前，也别忘了照顾自己。')+'”</p></section>'+
+ '<section class="poster-message reply"><small>我希望'+esc(hz)+'的自己对现在的我说</small><p>“'+quote(result.future_reply,'你已经走得比想象中远了。')+'”</p></section>'+
+ '<footer>写给'+esc(hz)+'的我 · '+esc(code)+' · 排序只展示核心 Top，不代表量表分数</footer></article></div>';
 }
 function rr(ctx,x,y,w,h,r){const q=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+q,y);ctx.arcTo(x+w,y,x+w,y+h,q);ctx.arcTo(x+w,y+h,x,y+h,q);ctx.arcTo(x,y+h,x,y,q);ctx.arcTo(x,y,x+w,y,q);ctx.closePath()}
-function wrap(ctx,text,maxWidth){
- const chars=Array.from(String(text||''));const lines=[];let line='';
- for(const ch of chars){const test=line+ch;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=ch}else line=test}
- if(line)lines.push(line);return lines.length?lines:['—'];
-}
+function wrap(ctx,text,maxWidth){const chars=Array.from(String(text||'')),lines=[];let line='';for(const ch of chars){const t=line+ch;if(ctx.measureText(t).width>maxWidth&&line){lines.push(line);line=ch}else line=t}if(line)lines.push(line);return lines.length?lines:['—']}
 function canvas(result,code,style='diary'){
- const hz=result.future_horizon_label||'未来';
- const cur=allRanked(result.current_rank_labels,result.current_selected_labels);
- const ideal=allRanked(result.ideal_rank_labels,result.ideal_selected_labels);
- const vals=(result.value_rank_labels||[]);
- const shared=result.shared_trait_labels||[], idealOnly=result.ideal_only_labels||[], scenes=result.future_context_labels||[], obstacles=result.obstacle_labels||[];
- const futureMsg=(result.future_message||'继续往前，也别忘了照顾自己。').trim();
- const futureReply=(result.future_reply||'你已经走得比想象中远了。').trim();
- const sections=[
-   ['01  现在的我 · 全部入选',cur.map((x,i)=>(i+1)+'. '+x).join('  ')||'暂无'],
-   ['02  理想的我 · 全部入选',ideal.map((x,i)=>(i+1)+'. '+x).join('  ')||'暂无'],
-   ['03  两边都保留',shared.join(' · ')||'暂无'],
-   ['04  理想方向中新出现',idealOnly.join(' · ')||'暂无'],
-   ['05  我最看重',vals.join(' · ')||'暂无'],
-   ['06  '+hz+'的一天',scenes.join(' · ')||'暂无'],
-   ['07  可能卡住我的地方',obstacles.join(' · ')||'暂无'],
-   ['08  卡住时我先做',result.action_label||'—'],
-   ['09  我想送给'+hz+'的自己','“'+futureMsg+'”'],
-   ['10  我希望'+hz+'的自己对现在的我说','“'+futureReply+'”']
- ];
- const palette=style==='magazine'
-   ?{bg1:'#28231f',bg2:'#21443a',ink:'#fffaf3',muted:'#d8cbc0',card:'rgba(255,255,255,.08)',line:'rgba(255,255,255,.14)',accent:'#ffb090',mint:'#83dcb9'}
-   :style==='letter'
-   ?{bg1:'#f6fbf3',bg2:'#fff1df',ink:'#344236',muted:'#71806e',card:'rgba(255,255,255,.76)',line:'rgba(80,100,70,.12)',accent:'#ef9b82',mint:'#77cda9'}
-   :{bg1:'#fff4e5',bg2:'#edf5e9',ink:'#493c33',muted:'#7e7066',card:'rgba(255,255,255,.68)',line:'rgba(100,76,58,.11)',accent:'#ff9177',mint:'#7fd7b5'};
- const W=1080,pad=72,boxW=W-pad*2;
- const probe=document.createElement('canvas').getContext('2d');probe.font='30px "PingFang SC","Microsoft YaHei",sans-serif';
- let estimated=560;
- for(const [,body] of sections){estimated+=130+wrap(probe,body,boxW-72).length*44}
- estimated+=300;
- const H=Math.max(2200,estimated);
- const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
+ const hz=result.future_horizon_label||'未来',d=digest(result),distance=result.future_distance_0_100??'—',overlap=result.future_overlap_percent??'—';
+ const palette=style==='magazine'?{bg1:'#28231f',bg2:'#21443a',ink:'#fffaf3',muted:'#d8cbc0',card:'rgba(255,255,255,.09)',line:'rgba(255,255,255,.14)',accent:'#ffb090',mint:'#83dcb9'}:style==='letter'?{bg1:'#f6fbf3',bg2:'#fff1df',ink:'#344236',muted:'#71806e',card:'rgba(255,255,255,.78)',line:'rgba(80,100,70,.12)',accent:'#ef9b82',mint:'#77cda9'}:{bg1:'#fff4e5',bg2:'#edf5e9',ink:'#493c33',muted:'#7e7066',card:'rgba(255,255,255,.72)',line:'rgba(100,76,58,.11)',accent:'#ff9177',mint:'#7fd7b5'};
+ const W=1080,H=1900,pad=70,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,palette.bg1);g.addColorStop(1,palette.bg2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- ctx.globalAlpha=.18;ctx.fillStyle=palette.accent;ctx.beginPath();ctx.arc(930,120,210,0,Math.PI*2);ctx.fill();ctx.fillStyle=palette.mint;ctx.beginPath();ctx.arc(120,H-170,240,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
- let y=86;ctx.fillStyle=palette.muted;ctx.font='700 22px sans-serif';ctx.fillText('A NOTE ACROSS TIME',pad,y);ctx.textAlign='right';ctx.fillText(String(code||''),W-pad,y);ctx.textAlign='left';
- y+=82;ctx.fillStyle=palette.ink;ctx.font='700 62px "Songti SC","STSong",serif';ctx.fillText('现在的我，正在走向怎样的自己？',pad,y);
- y+=52;ctx.fillStyle=palette.muted;ctx.font='26px sans-serif';ctx.fillText('写给'+hz+'的我 · 一张完整的自我记录',pad,y);
- y+=64;
- // Future metrics card
- rr(ctx,pad,y,boxW,180,34);ctx.fillStyle=palette.card;ctx.fill();ctx.strokeStyle=palette.line;ctx.stroke();
- ctx.fillStyle=palette.muted;ctx.font='700 22px sans-serif';ctx.fillText('我和'+hz+'的连接',pad+34,y+42);
- ctx.fillStyle=palette.ink;ctx.font='700 52px sans-serif';ctx.fillText(String(result.future_distance_0_100??'—'),pad+34,y+112);ctx.font='22px sans-serif';ctx.fillStyle=palette.muted;ctx.fillText('距离 / 100',pad+122,y+110);
- const overlap=Number(result.future_overlap_percent)||0;ctx.globalAlpha=.72;ctx.fillStyle=palette.accent;ctx.beginPath();ctx.arc(W/2+70,y+100,62,0,Math.PI*2);ctx.fill();ctx.fillStyle=palette.mint;ctx.beginPath();ctx.arc(W/2+70-(overlap*.55),y+100,62,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
- ctx.textAlign='right';ctx.fillStyle=palette.ink;ctx.font='700 52px sans-serif';ctx.fillText(String(result.future_overlap_percent??'—')+'%',W-pad-34,y+112);ctx.textAlign='left';
- y+=210;
- for(const [title,body] of sections){
-   ctx.font='30px "PingFang SC","Microsoft YaHei",sans-serif';
-   const lines=wrap(ctx,body,boxW-72);const h=92+lines.length*46;
-   rr(ctx,pad,y,boxW,h,28);ctx.fillStyle=palette.card;ctx.fill();ctx.strokeStyle=palette.line;ctx.stroke();
-   ctx.fillStyle=palette.muted;ctx.font='700 21px sans-serif';ctx.fillText(title,pad+34,y+36);
-   ctx.fillStyle=palette.ink;ctx.font='30px "PingFang SC","Microsoft YaHei",sans-serif';
-   lines.forEach((line,i)=>ctx.fillText(line,pad+34,y+82+i*46));
-   y+=h+22;
- }
- ctx.fillStyle=palette.muted;ctx.font='22px sans-serif';ctx.fillText('P001 · 现在的我 / 理想的我 / 未来的我',pad,H-54);
+ ctx.globalAlpha=.18;ctx.fillStyle=palette.accent;ctx.beginPath();ctx.arc(940,120,220,0,Math.PI*2);ctx.fill();ctx.fillStyle=palette.mint;ctx.beginPath();ctx.arc(110,H-120,230,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ ctx.fillStyle=palette.muted;ctx.font='700 21px sans-serif';ctx.fillText('A NOTE ACROSS TIME',pad,74);ctx.textAlign='right';ctx.fillText(String(code||''),W-pad,74);ctx.textAlign='left';
+ ctx.fillStyle=palette.ink;ctx.font='700 62px "Songti SC","STSong",serif';ctx.fillText('我现在是谁，又想成为谁？',pad,154);
+ function box(x,y,w,h){rr(ctx,x,y,w,h,28);ctx.fillStyle=palette.card;ctx.fill();ctx.strokeStyle=palette.line;ctx.stroke()}
+ function title(t,x,y){ctx.fillStyle=palette.muted;ctx.font='700 20px sans-serif';ctx.fillText(t,x,y)}
+ function lines(text,x,y,w,size=30,lh=42,max=4){ctx.fillStyle=palette.ink;ctx.font=size+'px "PingFang SC","Microsoft YaHei",sans-serif';wrap(ctx,text,w).slice(0,max).forEach((l,i)=>ctx.fillText(l,x,y+i*lh))}
+ let y=205;
+ // current / ideal
+ box(pad,y,450,245);box(560,y,450,245);title('现在的我 · TOP 3',pad+26,y+38);title('理想的我 · TOP 3',586,y+38);
+ ctx.fillStyle=palette.ink;ctx.font='700 40px "Songti SC","STSong",serif';ctx.fillText(d.curTop[0]||'仍在认识自己',pad+26,y+92);ctx.fillText(d.idealTop[0]||'仍在想象',586,y+92);
+ lines(d.curTop.slice(1).join(' · ')||'—',pad+26,y+140,398,25,36,3);lines(d.idealTop.slice(1).join(' · ')||'—',586,y+140,398,25,36,3);
+ ctx.fillStyle=palette.muted;ctx.font='18px sans-serif';ctx.fillText(d.currentComparisons+' 次取舍',pad+26,y+215);ctx.fillText(d.idealComparisons+' 次取舍',586,y+215);y+=275;
+ // keep / grow
+ box(pad,y,450,165);box(560,y,450,165);title('想保留的',pad+26,y+36);title('最想长成的方向',586,y+36);lines(d.shared.join(' · ')||'暂时没有特别突出的项目',pad+26,y+82,398,27,38,2);lines(d.growth.join(' · ')||'暂时没有特别突出的项目',586,y+82,398,27,38,2);y+=195;
+ // values
+ box(pad,y,940,145);title('我最看重 · TOP 3',pad+26,y+36);lines(d.values.map(v=>v.label).join(' · ')||'—',pad+26,y+86,888,30,42,2);y+=175;
+ // future metrics
+ box(pad,y,940,190);title('我和'+hz+'的连接',pad+26,y+36);ctx.fillStyle=palette.ink;ctx.font='700 52px sans-serif';ctx.fillText(String(distance),pad+30,y+114);ctx.font='20px sans-serif';ctx.fillStyle=palette.muted;ctx.fillText('距离 / 100',pad+116,y+112);
+ const ov=Number(overlap)||0;ctx.globalAlpha=.68;ctx.fillStyle=palette.accent;ctx.beginPath();ctx.arc(W/2+20,y+108,60,0,Math.PI*2);ctx.fill();ctx.fillStyle=palette.mint;ctx.beginPath();ctx.arc(W/2+20-ov*.5,y+108,60,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ ctx.textAlign='right';ctx.fillStyle=palette.ink;ctx.font='700 52px sans-serif';ctx.fillText(String(overlap)+'%',W-pad-30,y+114);ctx.textAlign='left';y+=220;
+ // scenes and obstacles
+ box(pad,y,450,205);box(560,y,450,205);title(hz+'的一天',pad+26,y+36);title('最容易卡住',586,y+36);
+ lines(d.scenes.shown.join(' · ')+(d.scenes.more?'  +'+d.scenes.more:''),pad+26,y+82,398,25,36,3);
+ lines(d.obstacles.shown.join(' · ')+(d.obstacles.more?'  +'+d.obstacles.more:''),586,y+82,398,25,36,2);ctx.fillStyle=palette.muted;ctx.font='19px sans-serif';ctx.fillText('先做：'+(result.action_label||'—'),586,y+172);y+=235;
+ // messages
+ box(pad,y,940,180);title('我想送给'+hz+'的自己',pad+26,y+36);lines('“'+((result.future_message||'继续往前，也别忘了照顾自己。').trim())+'”',pad+26,y+84,888,29,42,3);y+=210;
+ box(pad,y,940,180);title('我希望'+hz+'的自己对现在的我说',pad+26,y+36);lines('“'+((result.future_reply||'你已经走得比想象中远了。').trim())+'”',pad+26,y+84,888,29,42,3);
+ ctx.fillStyle=palette.muted;ctx.font='18px sans-serif';ctx.fillText('P001 · 只展示经过取舍的核心结论，不代表标准人格量表分数',pad,H-48);
  return c;
 }
 window.P001Report={html,canvas};

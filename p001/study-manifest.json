@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module": "P001",
-  "version": "5.3-pages",
+  "version": "5.4-pages",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "constructs": {
@@ -51,8 +51,11 @@
     "未来的我"
   ],
   "notes": [
-    "Reuse AI-Ques shared profile; no duplicate identity form in P001 Pages.",
-    "Current-self card is the movable object in both distance and overlap tasks.",
-    "Result poster includes all participant-facing content and uses native Canvas PNG export."
+    "P001 reuses the AI-Ques shared profile without a duplicate identity form.",
+    "Swipe-module progress is always visible, including from the first card.",
+    "STJ uses balanced coverage followed by uncertainty-focused adaptive pairing and regularized Bradley-Terry estimates.",
+    "Student result/share poster shows curated Top conclusions rather than every selected trait.",
+    "Current-self is the movable object in both future distance and overlap tasks.",
+    "PNG export uses native Canvas and does not depend on html2canvas."
   ]
 }
