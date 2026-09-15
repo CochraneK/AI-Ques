@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f1ea">
+  <title>P002 · 情绪天气站</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="topbar">
+    <a class="brand" href="../">
+      <span class="brand-mark">P002</span>
+      <span>情绪天气站</span>
+    </a>
+    <div class="status-pill"><span class="status-dot"></span> Research prototype</div>
+  </header>
+
+  <main class="shell">
+    <section id="launcher" class="screen">
+      <div class="hero">
+        <p class="eyebrow">PCL-5 · Current CAPE-P15</p>
+        <h1>不是给自己贴标签，<br>只是把最近的感受记录得更清楚。</h1>
+        <p class="hero-copy">P002 聚焦两套核心量表的稳定呈现、可追溯计分与研究数据结构。当前页面是研究原型，不提供诊断结论。</p>
+      </div>
+
+      <div class="setup-grid">
+        <section class="panel setup-panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">01 · 身份</p>
+              <h2>本次记录</h2>
+            </div>
+          </div>
+          <label class="field">
+            <span>Participant ID</span>
+            <input id="participantId" autocomplete="off" placeholder="例如 BJTU-0001">
+          </label>
+          <p class="hint">页面不会自动上传答案。Participant ID 只进入本次导出的研究文件。</p>
+        </section>
+
+        <section class="panel setup-panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">02 · 量表</p>
+              <h2>选择本次测量</h2>
+            </div>
+          </div>
+          <div id="scaleChoices" class="scale-grid"></div>
+        </section>
+      </div>
+
+      <section class="panel protocol-panel">
+        <div>
+          <p class="section-kicker">研究边界</p>
+          <h2>这一版先把“测得准”放在“玩得花”前面</h2>
+        </div>
+        <div class="protocol-grid">
+          <div><strong>PCL-5</strong><span>过去 1 个月 · 20 项 · 0–4</span></div>
+          <div><strong>CAPE-P15</strong><span>过去 3 个月 · 15 项 · 频率 + 条件式困扰度</span></div>
+          <div><strong>数据层</strong><span>item-level + cluster + timing + version</span></div>
+        </div>
+      </section>
+
+      <button id="startBtn" class="primary wide" disabled>开始本次记录</button>
+    </section>
+
+    <section id="assessment" class="screen hidden">
+      <div class="assessment-head">
+        <button id="exitBtn" class="ghost">← 返回</button>
+        <div class="progress-wrap">
+          <div class="progress-meta">
+            <span id="progressLabel">0 / 0</span>
+            <span id="scaleLabel"></span>
+          </div>
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+      </div>
+
+      <div class="question-layout">
+        <aside class="context-card">
+          <div id="weatherGlyph" class="weather-glyph">◌</div>
+          <p class="section-kicker">当前维度</p>
+          <h2 id="clusterTitle"></h2>
+          <p id="clusterDesc"></p>
+          <div id="windowChip" class="window-chip"></div>
+        </aside>
+
+        <section class="question-card">
+          <p id="questionIndex" class="section-kicker"></p>
+          <h2 id="questionText"></h2>
+          <p id="questionPrompt" class="question-prompt"></p>
+          <div id="answerOptions" class="answer-options"></div>
+
+          <div id="distressBlock" class="distress-block hidden">
+            <div class="divider"></div>
+            <p class="section-kicker">补充 · 只在有过该体验时出现</p>
+            <h3>这项体验让你有多困扰？</h3>
+            <div id="distressOptions" class="answer-options compact"></div>
+          </div>
+
+          <div class="question-foot">
+            <span>没有正确答案，按最近真实情况选择。</span>
+            <button id="nextBtn" class="primary" disabled>下一题</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="result" class="screen hidden">
+      <div class="result-hero">
+        <p class="eyebrow">完成</p>
+        <h1>本次记录已整理好。</h1>
+        <p>页面只做研究计分与结构化导出，不把分数解释成诊断或个人“风险等级”。</p>
+      </div>
+
+      <div id="resultCards" class="result-grid"></div>
+
+      <section class="panel export-panel">
+        <div>
+          <p class="section-kicker">研究导出</p>
+          <h2>带走原始数据，而不是一张不可追溯的截图</h2>
+          <p class="hint">JSON 保存完整 session；CSV 按题目展开，便于进入 R / SPSS / Python。</p>
+        </div>
+        <div class="export-actions">
+          <button id="downloadJson" class="secondary">下载 JSON</button>
+          <button id="downloadCsv" class="secondary">下载 CSV</button>
+          <button id="restartBtn" class="primary">再做一次</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <span>P002 · BJTU Project</span>
+    <span>Prototype only · no automatic upload</span>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
