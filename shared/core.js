@@ -2,6 +2,7 @@
   "use strict";
 
   const PROFILE_KEY="aiques_global_profile_v1";
+  const LEGACY_PROFILE_KEYS=["aiques.global.profile.v1"];
   const EVENTS_KEY="aiques_local_events_v1";
   const QUEUE_KEY="aiques_event_queue_v1";
   const CONFIG=global.AIQUES_CONFIG||{};
@@ -16,7 +17,29 @@
   }
   function now(){return new Date().toISOString()}
 
-  function getProfile(){return read(PROFILE_KEY,null)}
+  function getProfile(){
+    let profile=read(PROFILE_KEY,null);
+    if(profile)return profile;
+    for(const key of LEGACY_PROFILE_KEYS){
+      const legacy=read(key,null);
+      if(legacy){
+        profile={
+          schema_version:1,
+          participant_id:legacy.participant_id||legacy.participantId||randomId("P"),
+          name:String(legacy.name||"").trim(),
+          age:legacy.age==null?null:Number(legacy.age),
+          origin:String(legacy.origin||"").trim(),
+          location:String(legacy.location||"").trim(),
+          currentWork:String(legacy.currentWork||legacy.current_work||"").trim(),
+          created_at:legacy.created_at||now(),
+          updated_at:now()
+        };
+        write(PROFILE_KEY,profile);
+        return profile;
+      }
+    }
+    return null;
+  }
   function saveProfile(input){
     const old=getProfile()||{};
     const profile={
@@ -31,10 +54,11 @@
       updated_at:now()
     };
     write(PROFILE_KEY,profile);
+    LEGACY_PROFILE_KEYS.forEach(key=>write(key,profile));
     recordEvent("profile_saved",{profile_snapshot:profile},{project_id:"GLOBAL"});
     return profile;
   }
-  function clearProfile(){localStorage.removeItem(PROFILE_KEY)}
+  function clearProfile(){localStorage.removeItem(PROFILE_KEY);LEGACY_PROFILE_KEYS.forEach(key=>localStorage.removeItem(key))}
 
   function returnUrl(){
     const u=new URL(location.href);
@@ -154,7 +178,7 @@
   }
 
   global.AIQ={
-    version:"global-0.1.0",
+    version:"global-0.2.0",
     config:CONFIG,
     getProfile,saveProfile,clearProfile,ensureProfile,returnUrl,
     startSession,recordEvent,completeSession,flush,
