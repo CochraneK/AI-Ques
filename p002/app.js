@@ -64,10 +64,9 @@ const SCALES = {
 };
 
 const MODES = {
-  original:{name:'直接问卷',desc:'按题干与原反应格式完成。'},
-  vassip:{name:'VASSIP 式',desc:'保留核心题目，加入故事氛围与不计分互动。'},
-  emoji:{name:'Emoji Game 式',desc:'保留核心题目，加入独立的 Emoji 搜索任务。'},
-  rush:{name:'HEXACO-RUSH / SJT 式',desc:'通过叙事情境与选择产生实验性构念信号。'}
+  original:{name:'直接问卷',desc:'不改变测量形式，按题干与原反应格式完成。'},
+  vassip:{name:'故事化问卷',desc:'保留核心题目与反应格式，只增加故事氛围和中性互动。'},
+  rush:{name:'情境选择',desc:'把测量转为情境判断与选择，输出实验性行为信号。'}
 };
 
 const RUSH = {
@@ -91,7 +90,7 @@ const RUSH = {
   ]
 };
 
-const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,emojiIndex:null,rushSignals:{},chapterSeen:{}};
+const state={scale:null,mode:null,index:0,answers:[],distress:[],rushSignals:{},chapterSeen:{}};
 const $=s=>document.querySelector(s);
 const SEARCH=typeof location!=='undefined'?String(location.search||''):'';
 function queryParam(name){
@@ -126,9 +125,6 @@ function resetRun(){
   state.index=0;
   state.answers=[];
   state.distress=[];
-  state.emojiFound=0;
-  state.emojiSeen=0;
-  state.emojiIndex=state.scale?Math.floor(Math.random()*SCALES[state.scale].items.length):null;
   state.rushSignals={};
   state.chapterSeen={};
 }
@@ -155,15 +151,12 @@ function renderStep(){
   progress(state.index+1,scale.items.length);
   const ch=currentChapter(scale,item), chapterStart=state.index===0 || scale.items[state.index-1].cluster!==item.cluster;
   if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
-  const emojiActive=state.mode==='emoji' && state.index===state.emojiIndex;
-  if(emojiActive && state.emojiSeen===0) state.emojiSeen=1;
   const pub=publicChapter(item.cluster);
   const firstItem=state.index===0;
   $('#gameBody').innerHTML=`<div class="scene">
     ${chapterStart && state.mode==='vassip'?`<div class="chapter-card"><span class="scene-kicker">${scale.window}</span><h2>${pub.title}</h2><p>${pub.desc}</p></div>`:''}
     ${firstItem?`<p class="instrument-instruction">${scale.instruction}</p>`:''}
     <div class="question-card">
-      ${emojiActive?`<button class="emoji-clue" id="emojiClue" aria-label="找到隐藏表情">${['🪐','🫧','🦊','🌱','🧩','🐳'][state.index%6]}</button>`:''}
       <div class="question-id">${scale.id==='pcl5'?'过去一个月 · 同一压力经历':'过去三个月'}</div>
       <div class="question">${item.text}</div>
       ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
@@ -181,7 +174,6 @@ function renderStep(){
     state.index++;
     renderStep();
   });
-  const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';} };
 }
 
 function renderCapeDistress(scale,item,frequencyScore){
@@ -251,7 +243,7 @@ function finishRush(){
     return;
   }
   const entries=Object.entries(state.rushSignals); const max=Math.max(...entries.map(x=>x[1]),1);
-  $('#result').innerHTML=`<p class="eyebrow">Research view · HEXACO-RUSH / SJT 式</p><h2>情境决策信号</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>研究检查视图。</strong> 这些是实验性构念信号，不是 ${SCALES[state.scale].name} 得分。</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
+  $('#result').innerHTML=`<p class="eyebrow">Research view · 情境选择</p><h2>情境决策信号</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>研究检查视图。</strong> 这些是实验性构念信号，不是 ${SCALES[state.scale].name} 得分。</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
 }
 
 $('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();
