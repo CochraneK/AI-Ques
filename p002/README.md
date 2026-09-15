@@ -1,55 +1,69 @@
 # P002 · PCL × CAPE Interaction Lab
 
-P002 专注于 **PCL-5** 与 **Current CAPE-P15** 的交互形式研究。当前仓库实现 8 种完成方式，用于比较体验变化与测量变化，不把任何未经验证的改写版本当作正式临床工具。
+P002 研究 PCL-5 与 Current CAPE-P15 在不同呈现/测量条件下的完成体验。参与者前端**不再选择玩法或实验条件**。
+
+## 当前产品逻辑
+
+参与者只选择量表：
+
+- **PCL-5**
+- **Current CAPE-P15**
+
+实验呈现由 P002 管理员控制：
+
+- **故事问卷（默认）**：保留核心题目与原反应格式，用中性故事段落串联。设计参考 VASSIP 的 storyfication / immersion / non-evaluable dynamics，但不把它作为参与者可选“玩法”。
+- **直接问卷**：管理员可切换。去除故事段落，直接呈现题目与反应选项。
+- **情景选择**：管理员可切换。用叙事情境与选择产生实验性行为信号；参考 HEXACO-RUSH / gamified SJT 路线，不继承 PCL-5 或 CAPE-P15 的标准计分解释。
+
+**Emoji Game 已从产品与实验条件中删除。**
+
+管理员页面：`/p002/admin.html`
+
+当前静态原型把管理员配置保存在同一浏览器的 `bjtu.p002.condition.v1`。默认值是 `story`。这不是正式的多设备研究后台，也没有服务器端管理员鉴权。
 
 ## 量表边界
 
-- **PCL-5**：原始英文量表为 20 项、0–4 反应格式、过去一个月；官方版本可计算 0–80 总分与 B/C/D/E 聚类。本仓库中文题干是原型转述，因此本页数值仅用于原型内部比较，不直接继承验证版临床解释。
-- **Current CAPE-P15**：15 项、过去 3 个月、三个维度（PI / BE / PA）。当前原型只实现频率层；论文中与体验相关的 distress 信息没有在此版本中实现。
-- 当前中文内容均不是仓库所声明的正式验证中文版。
+### PCL-5
 
-## 8 种交互模式
+- 20 项
+- 0–4 反应格式
+- 过去一个月
+- 全程围绕同一段最困扰的压力经历
+- 回答这些问题在多大程度上“困扰到你”
+- 当前中文题干仍是 prototype paraphrase，不声明为正式验证中文版
 
-1. 直接问卷
-2. VASSIP 式
-3. Emoji Game 式
-4. 逐题情景化
-5. 构念情景化
-6. AI-SJT
-7. PsychoGAT-lite
-8. HEXACO-RUSH 式
+### Current CAPE-P15
 
-越偏离直接呈现，越不能默认继承原量表的心理测量属性。
+- 15 项
+- 过去 3 个月
+- PI / BE / PA 三个维度
+- 原始 Current CAPE-15 方案：0–3 频率
+- 频率至少为“有时”时追加独立 0–3 distress
+- 当前中文题干仍是 prototype paraphrase，不声明为正式验证中文版
 
-## 研究版本
+## 呈现原则
 
-机器可读研究边界见 `study-manifest.json`。当前：
+- 参与者看不到实验条件选择器
+- 参与者看不到 B/C/D/E 或 PI/BE/PA code
+- 默认结果页只显示完成，不显示总分、cluster bar、SJT signal 或风险标签
+- `?research=1` 仅用于研究检查视图
+- `?source=1` 仅用于 PCL-5 source wording 核对
 
-- `status = prototype_only`
-- `formal_data_collection_authorized = false`
-- 正式收数前必须冻结题干、模式、评分逻辑、版本和参与者 session schema。
+## 条件质量要求
 
-## 运行与检查
-
-从仓库根目录运行：
-
-~~~bash
-python -m http.server 8000
-~~~
-
-访问 `http://localhost:8000/p002/`。
-
-仓库 CI 会检查 JS 语法、2 个量表 × 8 种模式的 smoke path、目录结构和研究边界。
+- **故事问卷**：故事与中性互动不得直接提示目标构念，避免 priming；题目与反应格式保持不变
+- **直接问卷**：不加入故事或额外互动
+- **情景选择**：一个场景尽量只承载一个主要构念，不把 grounding、沟通技巧等 coping competence 当成症状强度；输出只作为实验信号
 
 ## 主要来源
 
 - VA National Center for PTSD, PCL-5: https://www.ptsd.va.gov/professional/assessment/adult-sr/ptsd-checklist.asp
 - Capra et al. (2017), Current CAPE-15: https://doi.org/10.1111/eip.12245
 - Ramos-Villagrasa et al. (2024), VASSIP: https://doi.org/10.1371/journal.pone.0302429
-- Kleiman et al. (2025), Emoji Game: https://doi.org/10.1037/pas0001371
 - Nikolaou & Katsadoraki (2025), HEXACO-RUSH: https://doi.org/10.1016/j.chb.2024.108467
-- Yang et al. (2024), PsychoGAT: https://doi.org/10.18653/v1/2024.acl-long.779
 
-## 安全
+## 研究状态
 
-P002 不是诊断工具、医疗器械或临床筛查服务。正式研究需要伦理审批、知情同意、退出机制、数据治理和风险转介方案。
+- `status = prototype_only`
+- `formal_data_collection_authorized = false`
+- 正式收数前需要冻结目标语言题干、条件逻辑、session schema、伦理/同意/退出流程和数据治理
