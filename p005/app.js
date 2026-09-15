@@ -644,7 +644,7 @@ function ensureGreeting(){
   });
   state.messages.push({
     role:'future',
-    text:'你知道吗，回头看这几十年，我最珍惜的往往不是某个头衔，而是'+firstClause(p.people,'重要的人')+'和那些慢慢长出来的日常。你现在最想问我什么？'
+    text:'你知道吗，从'+targetPhrase()+'回头看，我最珍惜的往往不是某个头衔，而是'+firstClause(p.people,'重要的人')+'和那些慢慢长出来的日常。你现在最想问我什么？'
   });
   save();
 }
@@ -672,7 +672,7 @@ function localFutureReply(input){
 
   const groups={
     happy:[
-      '并不是一直开心。到"+targetPhrase()+"，我更在意的不是“幸福有没有到达”，而是生活有没有长期偏离“'+values+'”。',
+      '并不是一直开心。到'+targetPhrase()+'，我更在意的不是“幸福有没有到达”，而是生活有没有长期偏离“'+values+'”。',
       '有快乐，也有很普通甚至很难的几年。真正稳定下来的，是我终于不再要求每个阶段都证明自己走对了。'
     ],
     career:[
@@ -693,7 +693,7 @@ function localFutureReply(input){
     ],
     decision:[
       m.branch
-        ? '关于“'+m.branch.decision+'”，我不会假装从"+targetPhrase()+"知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
+        ? '关于“'+m.branch.decision+'”，我不会假装从'+targetPhrase()+'知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
         : '如果你卡在一个选择里，我会问三个问题：我真正重视什么？哪种代价我愿意承担？哪个下一步能让我获得更多真实信息？'
     ],
     surprise:[
@@ -701,8 +701,8 @@ function localFutureReply(input){
       '未来最常见的不是戏剧性反转，而是一些当时不起眼的选择，几年后突然显出差异。'
     ],
     default:[
-      '当我从"+targetPhrase()+"往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
-      '我能给你的不是答案，而是一点时间距离。很多问题放到几十年的尺度里，会从“必须马上选对”变成“先做一次真实尝试”。'
+      '当我从'+targetPhrase()+'往回看，我不会先问“正确答案是什么”，而会先问：它和“'+values+'”有什么关系？',
+      '我能给你的不是答案，而是一点时间距离。很多问题放到未来的尺度里，会从“必须马上选对”变成“先做一次真实尝试”。'
     ]
   };
 
