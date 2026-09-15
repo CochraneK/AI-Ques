@@ -1,4 +1,4 @@
-name: AI-Ques Quality Gate
+name: P00 Quality Gate
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  quality-sensor:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,15 +20,23 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check app.js
-          node --check experiments.js
-          node --check future-me/app.js
+          node --check shared/profile.js
+          node --check p002/app.js
+          node --check p002/experiments.js
+          node --check p004/app.js
+          node --check p004/api-client.js
+          node --check p005/app.js
+          node --check tests/smoke.mjs
+          node --check tests/structure.mjs
 
-      - name: Run behavior smoke tests
+      - name: Check Python syntax
+        run: python -m py_compile scripts/quality_sensor.py
+
+      - name: Run P002 behavior smoke tests
         run: node tests/smoke.mjs
 
-      - name: Run quality sensor
-        run: python scripts/quality_sensor.py --strict
+      - name: Run repository structure checks
+        run: node tests/structure.mjs
 
-      - name: Show next improvement target
-        if: always()
-        run: python scripts/next_quality_target.py
+      - name: Run repository quality sensor
+        run: python scripts/quality_sensor.py --strict
