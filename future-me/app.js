@@ -609,8 +609,8 @@ function renderReady() {
   $('#futureMonogram').textContent = initial;
   renderFuturePortrait();
 
-  const timelineHtml = state.memory.timeline.map(function (item) {
-    return '<div class="milestone"><b>' + escapeHtml(item.age) + ' 岁 · ' + escapeHtml(item.tag) + '</b><p>' + escapeHtml(item.text) + '</p></div>';
+  const timelineHtml = state.memory.timeline.map(function (x) {
+    return '<div class="milestone"><b>' + escapeHtml(x.age) + ' 岁 · ' + escapeHtml(x.tag) + '</b><p>' + escapeHtml(x.text) + '</p></div>';
   }).join('');
 
   const lessonsHtml = state.memory.lessons.map(function (item) {
