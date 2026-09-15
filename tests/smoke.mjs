@@ -144,3 +144,8 @@ assert.ok(!appSource.includes("中等信号"));
 assert.ok(!appSource.includes("构念启发"));
 
 console.log("P002 smoke tests passed: 2 scales × 3 admin-controlled conditions; participant picker removed; story is default.");
+
+assert.ok(
+  !appSource.includes("state.chapterSeen[ch.key]=Number"),
+  "story chapter completion must not depend on a truthy choice index"
+);
