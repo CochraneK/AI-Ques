@@ -222,7 +222,8 @@ def scan_repo() -> list[dict]:
                 "Escape every dynamic field or build DOM nodes with textContent.",
             ))
 
-    if "P004" not in p004_readme := read("p004/README.md"):
+    p004_readme = read("p004/README.md")
+    if "P004" not in p004_readme:
         findings.append(finding(
             "p004-doc-missing", "P1", "p004/README.md",
             "P004 module documentation is incomplete.",
