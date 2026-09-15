@@ -457,7 +457,7 @@ function renderMatrixQuestion(q,root){
       const on=selected.includes(option)?' selected':'';
       return '<button type="button" class="matrix-item'+on+'" data-matrix-option="'+escapeHtml(option)+'">'+escapeHtml(option)+'</button>';
     }).join('')+'</div>';
-  $('[data-matrix-option]').forEach((button)=>button.addEventListener('click',()=>{
+  $$('[data-matrix-option]').forEach((button)=>button.addEventListener('click',()=>{
     const value=button.dataset.matrixOption;
     let values=Array.isArray((state.structuredAnswers[q.key]||{}).selected)?[...state.structuredAnswers[q.key].selected]:[];
     if(values.includes(value))values=values.filter((x)=>x!==value);
@@ -912,7 +912,7 @@ function renderPersonalizedPrompts(){
     p.people?'你和'+firstClause(p.people)+'后来怎么样？':'后来哪些关系一直留在身边？',
     p.turningPoint?'回头看，“'+firstClause(p.turningPoint)+'”真的改变了人生吗？':'最大的意外是什么？'
   ];
-  $('#promptChips button').forEach((button,i)=>{if(prompts[i])button.textContent=prompts[i]});
+  $$('#promptChips button').forEach((button,i)=>{if(prompts[i])button.textContent=prompts[i]});
 }
 function startChat(){ensureGreeting();renderPersonalizedPrompts();renderMessages();updateVoiceUI();updateChatModeNote()}
 
@@ -1016,7 +1016,7 @@ $('#chatForm').addEventListener('submit',async(event)=>{
   emitSessionEvent('chat_turn',{userMessage:text,replyLength:reply.length});syncAdmin('chat_turn');
   if(state.settings.voiceMode)speakText(reply);
 });
-$$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
+$$$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
   $('#chatInput').value=button.textContent;$('#chatForm').requestSubmit();
 }));
 function effectiveMessageCount(){return state.messages.filter((m)=>m.text!=='…').length}
@@ -1243,7 +1243,7 @@ function clearApiSettings(){
   window.P005_API.clearDirect();renderApiRuntime();closeApiSettings();showToast('本次会话的模型设置已清除');
 }
 $('#apiBtn').addEventListener('click',openApiSettings);
-$('[data-api-close]').forEach((button)=>button.addEventListener('click',closeApiSettings));
+$$('[data-api-close]').forEach((button)=>button.addEventListener('click',closeApiSettings));
 $('#toggleApiKeyBtn').addEventListener('click',()=>{
   const input=$('#apiKeyInput'),show=input.type==='password';input.type=show?'text':'password';$('#toggleApiKeyBtn').textContent=show?'隐藏':'显示';
 });
