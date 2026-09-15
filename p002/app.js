@@ -97,13 +97,13 @@ const RUSH = {
 
 const state={scale:null,mode:null,index:0,answers:[],distress:[],emojiFound:0,emojiSeen:0,rushSignals:{},lastReflection:'',chapterSeen:{}};
 const $=s=>document.querySelector(s);
-const SHOW_SOURCE=new URLSearchParams(location.search).get('source')==='1';
+const SHOW_SOURCE=typeof location!=='undefined' && String(location.search||'').includes('source=1');
 
 function renderLauncher(){
   $('#scaleChoices').innerHTML=Object.values(SCALES).map(s=>`<button class="choice ${state.scale===s.id?'active':''}" data-scale="${s.id}" aria-pressed="${state.scale===s.id}">
     <h3>${s.name}</h3>
     <p>${s.subtitle}<br>时间窗口：${s.window}</p>
-    <span class="tag">${s.id==='pcl5'?'保留 0–4 反应格式':'原型转述需验证'}</span>
+    <span class="tag">${s.id==='pcl5'?'保留 0–4 反应格式':'原始 0–3 + 条件式困扰度'}</span>
   </button>`).join('');
 
   $('#modeChoices').innerHTML=Object.entries(MODES).map(([id,m])=>`<button class="choice ${state.mode===id?'active':''}" data-mode="${id}" aria-pressed="${state.mode===id}">
