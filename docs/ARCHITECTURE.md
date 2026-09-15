@@ -47,3 +47,10 @@ P004 clinical-like signals must remain admin/research-side. P005 must not reinte
 - Storage behavior must be disclosed when sensitive user-authored content is retained.
 - Shared public profile and private/admin inference must use different namespaces.
 - Internal agent scratchpads and workflow memory should not be published as product documentation.
+
+
+## 8. Design system
+
+P001–P005 share a standing product-design constraint: **Less is more**.
+
+The canonical UI principles are documented in `docs/DESIGN_PRINCIPLES.md`. Feature growth must not automatically increase visible interface density. Prefer one-task-per-screen flows, progressive disclosure, whitespace, typography, and semantic motion over additional cards, gradients, badges, and decorative AI motifs.
