@@ -27,10 +27,25 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Build minimal static artifact
+        run: |
+          set -euo pipefail
+          mkdir -p _site/shared _site/p002 _site/p004 _site/p005 _site/future-me
+
+          cp index.html app.js styles.css module-registry.json _site/
+          cp shared/profile.js _site/shared/
+
+          cp p002/index.html p002/app.js p002/experiments.js p002/styles.css _site/p002/
+          cp p004/index.html p004/app.js p004/api-client.js p004/styles.css _site/p004/
+          cp p005/index.html p005/app.js p005/styles.css _site/p005/
+          cp future-me/index.html _site/future-me/
+
+          touch _site/.nojekyll
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
