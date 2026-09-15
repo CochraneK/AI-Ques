@@ -9,10 +9,10 @@
     return {
       baseUrl:'https://api.openai.com/v1',
       apiKey:'',
-      chatModel:'gpt-5.6-luna',
-      imageModel:'gpt-image-2',
-      ttsModel:'gpt-4o-mini-tts',
-      sttModel:'gpt-transcribe',
+      chatModel:'',
+      imageModel:'',
+      ttsModel:'',
+      sttModel:'',
       voice:'marin'
     };
   }
@@ -47,11 +47,31 @@
     return Boolean(s.baseUrl&&s.apiKey&&s.chatModel);
   }
 
-  function endpoint(path){
-    const base=clean(readDirect().baseUrl).replace(/\/$/,'');
+  function endpoint(path,baseOverride){
+    const base=clean(baseOverride||readDirect().baseUrl).replace(/\/$/,'');
     if(!base)return '';
-    if(base.toLowerCase().endsWith(path.toLowerCase()))return base;
+    const lower=base.toLowerCase(),target=path.toLowerCase();
+    if(lower.endsWith(target))return base;
+    if(/\/chat\/completions$/i.test(base)&&path!='/chat/completions'){
+      return base.replace(/\/chat\/completions$/i,path);
+    }
     return base+path;
+  }
+  function capabilities(source){
+    const s=Object.assign({},readDirect(),source||{});
+    return {
+      chat:Boolean(clean(s.baseUrl)&&clean(s.apiKey)&&clean(s.chatModel)),
+      image:Boolean(clean(s.baseUrl)&&clean(s.apiKey)&&clean(s.imageModel)),
+      tts:Boolean(clean(s.baseUrl)&&clean(s.apiKey)&&clean(s.ttsModel)),
+      stt:Boolean(clean(s.baseUrl)&&clean(s.apiKey)&&clean(s.sttModel))
+    };
+  }
+  async function fetchWithTimeout(url,options,timeoutMs=30000){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      return await fetch(url,Object.assign({},options,{signal:controller.signal}));
+    }finally{clearTimeout(timer)}
   }
 
   function auth(){
@@ -69,12 +89,12 @@
     if(payload.userMessage&&!messages.some((m,i)=>i===messages.length-1&&m.role==='user'&&m.content===payload.userMessage)){
       messages.push({role:'user',content:String(payload.userMessage)});
     }
-    const url=clean(s.baseUrl).replace(/\/$/,'')+'/chat/completions';
-    const r=await fetch(url,{
+    const url=endpoint('/chat/completions',s.baseUrl);
+    const r=await fetchWithTimeout(url,{
       method:'POST',
       headers:Object.assign({'Content-Type':'application/json'},auth()),
       body:JSON.stringify({model:s.chatModel,messages,stream:false})
-    });
+    },30000);
     const raw=await r.text();let data={};try{data=JSON.parse(raw)}catch(_){}
     if(!r.ok)throw new Error(data?.error?.message||('Chat API '+r.status));
     const value=data?.choices?.[0]?.message?.content;
@@ -106,9 +126,9 @@
       'Target age: '+(payload.targetAge||'unknown')+'.',
       'Photorealistic, natural lighting, neutral portrait, preserve the same person and core facial identity.'
     ].join(' '));
-    const r=await fetch(clean(s.baseUrl).replace(/\/$/,'')+'/images/edits',{
+    const r=await fetchWithTimeout(endpoint('/images/edits',s.baseUrl),{
       method:'POST',headers:auth(),body:form
-    });
+    },60000);
     const raw=await r.text();let data={};try{data=JSON.parse(raw)}catch(_){}
     if(!r.ok)throw new Error(data?.error?.message||('Image API '+r.status));
     const item=data?.data?.[0]||{};
@@ -120,7 +140,7 @@
   async function directSpeak(payload){
     const s=readDirect();
     if(!s.baseUrl||!s.apiKey||!s.ttsModel)return null;
-    const r=await fetch(clean(s.baseUrl).replace(/\/$/,'')+'/audio/speech',{
+    const r=await fetchWithTimeout(endpoint('/audio/speech',s.baseUrl),{
       method:'POST',
       headers:Object.assign({'Content-Type':'application/json'},auth()),
       body:JSON.stringify({
@@ -130,7 +150,7 @@
         instructions:payload.instructions||'自然、平静、像熟悉自己的真人，不要播音腔。',
         response_format:'mp3'
       })
-    });
+    },45000);
     if(!r.ok){
       let message='TTS API '+r.status;try{const j=await r.json();message=j?.error?.message||message}catch(_){}
       throw new Error(message);
@@ -146,9 +166,9 @@
     form.append('file',blob,'future-me.webm');
     form.append('model',s.sttModel);
     form.append('language','zh');
-    const r=await fetch(clean(s.baseUrl).replace(/\/$/,'')+'/audio/transcriptions',{
+    const r=await fetchWithTimeout(endpoint('/audio/transcriptions',s.baseUrl),{
       method:'POST',headers:auth(),body:form
-    });
+    },45000);
     const raw=await r.text();let data={};try{data=JSON.parse(raw)}catch(_){}
     if(!r.ok)throw new Error(data?.error?.message||('STT API '+r.status));
     return {text:String(data.text||'').trim(),raw:data};
@@ -172,6 +192,7 @@
 
   window.P005_API=Object.freeze({
     get configured(){return isConfigured()},
+    capabilities,
     readDirect,
     saveDirect,
     clearDirect,
