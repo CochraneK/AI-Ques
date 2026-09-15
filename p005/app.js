@@ -4,9 +4,84 @@
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.4.0';
+const MODULE_VERSION = '0.5.0';
 const ADMIN_SETTINGS_KEY = 'bjtu.p005.admin.v1';
 const HORIZON_OPTIONS = ['1y','2y','3y','4y','10y','age60'];
+
+const P001_PROFILE_ASSETS_FALLBACK = {
+  // Temporary mirror until the authoritative P001 24+16 word list is exposed to the shared runtime.
+  // P001 research basis in the project map: IPIP public-domain trait content + Miller Personal Values Card Sort.
+  qualities:[
+    '好奇','创造','勤奋','自律','可靠','负责',
+    '勇敢','坚持','真诚','善良','同理','合作',
+    '公平','谦逊','宽容','乐观','幽默','热情',
+    '独立','开放','审慎','果断','领导力','适应力'
+  ],
+  values:[
+    '家人','亲密关系','友谊','健康',
+    '成长','学习','事业','成就',
+    '创造','自由','稳定','财富',
+    '影响力','帮助他人','体验','内心平静'
+  ]
+};
+
+function p001Sources(){
+  const root=window.P00_CONTEXT||{};
+  const sources=[root.p001,root.P001,window.P001_PROFILE].filter((x)=>x&&typeof x==='object');
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||'';
+      if(!/p[-_.]?001/i.test(key))continue;
+      const raw=parseJson(localStorage.getItem(key)||'');
+      if(raw&&typeof raw==='object')sources.push(raw);
+    }
+  }catch(_){}
+  return sources;
+}
+function nestedCandidates(source){
+  if(!source||typeof source!=='object')return [];
+  const out=[source];
+  for(const key of ['profile','result','results','answers','self','data','summary']){
+    const value=source[key];
+    if(value&&typeof value==='object'&&!Array.isArray(value))out.push(value);
+  }
+  return out;
+}
+function p001Context(){
+  const sources=p001Sources();
+  return sources.length?sources[0]:{};
+}
+function p001Assets(){
+  let ext=window.P001_PROFILE_ASSETS||null;
+  if(!ext){
+    for(const source of p001Sources()){
+      for(const candidate of nestedCandidates(source)){
+        if(candidate.assets&&typeof candidate.assets==='object'){ext=candidate.assets;break}
+      }
+      if(ext)break;
+    }
+  }
+  ext=ext||{};
+  const qualities=Array.isArray(ext.positiveQualities)&&ext.positiveQualities.length===24
+    ? ext.positiveQualities
+    : P001_PROFILE_ASSETS_FALLBACK.qualities;
+  const values=Array.isArray(ext.values)&&ext.values.length===16
+    ? ext.values
+    : P001_PROFILE_ASSETS_FALLBACK.values;
+  return {qualities:[...qualities],values:[...values]};
+}
+function firstArray(source,keys){
+  const sources=source?[source]:p001Sources();
+  for(const item of sources){
+    for(const candidate of nestedCandidates(item)){
+      for(const key of keys){
+        if(Array.isArray(candidate&&candidate[key]))return candidate[key].filter(Boolean).map(String);
+      }
+    }
+  }
+  return [];
+}
+
 
 const SCREENS = ['welcome', 'survey', 'portrait', 'generate', 'ready', 'chat', 'share', 'capsule'];
 const STEP_NAMES = {
@@ -23,25 +98,34 @@ const STEP_NAMES = {
 const QUESTIONS = [
   { section:'现在的你', key:'name', source:'paper-core', question:'希望未来的你怎么称呼你？', hint:'用你平时最习惯的称呼。', type:'text', placeholder:'例如：小林', required:true },
   { section:'现在的你', key:'age', source:'paper-core', question:'你现在几岁？', hint:'Future Me 会使用管理员设定的未来时间锚点。', type:'number', placeholder:'22', required:true },
-  { section:'现在的你', key:'pronouns', source:'paper-core', question:'你希望未来的自己怎样称呼你？', hint:'研究复刻版为开放回答；低负担版可直接选择。', type:'text', guidedType:'single', options:['她 / 她','他 / 他','TA / TA','不特别指定','其他'], optionalDetail:true, placeholder:'可选' },
-  { section:'现在的你', key:'location', source:'paper-core', question:'你现在生活在哪里？', hint:'城市或一个你认同的地方都可以。', type:'text', placeholder:'例如：北京' },
-  { section:'现在的你', key:'currentWork', source:'p005-extension', question:'现在，什么占据了你大部分时间？', hint:'低负担版用它帮助 Future Me 更贴近你当下的生活。', type:'textarea', guidedType:'single', options:['学习 / 升学','研究 / 学术','全职工作','创业 / 自由职业','求职 / 过渡期','照顾家庭','其他'], optionalDetail:true },
 
-  { section:'人生故事', key:'people', source:'paper-core', question:'现在对你最重要的人是谁？', hint:'研究复刻版保持自由文本；低负担版可多选关系类型并补一句。', type:'textarea', guidedType:'multi', max:4, options:['父母 / 家人','伴侣','朋友','孩子','老师 / 导师','同事 / 合作者','自己','其他'], optionalDetail:true },
-  { section:'人生故事', key:'proud', source:'paper-core', question:'哪一个时刻，让你真正为自己骄傲？', hint:'不需要宏大。低负担版先选最接近的一类，再按需补充。', type:'textarea', guidedType:'single', options:['学习 / 学术突破','工作 / 项目成果','创作 / 作品','帮助了别人','跨过困难','独立做出重要选择','关系中的成长','其他'], optionalDetail:true },
-  { section:'人生故事', key:'lowPoint', source:'paper-core', question:'你经历过的一段低谷是什么？', hint:'只回答你愿意回答的部分。', type:'textarea', guidedType:'single', options:['学习 / 工作受挫','关系变化','失去重要的人或事','健康 / 压力','经济压力','方向迷茫','家庭事件','其他 / 不想细说'], optionalDetail:true },
-  { section:'人生故事', key:'turningPoint', source:'paper-core', question:'哪件事明显改变了你的方向？', hint:'选择最接近的一类即可，也可以补一句。', type:'textarea', guidedType:'single', options:['升学 / 专业选择','工作 / 职业选择','搬家 / 出国','一段重要关系','一次成功或失败','家庭事件','健康或失去','偶然机会','其他'], optionalDetail:true },
-  { section:'人生故事', key:'challenge', source:'p005-extension', question:'现在最想跨过去的难题是什么？', hint:'这是 P005 扩展题，不属于 2024 论文列出的核心 intake 字段。', type:'textarea', guidedType:'single', options:['方向选择','学业 / 工作压力','自信 / 害怕失败','关系 / 边界','金钱 / 安全感','健康 / 精力','时间管理','暂时没有','其他'], optionalDetail:true },
+  { section:'现在的你', key:'pronouns', source:'paper-core', replicationOnly:true, question:'你希望未来的自己怎样称呼你？', hint:'2024 Future You 论文公开字段。', type:'text', placeholder:'请用自己的话回答' },
+  { section:'现在的你', key:'gender', source:'p005-extension', guidedOnly:true, question:'你的性别是？', hint:'请选择。', type:'text', guidedType:'single', options:['男','女'], required:true },
 
-  { section:'未来的你', key:'lifeProject', source:'paper-prompt', question:'如果有一件事值得长期投入，会是什么？', hint:'这个字段出现在论文公开的 Future Memory prompt 中。', type:'textarea', guidedType:'single', options:['专业 / 研究','事业 / 创业','创作 / 作品','家庭 / 关系','教育 / 帮助他人','公益 / 社会影响','健康 / 生活方式','探索世界','还不知道','其他'], optionalDetail:true },
-  { section:'未来的你', key:'career', source:'paper-core', question:'到 {future}，你希望事业更接近哪种状态？', hint:'论文明确包含 career / professional accomplishments。', type:'textarea', guidedType:'multi', max:2, options:['成为某领域的专家','做有影响力的项目','带领团队','拥有自己的事业','更自由地工作','稳定且有生活平衡','帮助更多人','仍在探索'], optionalDetail:true },
-  { section:'未来的你', key:'finance', source:'paper-core', question:'到 {future}，怎样的财务状态会让你觉得够好？', hint:'论文明确包含 financial status。', type:'textarea', guidedType:'multi', max:3, options:['基本无经济焦虑','有稳定储蓄','没有高压债务','能支持家人','有选择工作的自由','实现财务独立','能为兴趣和体验花钱','不把钱当核心目标'], optionalDetail:true },
-  { section:'未来的你', key:'family', source:'paper-core', question:'到 {future}，你希望亲密关系和家庭是什么样？', hint:'论文明确包含 family life。', type:'textarea', guidedType:'multi', max:3, options:['有稳定伴侣','有孩子','和原生家庭亲近','和朋友像家人一样','独居但有稳定关系网','把工作伙伴视为重要关系','还不确定','其他'], optionalDetail:true },
-  { section:'未来的你', key:'personalLife', source:'paper-core', question:'到 {future}，你希望个人生活最明显的变化是什么？', hint:'论文明确提到 personal life outcomes。', type:'textarea', guidedType:'multi', max:3, options:['更自由自主','更平静稳定','更健康有精力','有更多时间给重要的人','持续学习成长','有更多创造和兴趣','常旅行 / 看世界','对生活更有掌控感'], optionalDetail:true },
-  { section:'未来的你', key:'futureLocation', source:'paper-prompt', question:'到 {future}，你想在哪里生活？', hint:'where_to_live 出现在论文公开 Future Memory prompt 中。', type:'textarea', guidedType:'single', options:['现在的城市','回到家乡 / 家人附近','中国另一座城市','海外生活','多个城市之间流动','更自然安静的地方','地点不重要','还不知道'], optionalDetail:true },
-  { section:'未来的你', key:'dailyLife', source:'paper-prompt', question:'到 {future}，普通的一天里你希望有什么？', hint:'daily_life 出现在论文公开 Future Memory prompt 中。', type:'textarea', guidedType:'multi', max:4, options:['专注工作 / 创作','运动 / 健康','陪伴家人 / 伴侣','和朋友见面','学习新东西','旅行 / 户外','社区 / 公益','安静独处','规律休息'], optionalDetail:true },
-  { section:'未来的你', key:'values', source:'current-site', question:'无论未来怎么变，什么最好不要丢？', hint:'当前 Future You 官网明确将 Values 纳入 intake；不属于 2024 论文逐项列出的核心字段。', type:'textarea', guidedType:'multi', max:3, options:['自由','关系','好奇','创造','成长','安全','诚实','成就','善意','独立','影响力','平静'], optionalDetail:true },
-  { section:'可能的分岔', key:'decision', source:'p005-extension', question:'有一个你现在拿不准的 A / B 决定吗？', hint:'可选。没有就直接跳过。', type:'decision' }
+  { section:'现在的你', key:'location', source:'paper-core', question:'你现在生活在哪里？', hint:'填写城市即可。', type:'text', placeholder:'例如：北京' },
+  { section:'现在的你', key:'currentWork', source:'p005-extension', guidedOnly:true, question:'现在，什么占据了你大部分时间？', hint:'请选择最主要的一项。', type:'textarea', guidedType:'single', required:true, options:[
+    '本科阶段学习','硕士阶段学习','博士阶段学习','其他阶段学习',
+    '职业培训或备考','全职受雇工作','兼职受雇工作','自由职业',
+    '创业经营','求职','照顾家庭','休学或间隔期',
+    '暂时没有固定安排','其他'
+  ], optionalDetail:true },
+
+  { section:'快速画像', key:'p001Qualities', source:'p001-reuse', guidedOnly:true, question:'哪些积极品质最像现在的你？', hint:'最多选 6 个。这里只做快速画像，不重复 P001 的玩法。', type:'matrix', asset:'qualities', max:6, required:true },
+  { section:'快速画像', key:'p001Values', source:'p001-reuse', guidedOnly:true, question:'对你来说，哪些事情真的重要？', hint:'最多选 4 个。', type:'matrix', asset:'values', max:4, required:true },
+
+  { section:'人生故事', key:'people', source:'paper-core', question:'现在对你最重要的人是谁？', hint:'可以多选。研究复刻版保持自由文本。', type:'textarea', guidedType:'multi', max:5, options:['父母','其他家人','伴侣','孩子','朋友','老师或导师','同学或同事','自己','其他'], optionalDetail:true },
+  { section:'人生故事', key:'proud', source:'paper-core', question:'哪一个时刻，让你真正为自己骄傲？', hint:'先选最接近的一类，也可以补一句。', type:'textarea', guidedType:'single', options:['学习突破','科研突破','工作成果','创作作品','帮助他人','跨过困难','独立做出重要选择','关系中的成长','体育或比赛','其他'], optionalDetail:true },
+  { section:'人生故事', key:'lowPoint', source:'paper-core', question:'你经历过的一段低谷是什么？', hint:'只回答你愿意回答的部分。', type:'textarea', guidedType:'single', options:['学业受挫','工作受挫','关系变化','失去重要的人或事','健康压力','经济压力','方向迷茫','家庭事件','其他','不想细说'], optionalDetail:true },
+  { section:'人生故事', key:'turningPoint', source:'paper-core', question:'哪件事明显改变了你的方向？', hint:'选择最接近的一类即可，也可以补一句。', type:'textarea', guidedType:'single', options:['升学选择','专业选择','工作选择','搬到新的城市','出国经历','一段重要关系','一次成功','一次失败','家庭事件','健康事件','偶然机会','其他'], optionalDetail:true },
+  { section:'人生故事', key:'challenge', source:'p005-extension', guidedOnly:true, question:'现在最想跨过去的难题是什么？', hint:'请选择最接近的一项。', type:'textarea', guidedType:'single', options:['方向选择','学业压力','工作压力','害怕失败','自信不足','关系困扰','经济压力','健康或精力','时间管理','暂时没有','其他'], optionalDetail:true },
+
+  { section:'未来的你', key:'lifeProject', source:'paper-prompt', question:'如果有一件事值得长期投入，会是什么？', hint:'这个字段出现在论文公开的 Future Memory prompt 中。', type:'textarea', guidedType:'single', options:['专业研究','事业发展','创业','创作','家庭关系','教育他人','帮助他人','公益行动','健康生活','探索世界','还不知道','其他'], optionalDetail:true },
+  { section:'未来的你', key:'career', source:'paper-core', question:'到 {future}，你希望事业更接近哪种状态？', hint:'最多选 2 项。', type:'textarea', guidedType:'multi', max:2, options:['成为某领域的专家','做有影响力的项目','带领团队','拥有自己的事业','更自由地工作','工作稳定','工作和生活更平衡','帮助更多人','仍在探索'], optionalDetail:true },
+  { section:'未来的你', key:'finance', source:'paper-core', question:'到 {future}，怎样的财务状态会让你觉得够好？', hint:'最多选 3 项。', type:'textarea', guidedType:'multi', max:3, options:['基本没有经济焦虑','有稳定储蓄','没有高压债务','能支持家人','有选择工作的自由','实现财务独立','能为兴趣和体验花钱','钱不是生活的核心'], optionalDetail:true },
+  { section:'未来的你', key:'family', source:'paper-core', question:'到 {future}，你希望亲密关系和家庭是什么样？', hint:'可以多选。', type:'textarea', guidedType:'multi', max:4, options:['有稳定伴侣','有孩子','和父母关系亲近','和其他家人关系亲近','有稳定的朋友群体','独居但关系充实','还不确定','其他'], optionalDetail:true },
+  { section:'未来的你', key:'personalLife', source:'paper-core', question:'到 {future}，你希望个人生活最明显的变化是什么？', hint:'最多选 3 项。', type:'textarea', guidedType:'multi', max:3, options:['更自由自主','更平静稳定','更健康有精力','有更多时间陪重要的人','持续学习成长','有更多创造和兴趣','更多旅行','更有生活掌控感'], optionalDetail:true },
+  { section:'未来的你', key:'futureLocation', source:'paper-prompt', question:'到 {future}，你想在哪里生活？', hint:'请选择最接近的一项。', type:'textarea', guidedType:'single', options:['继续留在现在的城市','回到家乡','去中国另一座城市','长期生活在海外','在多个城市之间生活','住在更自然安静的地方','地点不重要','还不知道'], optionalDetail:true },
+  { section:'未来的你', key:'dailyLife', source:'paper-prompt', question:'到 {future}，普通的一天里你希望有什么？', hint:'最多选 4 项。', type:'textarea', guidedType:'multi', max:4, options:['专注工作','创作','运动','陪伴家人','陪伴伴侣','和朋友见面','学习新东西','旅行或户外','参与社区活动','安静独处','规律休息'], optionalDetail:true }
 ];
 
 function protocolMode(){
@@ -49,11 +133,11 @@ function protocolMode(){
 }
 function activeQuestions(){
   return protocolMode()==='replication'
-    ? QUESTIONS.filter((q)=>q.source==='paper-core'||q.source==='paper-prompt')
-    : QUESTIONS;
+    ? QUESTIONS.filter((q)=>(q.source==='paper-core'||q.source==='paper-prompt')&&!q.guidedOnly)
+    : QUESTIONS.filter((q)=>!q.replicationOnly);
 }
 function questionSourceLabel(source){
-  return ({'paper-core':'2024 论文核心','paper-prompt':'2024 Memory prompt','current-site':'当前官网扩展','p005-extension':'P005 扩展'})[source]||'';
+  return ({'paper-core':'2024 论文核心','paper-prompt':'2024 Memory prompt','p001-reuse':'P001 共用画像','p005-extension':'P005 扩展'})[source]||'';
 }
 
 const state = {
@@ -67,7 +151,7 @@ const state = {
   futurePortrait:'',
   capsules:[],
   generated:false,
-  settings:{ voiceMode:false, unlockMonths:12 }
+  settings:{ voiceMode:false, unlockMonths:12, shareCardStyle:'minimal' }
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -174,9 +258,21 @@ function sharedProfile(){
   return (window.P00_CONTEXT&&window.P00_CONTEXT.profile)||{};
 }
 function mapSharedIntoProfile(shared){
-  const allowed=['name','age','origin','location','currentWork','values'];
+  const allowed=['name','age','origin','location','currentWork','values','gender'];
   for(const key of allowed){
     if(!state.profile[key]&&shared&&shared[key])state.profile[key]=shared[key];
+  }
+}
+function hydrateP001Selections(){
+  const qualities=firstArray(null,['selectedQualities','positiveQualities','qualities','strengths','traits']).slice(0,6);
+  const values=firstArray(null,['selectedValues','valueChoices','importantValues','values','priorities']).slice(0,4);
+  if(qualities.length&&!(state.structuredAnswers.p001Qualities&&state.structuredAnswers.p001Qualities.selected&&state.structuredAnswers.p001Qualities.selected.length)){
+    state.structuredAnswers.p001Qualities={selected:qualities,detail:'',reusedFromP001:true};
+    state.profile.positiveQualities=qualities.join('、');
+  }
+  if(values.length&&!(state.structuredAnswers.p001Values&&state.structuredAnswers.p001Values.selected&&state.structuredAnswers.p001Values.selected.length)){
+    state.structuredAnswers.p001Values={selected:values,detail:'',reusedFromP001:true};
+    state.profile.values=values.join('、');
   }
 }
 function writeSharedProfile(){
@@ -303,6 +399,7 @@ function load(){
     state.generated=Boolean(state.memory);
   }
   mapSharedIntoProfile(sharedProfile());
+  hydrateP001Selections();
   restorePortraits();
   renderSurvey();
   updateVoiceUI();
@@ -349,6 +446,31 @@ function selectedGuidedValues(q){
   const stored=state.structuredAnswers[q.key]||{};
   return Array.isArray(stored.selected)?stored.selected:[];
 }
+function renderMatrixQuestion(q,root){
+  const assets=p001Assets();
+  const options=assets[q.asset]||[];
+  const stored=state.structuredAnswers[q.key]||{};
+  const selected=Array.isArray(stored.selected)?stored.selected:[];
+  root.innerHTML=
+    '<div class="matrix-head"><span>已选 <b id="matrixCount">'+selected.length+'</b> / '+q.max+'</span><small>点一下选择，再点一下取消</small></div>'+
+    '<div class="profile-matrix">'+options.map((option)=>{
+      const on=selected.includes(option)?' selected':'';
+      return '<button type="button" class="matrix-item'+on+'" data-matrix-option="'+escapeHtml(option)+'">'+escapeHtml(option)+'</button>';
+    }).join('')+'</div>';
+  $('[data-matrix-option]').forEach((button)=>button.addEventListener('click',()=>{
+    const value=button.dataset.matrixOption;
+    let values=Array.isArray((state.structuredAnswers[q.key]||{}).selected)?[...state.structuredAnswers[q.key].selected]:[];
+    if(values.includes(value))values=values.filter((x)=>x!==value);
+    else{
+      if(values.length>=q.max){showToast('最多选择 '+q.max+' 个');return}
+      values.push(value);
+    }
+    state.structuredAnswers[q.key]={selected:values,detail:'',reusedFromP001:false};
+    button.classList.toggle('selected',values.includes(value));
+    const count=$('#matrixCount');if(count)count.textContent=values.length;
+  }));
+}
+
 function renderGuidedChoices(q,root){
   const selected=selectedGuidedValues(q);
   const type=q.guidedType||'single';
@@ -388,30 +510,8 @@ function renderSurvey(){
   $('#surveyHint').textContent=interpolateQuestion(q.hint||'');
 
   const root=$('#surveyInput');
-  if(q.type==='decision'&&protocolMode()==='guided'){
-    root.innerHTML=
-      '<div class="decision-presets">'+
-      ['升学 / 工作','留下 / 离开','稳定 / 冒险','这座城市 / 另一座城市','继续一段关系 / 结束','暂时没有'].map((x)=>'<button type="button" class="answer-option" data-decision-preset="'+x+'">'+x+'</button>').join('')+
-      '</div>'+
-      '<div class="decision-inputs">'+
-      '<label><span>我正在决定</span><input id="decisionMain" placeholder="可选"></label>'+
-      '<div class="decision-options">'+
-      '<label><span>Option A</span><input id="decisionA" placeholder="A"></label>'+
-      '<label><span>Option B</span><input id="decisionB" placeholder="B"></label>'+
-      '</div></div>';
-    $('#decisionMain').value=state.profile.decision||'';
-    $('#decisionA').value=state.profile.optionA||'';
-    $('#decisionB').value=state.profile.optionB||'';
-    $$('[data-decision-preset]').forEach((button)=>button.addEventListener('click',()=>{
-      const value=button.dataset.decisionPreset;
-      if(value==='暂时没有'){
-        $('#decisionMain').value='';$('#decisionA').value='';$('#decisionB').value='';
-        showToast('已跳过 A / B');
-        return;
-      }
-      $('#decisionMain').value=value;
-      $('#decisionMain').focus();
-    }));
+  if(q.type==='matrix'&&protocolMode()==='guided'){
+    renderMatrixQuestion(q,root);
   }else if(protocolMode()==='guided'&&q.guidedType){
     renderGuidedChoices(q,root);
   }else{
@@ -433,17 +533,16 @@ function captureSurvey(){
   const q=list[state.surveyIndex];
   if(!q)return true;
 
-  if(q.type==='decision'&&protocolMode()==='guided'){
-    state.profile.decision=clean($('#decisionMain').value,'');
-    state.profile.optionA=clean($('#decisionA').value,'');
-    state.profile.optionB=clean($('#decisionB').value,'');
+  if(q.type==='matrix'&&protocolMode()==='guided'){
+    const current=state.structuredAnswers[q.key]||{};
+    const selected=Array.isArray(current.selected)?current.selected:[];
+    if(q.required&&!selected.length){showToast('至少选择 1 个');return false}
+    if(selected.length>q.max){showToast('最多选择 '+q.max+' 个');return false}
+    state.profile[q.key==='p001Qualities'?'positiveQualities':'values']=selected.join('、');
     save();
-    syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),value:{
-      decision:state.profile.decision,optionA:state.profile.optionA,optionB:state.profile.optionB
-    },surveyIndex:state.surveyIndex});
+    syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),structured:current,value:selected,surveyIndex:state.surveyIndex});
     return true;
   }
-
   if(protocolMode()==='guided'&&q.guidedType){
     const current=state.structuredAnswers[q.key]||{};
     const selected=Array.isArray(current.selected)?current.selected:[];
@@ -567,10 +666,10 @@ function safeExternalPersona(){
 function buildPersonaBrief(){
   const p=state.profile;
   return {
-    identity:{name:p.name||'',age:p.age||'',pronouns:p.pronouns||'',location:p.location||'',currentWork:p.currentWork||''},
+    identity:{name:p.name||'',age:p.age||'',gender:p.gender||'',pronouns:p.pronouns||'',location:p.location||'',currentWork:p.currentWork||''},
     continuity:{
       importantPeople:p.people||'',proudPoint:p.proud||'',lowPoint:p.lowPoint||'',turningPoint:p.turningPoint||'',
-      values:p.values||'',lifeProject:p.lifeProject||'',currentChallenge:p.challenge||''
+      positiveQualities:p.positiveQualities||'',values:p.values||'',lifeProject:p.lifeProject||'',currentChallenge:p.challenge||''
     },
     futurePreferences:{
       career:p.career||'',finance:p.finance||'',family:p.family||'',personalLife:p.personalLife||'',
@@ -609,21 +708,12 @@ function buildMemory(){
     {age:futureAge,tag:'Future Me',text:'到'+futurePhrase+'，你生活在'+futureLocation+'。普通的一天是：'+daily+'。关系上，你希望'+family+'；个人生活更接近：'+personalLife+'。'}
   ];
 
-  let branch=null;
-  if(clean(p.decision)&&clean(p.optionA)&&clean(p.optionB)){
-    branch={
-      decision:firstClause(p.decision),
-      a:{label:firstClause(p.optionA),text:'这条路可能更早带来某种确定性；真正要观察的是，它是否仍给“'+values+'”留下空间。'},
-      b:{label:firstClause(p.optionB),text:'这条路可能带来更多未知；真正要观察的是，它是否让你获得更真实的新信息。'}
-    };
-  }
 
   return {
     summary:'这是 '+clean(p.name,'你')+' 从现在走向'+futurePhrase+'的一种可能版本。它围绕“'+project+'”、'+career+'，以及你不想丢掉的“'+values+'”展开。',
     futureVignette:futurePhrase+'的你住在'+futureLocation+'。生活没有完全按计划发生，但“'+values+'”仍然能在日常里被看见。',
     memories,
     timeline,
-    branch,
     voiceAnchors:{values,people,career,project,challenge}
   };
 }
@@ -639,7 +729,7 @@ async function generateMemory(){
       personaBrief:buildPersonaBrief(),
       intakeProtocol:protocolMode(),
       target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
-      instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return JSON with summary, futureVignette, memories[3], timeline, and optional branch. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
+      instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return JSON with summary, futureVignette, memories[3], and timeline. Ground it in the user profile, including selected positive qualities and important values. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
     })});
     if(!response.ok)throw new Error('memory api '+response.status);
     const result=await response.json();
@@ -695,7 +785,7 @@ async function generateSequence(){
     $('#generateTitle').textContent='Future Me 已经准备好了。';
     $('#generateSub').textContent='它不是你的真实未来，只是一个足够具体、可以与之对话的可能版本。';
     $('#meetBtn').classList.remove('hidden');
-    emitSessionEvent('future_generated',{hasBranch:Boolean(state.memory&&state.memory.branch)});
+    emitSessionEvent('future_generated',{target:targetPhrase()});
     syncAdmin('future_generated');
   },1150);
 }
@@ -732,13 +822,6 @@ function renderReady(){
     '<p class="future-summary">'+escapeHtml(state.memory.summary||'')+'</p>'+
     '<div class="memory-glimpse">'+memories.map((x)=>'<p>'+escapeHtml(x)+'</p>').join('')+'</div>';
 
-  if(state.memory.branch){
-    $('#branchPreview').innerHTML=
-      '<div class="branch-card"><h3>'+escapeHtml(state.memory.branch.decision)+'</h3><div class="branch-options">'+
-      '<div class="branch-option"><small>A · '+escapeHtml(state.memory.branch.a.label)+'</small><p>'+escapeHtml(state.memory.branch.a.text)+'</p></div>'+
-      '<div class="branch-option"><small>B · '+escapeHtml(state.memory.branch.b.label)+'</small><p>'+escapeHtml(state.memory.branch.b.text)+'</p></div>'+
-      '</div></div>';
-  }else $('#branchPreview').innerHTML='';
   save();
 }
 
@@ -822,11 +905,7 @@ function localFutureReply(input){
       '我记得这种不确定。焦虑常常在要求你提前拿到未来的保证，但未来很少给这种保证。你能做的是让下一步更小、更真实、更可撤回。',
       '关于“'+challenge+'”，真正的变化不是某天突然不怕了，而是害怕时仍然能完成一个足够小的动作。'
     ],
-    decision:[
-      m.branch
-        ? '关于“'+m.branch.decision+'”，我不会假装从'+targetPhrase()+'知道 A 或 B 哪个一定更好。更值得比较的是：哪条路更接近“'+values+'”，哪条路能更快带回真实反馈，以及哪种代价是你愿意承担的。'
-        : '如果你卡在一个选择里，我会问三个问题：我真正重视什么？哪种代价我愿意承担？哪个下一步能让我获得更多真实信息？'
-    ],
+
     surprise:[
       '最大的意外是：很多当年觉得会决定一生的事，后来只是路口；一些很小的习惯和关系，反而慢慢复利成了人生。',
       '未来最常见的不是戏剧性反转，而是一些当时不起眼的选择，几年后突然显出差异。'
@@ -843,7 +922,6 @@ function localFutureReply(input){
   else if(/家人|家庭|朋友|伴侣|关系|父母/.test(q))key='people';
   else if(/后悔|遗憾|regret/.test(q))key='regret';
   else if(/焦虑|害怕|担心|恐惧|压力/.test(q))key='fear';
-  else if(/选择|决定|纠结|option|选哪/.test(q))key='decision';
   else if(/意外|惊讶|没想到|unexpected/.test(q))key='surprise';
 
   const reply=pick(groups[key],input+JSON.stringify(p));
@@ -1031,7 +1109,7 @@ function updateChatModeNote(){
 
 function cardValues(){
   const p=state.profile;
-  const raw=clean(p.values,[firstClause(p.people,''),firstClause(p.personalLife,''),firstClause(p.lifeProject,'')].filter(Boolean).join('、')||'真实、连接、成长');
+  const raw=clean(p.values,[firstClause(p.positiveQualities,''),firstClause(p.people,''),firstClause(p.personalLife,'')].filter(Boolean).join('、')||'真实、连接、成长');
   return raw.split(/[、，,；;\/]/).map((x)=>x.replace(/^补充：/,'').trim()).filter(Boolean).slice(0,3);
 }
 function latestFutureQuote(){
@@ -1049,42 +1127,79 @@ function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines=99){
   lines.forEach((row,i)=>ctx.fillText(row,x,y+i*lineHeight));
   return y+lines.length*lineHeight;
 }
+const CARD_STYLES = {
+  minimal:{label:'留白',bg:'#ffffff',ink:'#151515',muted:'#8a8a8f',accent:'#5b3cf6',line:'#e6e6e8'},
+  warm:{label:'暖纸',bg:'#f7f1e8',ink:'#2e2924',muted:'#887d70',accent:'#b86a4b',line:'#ded2c4'},
+  night:{label:'夜航',bg:'#151824',ink:'#f6f3ff',muted:'#aaa7bd',accent:'#9f8cff',line:'#36394a'},
+  mint:{label:'青简',bg:'#eef7f2',ink:'#18322b',muted:'#688078',accent:'#2d7c69',line:'#cfe2d9'}
+};
+function selectedCardStyle(){
+  const key=state.settings.shareCardStyle||'minimal';
+  return CARD_STYLES[key]?key:'minimal';
+}
+function drawCardBackground(ctx,w,h,styleKey,style){
+  ctx.fillStyle=style.bg;ctx.fillRect(0,0,w,h);
+  if(styleKey==='warm'){
+    ctx.strokeStyle=style.line;ctx.lineWidth=1;
+    for(let y=230;y<h-120;y+=62){ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(w-72,y);ctx.stroke()}
+  }else if(styleKey==='night'){
+    ctx.fillStyle=style.accent;ctx.globalAlpha=.12;ctx.beginPath();ctx.arc(w-140,170,180,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  }else if(styleKey==='mint'){
+    ctx.strokeStyle=style.accent;ctx.globalAlpha=.2;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(w-110,h-130,210,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
+  }
+}
 function renderShareCard(){
   const canvas=$('#shareCardCanvas');if(!canvas)return;
   const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
-  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,w,h);
-  ctx.fillStyle='#5b3cf6';ctx.fillRect(72,72,16,16);
-  ctx.fillStyle='#151515';ctx.font='700 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  const styleKey=selectedCardStyle(),style=CARD_STYLES[styleKey];
+  drawCardBackground(ctx,w,h,styleKey,style);
+
+  ctx.fillStyle=style.accent;ctx.fillRect(72,72,16,16);
+  ctx.fillStyle=style.ink;ctx.font='700 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('FUTURE ME',112,93);
-  ctx.fillStyle='#8a8a8f';ctx.font='500 22px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='500 22px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('一个可能的未来，不是预测',72,150);
 
-  ctx.fillStyle='#151515';ctx.font='650 72px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.ink;ctx.font='650 72px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   let y=300;
   y=wrapCanvasText(ctx,clean(state.profile.name,'我')+' × '+targetPhrase()+'的我',72,y,900,92,2)+38;
 
-  ctx.strokeStyle='#e6e6e8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(1008,y);ctx.stroke();y+=70;
+  ctx.strokeStyle=style.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(1008,y);ctx.stroke();y+=70;
 
-  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  ctx.fillText('我想守住',72,y);y+=54;
-  ctx.fillStyle='#151515';ctx.font='600 42px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  const qualities=(state.structuredAnswers.p001Qualities&&state.structuredAnswers.p001Qualities.selected)||[];
+  if(qualities.length){
+    ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('现在的我',72,y);y+=50;
+    ctx.fillStyle=style.ink;ctx.font='600 34px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+    y=wrapCanvasText(ctx,qualities.slice(0,6).join('  ·  '),72,y,900,50,2)+48;
+  }
+
+  ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('对我重要',72,y);y+=50;
+  ctx.fillStyle=style.ink;ctx.font='600 38px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   const vals=cardValues();
-  ctx.fillText(vals.join('  ·  '),72,y);y+=110;
+  y=wrapCanvasText(ctx,vals.join('  ·  '),72,y,900,54,2)+66;
 
-  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('未来片段',72,y);y+=48;
-  ctx.fillStyle='#333338';ctx.font='400 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  y=wrapCanvasText(ctx,(state.memory&&state.memory.futureVignette)||'未来仍然有变化，但重要的东西没有完全丢掉。',72,y,900,48,4)+70;
+  ctx.fillStyle=style.ink;ctx.font='400 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  y=wrapCanvasText(ctx,(state.memory&&state.memory.futureVignette)||'未来仍然有变化，但重要的东西没有完全丢掉。',72,y,900,48,4)+64;
 
-  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('Future Me 留给我的一句话',72,y);y+=54;
-  ctx.fillStyle='#151515';ctx.font='500 38px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  y=wrapCanvasText(ctx,'“'+latestFutureQuote()+'”',72,y,900,58,5);
+  ctx.fillStyle=style.ink;ctx.font='500 36px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  wrapCanvasText(ctx,'“'+latestFutureQuote()+'”',72,y,900,56,4);
 
-  ctx.fillStyle='#b0b0b5';ctx.font='500 20px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle=style.muted;ctx.font='500 20px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillText('P005 · '+new Date().toLocaleDateString('zh-CN'),72,h-86);
-  syncAdmin('share_card_generated',{target:targetPhrase()});
+  $$('#cardStyleChoices button').forEach((button)=>button.classList.toggle('active',button.dataset.cardStyle===styleKey));
+  syncAdmin('share_card_generated',{target:targetPhrase(),style:styleKey});
 }
+$$('[data-card-style]').forEach((button)=>button.addEventListener('click',()=>{
+  state.settings.shareCardStyle=button.dataset.cardStyle;
+  save();renderShareCard();
+}));
 function cardBlob(){
   return new Promise((resolve)=>$('#shareCardCanvas').toBlob(resolve,'image/png',.95));
 }
@@ -1094,14 +1209,14 @@ $('#downloadCardBtn').addEventListener('click',async()=>{
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='Future-Me-card-'+new Date().toISOString().slice(0,10)+'.png';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),600);
-  syncAdmin('share_card_saved',{});showToast('卡片已保存');
+  syncAdmin('share_card_saved',{style:selectedCardStyle()});showToast('卡片已保存');
 });
 $('#shareCardBtn').addEventListener('click',async()=>{
   renderShareCard();
   const blob=await cardBlob();if(!blob)return;
   const file=new File([blob],'future-me-card.png',{type:'image/png'});
   if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:'Future Me',text:'和未来的自己聊了一次。'});syncAdmin('share_card_shared',{});return}catch(error){if(error&&error.name==='AbortError')return}
+    try{await navigator.share({files:[file],title:'Future Me',text:'和未来的自己聊了一次。'});syncAdmin('share_card_shared',{style:selectedCardStyle()});return}catch(error){if(error&&error.name==='AbortError')return}
   }
   showToast('当前浏览器不支持直接分享，可先保存图片');
 });
@@ -1173,6 +1288,6 @@ load();
 updateProgress();
 updateChatModeNote();
 emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
-syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin'});
+syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin',p001ProfileReused:Boolean((state.structuredAnswers.p001Qualities||{}).reusedFromP001||(state.structuredAnswers.p001Values||{}).reusedFromP001)});
 
 })();

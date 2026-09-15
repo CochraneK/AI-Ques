@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="P005 Future Me：基于人生故事、未来记忆与未来自我对话的研究原型。" />
   <title>P005 · Future Me</title>
-  <link rel="stylesheet" href="styles.css?v=20260915-v04" />
+  <link rel="stylesheet" href="styles.css?v=20260915-v05" />
 </head>
 <body>
   <header class="topbar">
@@ -110,7 +110,6 @@
         <h2><span id="futureName">你</span>，<span id="futureTargetLabel">4 年后</span>。</h2>
         <p id="futureIntro" class="future-intro">一个由你现在的故事延伸出来的可能版本。</p>
         <div id="memorySummary" class="memory-summary"></div>
-        <div id="branchPreview"></div>
 
         <div class="ready-actions">
           <button class="primary" data-next="chat">开始对话</button>
@@ -170,6 +169,13 @@
         <h2>把这次对话，留成一张卡片。</h2>
         <p class="section-copy">只放少量内容：你想守住的东西、一个未来片段，以及这次对话留下的一句话。</p>
 
+        <div class="card-style-choices" id="cardStyleChoices" aria-label="卡片风格">
+          <button class="active" data-card-style="minimal" type="button"><span></span>留白</button>
+          <button data-card-style="warm" type="button"><span></span>暖纸</button>
+          <button data-card-style="night" type="button"><span></span>夜航</button>
+          <button data-card-style="mint" type="button"><span></span>青简</button>
+        </div>
+
         <div class="share-card-wrap">
           <canvas id="shareCardCanvas" width="1080" height="1440" aria-label="Future Me 分享卡片"></canvas>
         </div>
@@ -223,6 +229,6 @@
 
   <script src="../shared/profile.js?v=1"></script>
   <script src="runtime-config.js?v=1"></script>
-  <script src="app.js?v=20260915-v04"></script>
+  <script src="app.js?v=20260915-v05"></script>
 </body>
 </html>

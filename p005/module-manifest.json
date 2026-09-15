@@ -2,7 +2,7 @@
   "schema_version": 1,
   "module_id": "P005",
   "public_name": "Future Me / 未来的我",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "status": "prototype",
   "updated_at": "2026-09-15",
   "purpose": "Future-self continuity, reflective conversation and time-capsule interaction prototype.",
@@ -14,16 +14,16 @@
     "target_future_age": null,
     "core_flow": [
       "protocol-aware sequential life-story intake",
+      "P001 profile reuse or compact 24-quality / 16-value matrices",
       "optional present portrait upload",
       "optional age-progressed portrait API",
       "future-memory generation",
       "future-self reveal",
       "profile-grounded future-self conversation",
       "explicit conversation ending",
-      "share card"
+      "multi-style share card"
     ],
     "enhancements": [
-      "optional A/B possible-futures branch",
       "natural TTS output",
       "speech-to-text input",
       "optional realtime voice session hook",
@@ -58,6 +58,19 @@
         ],
         "publication_note": "paper-aligned, not verbatim survey replication"
       }
+    },
+    "guided_profile_matrix": {
+      "positive_qualities": {
+        "pool": 24,
+        "max_selected": 6,
+        "source": "P001 shared content asset"
+      },
+      "important_values": {
+        "pool": 16,
+        "max_selected": 4,
+        "source": "P001 shared content asset"
+      },
+      "interaction": "flat matrix selection, intentionally not P001 interaction"
     }
   },
   "shared_profile": {
@@ -65,7 +78,10 @@
     "canonical_key": "bjtu.p00.profile.v1",
     "reads": [
       "window.BJTU_PROFILE",
-      "window.P00_CONTEXT.profile"
+      "window.P00_CONTEXT.profile",
+      "window.P00_CONTEXT.p001",
+      "window.P001_PROFILE",
+      "window.P001_PROFILE_ASSETS"
     ],
     "auto_reuse_fields": [
       "name",
@@ -73,7 +89,11 @@
       "origin",
       "location",
       "currentWork",
-      "values"
+      "values",
+      "gender",
+      "positiveQualities",
+      "selectedQualities",
+      "selectedValues"
     ],
     "clinical_admin_fields_exposed_to_user": false
   },
@@ -141,7 +161,16 @@
     "methods_mapping": "METHODS_MAPPING.md",
     "original_2024_intake_response_style": "sequential free-text",
     "original_2024_chat_completion_threshold_messages": 16,
-    "voice_is_multimodal_extension": true
+    "voice_is_multimodal_extension": true,
+    "guided_localization": {
+      "gender_options": [
+        "男",
+        "女"
+      ],
+      "removes_ab_decision": true,
+      "current_role_single_choice": true,
+      "important_people_multi_select": true
+    }
   },
   "share_card": {
     "size_px": [
@@ -154,9 +183,16 @@
     ],
     "includes": [
       "target horizon",
-      "values/continuity anchors",
+      "positive qualities",
+      "important values",
       "future vignette",
       "future-self quote"
+    ],
+    "styles": [
+      "minimal",
+      "warm",
+      "night",
+      "mint"
     ]
   }
 }
