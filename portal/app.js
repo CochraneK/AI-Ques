@@ -6,7 +6,7 @@ const FALLBACK_PROJECTS=[
   {id:"P001",title:"未来自我",subtitle:"现在的我 · 未来的我 · 理想的我",route:"../future-me/",status:"active",accent:"warm",description:"未来自我、价值澄清与交互式反思。"},
   {id:"P002",title:"情绪天气站",subtitle:"PCL-5 · Current CAPE-P15",route:"../p002/",status:"active",accent:"sage",description:"稳定量表呈现、低改编交互条件与研究数据。"},
   {id:"P003",title:"人生模拟器",subtitle:"Life Simulation",route:"#",status:"building",accent:"blue",description:"从童年到成年的人生模拟与心理学机制。"},
-  {id:"P004",title:"人物画像",subtitle:"Conversational Profile",route:"#",status:"building",accent:"violet",description:"开放式聊天中的趣味画像与管理员研究信号。"},
+  {id:"P004",title:"人物画像",subtitle:"Conversational Profile",route:"../p004/",status:"active",accent:"violet",description:"开放式聊天中的趣味人物画像；研究侧保留证据、覆盖率与不确定性。"},
   {id:"P005",title:"Future Self",subtitle:"Future You × FutureMe",route:"#",status:"building",accent:"amber",description:"未来自我对话、语音与未来形象体验。"}
 ];
 
