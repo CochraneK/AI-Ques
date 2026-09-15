@@ -5,99 +5,94 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f4f1ea">
   <title>AI-Ques · 项目中心</title>
+  <link rel="stylesheet" href="../shared/theme.css">
   <link rel="stylesheet" href="./styles.css">
   <script src="../shared/config.js"></script>
   <script src="../shared/core.js"></script>
 </head>
-<body>
+<body class="aiq-noise">
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><span>AI-Ques</span><small>BJTU Project Hub</small></div>
-      <a class="admin-link" href="../admin/">管理员</a>
+      <a class="brand" href="./" aria-label="AI-Ques 首页">
+        <span class="brand-mark">A/Q</span>
+        <span>AI-Ques</span>
+        <small>BJTU Project Hub</small>
+      </a>
+      <div class="top-actions">
+        <span class="aiq-pill"><i class="aiq-dot"></i> Unified research workspace</span>
+        <a class="admin-link" href="../admin/">管理员 →</a>
+      </div>
     </header>
 
     <section class="hero">
-      <p class="eyebrow">ONE PROFILE · MANY STUDIES</p>
-      <h1>一次建档，<br>之后只管进入项目。</h1>
-      <p>你的基本信息会在 P001、P002 以及后续 P00x 项目之间共用。每个项目只记录自己的实验数据，但都使用同一个 participant_id。</p>
+      <div class="hero-copy">
+        <p class="eyebrow">ONE PROFILE · MANY STUDIES</p>
+        <h1>认识一次。<br><span>探索很多次。</span></h1>
+        <p>基本信息只建档一次。之后进入 P001、P002 以及后续研究项目时，系统会沿用同一个 participant_id，把每次体验作为独立 session 记录。</p>
+      </div>
+      <div class="hero-orbit" aria-hidden="true">
+        <div class="orbit-ring ring-a"></div>
+        <div class="orbit-ring ring-b"></div>
+        <div class="orbit-core"><strong>P00x</strong><span>one identity</span></div>
+        <i class="node n1">01</i><i class="node n2">02</i><i class="node n3">03</i><i class="node n4">04</i><i class="node n5">05</i>
+      </div>
     </section>
 
-    <section id="onboarding" class="panel">
-      <div class="panel-head">
-        <div>
-          <p class="kicker">首次建档</p>
-          <h2>先认识现在的你</h2>
-        </div>
-        <span class="badge">只需一次</span>
+    <section id="onboarding" class="panel onboarding-card">
+      <div class="onboarding-copy">
+        <p class="kicker">首次建档 · 只需一次</p>
+        <h2>先留下最基础的你。</h2>
+        <p>这些信息用于跨项目衔接体验，不用于自动生成诊断标签。以后可以随时修改。</p>
+        <div class="privacy-row"><span>● 本地优先</span><span>● 稳定 participant_id</span><span>● 子项目不重复询问</span></div>
       </div>
-      <form id="profileForm" class="form-grid">
-        <label>希望怎么称呼你？<input name="name" required placeholder="例如：小林"></label>
-        <label>你现在几岁？<input name="age" type="number" min="16" max="100" required placeholder="22"></label>
-        <label>你在哪里长大？<input name="origin" placeholder="例如：成都"></label>
-        <label>你现在住在哪里？<input name="location" placeholder="例如：北京"></label>
-        <label class="wide">你目前主要在做什么？<textarea name="currentWork" rows="3" placeholder="学习、工作、研究、创业，或者正处在什么阶段……"></textarea></label>
-      </form>
-      <div class="actions">
-        <p>保存后，P001 / P002 / 后续项目都直接读取，不再重复填写。</p>
-        <button id="saveProfile" class="primary">保存并进入项目中心</button>
+      <div class="onboarding-form">
+        <form id="profileForm" class="form-grid">
+          <label>怎么称呼你？<input name="name" required autocomplete="nickname" placeholder="例如：小林"></label>
+          <label>现在几岁？<input name="age" type="number" min="16" max="100" required inputmode="numeric" placeholder="22"></label>
+          <label>在哪里长大？<input name="origin" autocomplete="address-level1" placeholder="例如：成都"></label>
+          <label>现在住在哪里？<input name="location" autocomplete="address-level2" placeholder="例如：北京"></label>
+          <label class="wide">目前主要在做什么？<textarea name="currentWork" rows="3" placeholder="学习、工作、研究、创业，或者正处在什么阶段……"></textarea></label>
+        </form>
+        <div class="actions">
+          <p>保存后，P001 / P002 / 后续项目直接继承。</p>
+          <button id="saveProfile" class="primary">建立我的项目档案 →</button>
+        </div>
       </div>
     </section>
 
     <section id="hub" class="hidden">
       <div class="profile-strip panel">
-        <div>
-          <p class="kicker">当前参与者</p>
+        <div class="profile-avatar" id="profileAvatar">A</div>
+        <div class="profile-copy">
+          <p class="kicker">CURRENT PARTICIPANT</p>
           <h2 id="profileName"></h2>
           <p id="profileMeta"></p>
         </div>
         <div class="profile-actions">
           <span id="participantId" class="id-chip"></span>
-          <button id="editProfile" class="secondary">编辑基本信息</button>
+          <button id="editProfile" class="secondary">编辑资料</button>
         </div>
       </div>
 
       <div class="project-head">
         <div>
-          <p class="kicker">项目入口</p>
-          <h2>选择今天要进入的项目</h2>
+          <p class="kicker">PROJECT UNIVERSE</p>
+          <h2>今天想从哪里开始？</h2>
         </div>
-        <p>以后新增 P003、P004，只需要在这里注册一张项目卡片。</p>
+        <p>所有项目共享身份与管理员数据层，但每个项目保留自己的体验、量表版本与 session。</p>
       </div>
 
-      <section class="project-grid">
-        <a class="project-card p001" href="../future-me/">
-          <div class="project-code">P001</div>
-          <div>
-            <p class="kicker">Future Me</p>
-            <h3>现在的我 · 未来的我 · 理想的我</h3>
-            <p>未来自我、价值澄清与交互式反思。</p>
-          </div>
-          <span class="go">进入 →</span>
-        </a>
+      <section id="projectGrid" class="project-grid" aria-live="polite"></section>
 
-        <a class="project-card p002" href="../p002/">
-          <div class="project-code">P002</div>
-          <div>
-            <p class="kicker">PCL-5 · CAPE-P15</p>
-            <h3>情绪天气站</h3>
-            <p>稳定量表呈现、可追溯计分与研究数据导出。</p>
-          </div>
-          <span class="go">进入 →</span>
-        </a>
-
-        <article class="project-card disabled">
-          <div class="project-code">P003</div>
-          <div>
-            <p class="kicker">Coming next</p>
-            <h3>预留项目位</h3>
-            <p>沿用同一 participant / session / admin 数据体系。</p>
-          </div>
-          <span class="go">待开放</span>
-        </article>
+      <section class="system-note">
+        <div><strong>1</strong><span>一次建档</span></div>
+        <i></i>
+        <div><strong>∞</strong><span>多个项目</span></div>
+        <i></i>
+        <div><strong>1</strong><span>统一后台</span></div>
       </section>
     </section>
   </main>
-
   <script src="./app.js"></script>
 </body>
 </html>
