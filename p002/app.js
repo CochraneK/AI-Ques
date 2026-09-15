@@ -174,7 +174,6 @@ function renderStep(){
       <div class="question">${item.text}</div>
       ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
       <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
-      ${state.mode==='emoji'?`<div class="emoji-counter">Emoji ${state.emojiFound} / ${state.emojiSeen}</div>`:''}
     </div>
   </div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{
@@ -188,7 +187,7 @@ function renderStep(){
     state.index++;
     renderStep();
   });
-  const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';$('.emoji-counter').textContent=`Emoji ${state.emojiFound} / ${state.emojiSeen}`; } };
+  const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';} };
 }
 
 function renderCapeDistress(scale,item,frequencyScore){
