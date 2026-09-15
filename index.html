@@ -1,102 +1,25 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#f7f7f5" />
-  <meta name="description" content="AI-Ques 心理测评交互实验室：比较不同心理测评交互形式的研究原型。" />
-  <title>AI-Ques · 心理测评交互实验室</title>
-  <link rel="stylesheet" href="styles.css?v=20260915-1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=./portal/">
+  <title>AI-Ques · 项目中心</title>
+  <style>
+    html{font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:#f4f1ea;color:#17211c}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 20%,rgba(184,215,194,.55),transparent 28rem)}
+    main{padding:32px;text-align:center}
+    h1{font:500 48px Georgia,"Songti SC",serif;margin:0 0 16px}
+    p{color:#68736b}
+    a{color:#274536;font-weight:800}
+  </style>
+  <script>location.replace("./portal/"+location.search+location.hash);</script>
 </head>
 <body>
-  <a class="skip-link" href="#launcher">跳到实验选择</a>
-
-  <header class="topbar">
-    <a class="wordmark" href="./" aria-label="AI-Ques 首页">
-      <span class="mark">AQ</span>
-      <span><strong>AI-Ques</strong><small>心理测评交互实验室</small></span>
-    </a>
-    <div class="top-meta">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span>Research prototype</span>
-      <a href="https://github.com/CochraneK/AI-Ques" target="_blank" rel="noreferrer">GitHub ↗</a>
-    </div>
-  </header>
-
-  <main class="shell">
-    <section class="intro">
-      <div>
-        <p class="eyebrow">INTERACTION × PSYCHOMETRICS</p>
-        <h1>同一份心理测评，<br><span>换一种完成方式。</span></h1>
-      </div>
-      <div class="intro-copy">
-        <p>比较原题、故事化、Emoji 任务与情景判断等不同交互形式，观察体验提升与测量代价之间的变化。</p>
-        <p class="research-note"><strong>研究原型，不用于诊断。</strong> 改写、游戏化或情景化版本都需要重新验证信度、效度与阈值。</p>
-      </div>
-    </section>
-
-    <section id="launcher" class="launcher" aria-labelledby="launcherTitle">
-      <div class="launcher-head">
-        <div>
-          <p class="eyebrow">START AN EXPERIMENT</p>
-          <h2 id="launcherTitle">选择量表和玩法</h2>
-        </div>
-        <p>两步完成，不需要先读完整说明。</p>
-      </div>
-
-      <div class="launcher-grid">
-        <section class="step-block" aria-labelledby="scaleTitle">
-          <div class="step-title">
-            <span>01</span>
-            <div><h3 id="scaleTitle">量表</h3><p>先决定测量什么。</p></div>
-          </div>
-          <div id="scaleChoices" class="choice-grid scales"></div>
-        </section>
-
-        <section class="step-block" aria-labelledby="modeTitle">
-          <div class="step-title">
-            <span>02</span>
-            <div><h3 id="modeTitle">玩法</h3><p>再决定怎么完成。</p></div>
-          </div>
-          <div id="modeChoices" class="choice-grid modes"></div>
-        </section>
-      </div>
-
-      <div class="launch-bar">
-        <div id="selectedSummary" class="selected-summary" aria-live="polite">
-          <span class="selection-empty">请选择 1 个量表 + 1 种玩法</span>
-        </div>
-        <button id="startBtn" class="primary" disabled>开始体验 <span aria-hidden="true">→</span></button>
-      </div>
-    </section>
-
-    <a class="future-card" href="future-me/">
-      <span class="future-icon" aria-hidden="true">60</span>
-      <span class="future-copy">
-        <span class="future-kicker">SIDE EXPERIMENT · FUTURE ME</span>
-        <strong>和 60 岁的自己聊聊</strong>
-        <small>人生故事访谈 → 未来记忆 → 对话 → 一封来自未来的信。默认本地运行。</small>
-      </span>
-      <span class="future-arrow" aria-hidden="true">↗</span>
-    </a>
-
-    <section id="game" class="game-shell hidden" aria-live="polite">
-      <div class="game-topbar">
-        <button id="backBtn" class="ghost">← 返回</button>
-        <div class="progress-wrap" aria-hidden="true"><div id="progressBar" class="progress"></div></div>
-        <div id="progressText" class="progress-text"></div>
-      </div>
-      <div id="gameBody"></div>
-    </section>
-
-    <section id="result" class="result-shell hidden"></section>
-
-    <footer>
-      <p>AI-Ques · 交互式心理测评研究原型。正式研究或服务部署前，请完成伦理、授权、语言版本与心理测量学验证。</p>
-    </footer>
+  <main>
+    <h1>AI-Ques</h1>
+    <p>正在进入项目中心……</p>
+    <p><a href="./portal/">如果没有自动跳转，请点击这里</a></p>
   </main>
-
-  <script src="app.js?v=20260915-1"></script>
-  <script src="experiments.js?v=20260915-1"></script>
 </body>
 </html>
