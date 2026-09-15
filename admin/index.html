@@ -4,64 +4,73 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AI-Ques · 全局管理员</title>
+  <link rel="stylesheet" href="../shared/theme.css">
   <link rel="stylesheet" href="./styles.css">
   <script src="../shared/config.js"></script>
   <script src="../shared/core.js"></script>
 </head>
-<body>
+<body class="aiq-noise">
   <main class="shell">
     <header class="topbar">
-      <div>
-        <p class="kicker">AI-Ques · BJTU</p>
-        <h1>全局管理员面板</h1>
+      <div class="admin-brand">
+        <span class="brand-mark">A/Q</span>
+        <div><p class="kicker">AI-Ques · BJTU RESEARCH</p><h1>全局管理员</h1></div>
       </div>
-      <a href="../portal/">返回项目中心</a>
+      <div class="top-actions"><span class="aiq-pill"><i class="aiq-dot"></i> Unified event store</span><a href="../portal/">项目中心 →</a></div>
     </header>
 
     <section id="modeBanner" class="banner"></section>
 
     <section class="metrics">
-      <div><span>参与者</span><strong id="metricParticipants">0</strong></div>
-      <div><span>Sessions</span><strong id="metricSessions">0</strong></div>
-      <div><span>事件</span><strong id="metricEvents">0</strong></div>
-      <div><span>待同步</span><strong id="metricPending">0</strong></div>
+      <div class="metric-card"><span>参与者</span><strong id="metricParticipants">0</strong><small>unique participant_id</small></div>
+      <div class="metric-card"><span>Sessions</span><strong id="metricSessions">0</strong><small>跨全部 P00x</small></div>
+      <div class="metric-card"><span>完成 Session</span><strong id="metricCompleted">0</strong><small>session_completed</small></div>
+      <div class="metric-card"><span>待同步</span><strong id="metricPending">0</strong><small>local queue</small></div>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="panel project-overview">
+        <div class="panel-head"><div><p class="kicker">PROJECT ACTIVITY</p><h2>项目活跃度</h2></div><span id="metricEvents">0 events</span></div>
+        <div id="projectBars" class="project-bars"></div>
+      </section>
+      <section class="panel data-health">
+        <div class="panel-head"><div><p class="kicker">DATA HEALTH</p><h2>数据状态</h2></div></div>
+        <div id="healthGrid" class="health-grid"></div>
+      </section>
+    </section>
+
+    <section id="p002Section" class="panel p002-panel hidden">
+      <div class="panel-head">
+        <div><p class="kicker">P002 · SESSION SUMMARY</p><h2>PCL-5 / CAPE-P15 研究视图</h2></div>
+        <span id="p002Count"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="compact-table">
+          <thead><tr><th>参与者</th><th>Session</th><th>量表</th><th>Condition</th><th>核心结果</th><th>响应质量</th><th>完成时间</th></tr></thead>
+          <tbody id="p002Rows"></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="panel controls">
-      <div class="control">
-        <label>项目</label>
-        <select id="projectFilter"><option value="">全部项目</option></select>
-      </div>
-      <div class="control">
-        <label>参与者</label>
-        <input id="participantFilter" placeholder="participant_id">
-      </div>
-      <div class="control">
-        <label>事件类型</label>
-        <select id="eventFilter"><option value="">全部事件</option></select>
-      </div>
+      <div class="control"><label>项目</label><select id="projectFilter"><option value="">全部项目</option></select></div>
+      <div class="control"><label>参与者</label><input id="participantFilter" placeholder="participant_id"></div>
+      <div class="control"><label>事件类型</label><select id="eventFilter"><option value="">全部事件</option></select></div>
       <div class="actions">
-        <button id="refreshBtn">刷新</button>
-        <button id="exportCsv">导出全部 CSV</button>
-        <button id="exportJson">导出全部 JSON</button>
+        <button id="refreshBtn">↻ 刷新 / 同步</button>
+        <button id="exportCsv">CSV</button>
+        <button id="exportJson">JSON</button>
       </div>
     </section>
 
-    <section class="panel">
-      <div class="table-head">
-        <div>
-          <p class="kicker">UNIFIED EVENT STORE</p>
-          <h2>所有 P00x 项目数据</h2>
-        </div>
+    <section class="panel event-panel">
+      <div class="panel-head">
+        <div><p class="kicker">UNIFIED EVENT STORE</p><h2>完整事件日志</h2></div>
         <span id="rowCount">0 rows</span>
       </div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>时间</th><th>参与者</th><th>项目</th><th>Session</th><th>事件</th><th>摘要</th>
-            </tr>
-          </thead>
+          <thead><tr><th>时间</th><th>参与者</th><th>项目</th><th>Session</th><th>事件</th><th>摘要</th></tr></thead>
           <tbody id="eventRows"></tbody>
         </table>
       </div>
