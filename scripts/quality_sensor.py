@@ -42,7 +42,10 @@ def scan_repo() -> list[dict]:
         "shared/profile.js",
         "p002/index.html",
         "p002/app.js",
-        "p002/experiments.js",
+        "p002/condition-config.js",
+        "p002/admin.html",
+        "p002/admin.js",
+        "p002/admin.css",
         "p002/study-manifest.json",
         "p004/index.html",
         "p004/app.js",
@@ -158,6 +161,71 @@ def scan_repo() -> list[dict]:
             "P002 study manifest lacks formal data collection state.",
             "Keep explicit prototype/research governance flags.",
         ))
+
+    p002_manifest = read("p002/study-manifest.json")
+    p002_index = read("p002/index.html")
+    p002_config = read("p002/condition-config.js")
+    p002_admin = read("p002/admin.js")
+
+    for needle, code, message in [
+        ("scoreOffset:1", "p002-cape-old-encoding", "P002 still applies the obsolete CAPE +1 score offset."),
+        ("高信号", "p002-item-feedback-priming", "P002 participant flow contains item-level signal feedback."),
+        ("中等信号", "p002-item-feedback-priming", "P002 participant flow contains item-level signal feedback."),
+        ("构念启发", "p002-construct-cue", "P002 participant flow exposes construct-language cues."),
+        ("Emoji Game", "p002-emoji-residue", "P002 participant runtime still contains the retired Emoji Game."),
+    ]:
+        if needle in p002_app:
+            findings.append(finding(
+                code, "P0", "p002/app.js", message,
+                "Keep participant-facing assessment UI low-noise and aligned with the frozen protocol.",
+            ))
+
+    if "current-cape-p15-original-0-3" not in p002_app or "0-3 frequency + conditional 0-3 distress" not in p002_manifest:
+        findings.append(finding(
+            "p002-cape-scoring-contract", "P0", "p002/",
+            "P002 CAPE scoring/distress contract is not frozen to the audited 0-3 scheme.",
+            "Keep original 0-3 frequency plus conditional 0-3 distress in app and manifest.",
+        ))
+
+    if "同一段最困扰的压力经历" not in p002_app or "困扰到你" not in p002_app:
+        findings.append(finding(
+            "p002-pcl-anchor", "P0", "p002/app.js",
+            "PCL participant instructions do not preserve the single-event bother anchor.",
+            "Keep one stressful-event anchor and rate how much each problem bothered the participant in the past month.",
+        ))
+
+    if "modeChoices" in p002_index or "data-mode" in p002_index:
+        findings.append(finding(
+            "p002-participant-condition-picker", "P0", "p002/index.html",
+            "Participants can still select an experimental presentation condition.",
+            "Keep condition assignment admin-controlled and remove participant mode selectors.",
+        ))
+
+    if "bjtu.p002.condition.v1" not in p002_config or "condition:'story'" not in p002_config:
+        findings.append(finding(
+            "p002-story-default", "P0", "p002/condition-config.js",
+            "P002 no longer defaults to the story questionnaire when no admin setting exists.",
+            "Keep story as the default and persist admin overrides under bjtu.p002.condition.v1.",
+        ))
+
+    if "direct" not in p002_config or "scenario" not in p002_config or "cfg.write(selected)" not in p002_admin:
+        findings.append(finding(
+            "p002-admin-condition-control", "P0", "p002/",
+            "P002 admin control does not expose direct/scenario condition assignment.",
+            "Keep direct and scenario assignment available only through the administrator control surface.",
+        ))
+
+    try:
+        _p002_manifest = json.loads(p002_manifest)
+        control = _p002_manifest.get("presentation_control", {})
+        if control.get("participant_can_choose_condition") is not False or control.get("default_condition") != "story":
+            findings.append(finding(
+                "p002-manifest-condition-contract", "P0", "p002/study-manifest.json",
+                "P002 manifest no longer matches the admin-controlled story-default protocol.",
+                "Freeze participant_can_choose_condition=false and default_condition=story.",
+            ))
+    except json.JSONDecodeError:
+        pass
 
     if "aiques.global.profile.v1" in p004_app:
         findings.append(finding(
