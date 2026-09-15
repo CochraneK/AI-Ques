@@ -1,16 +1,16 @@
 (() => {
 'use strict';
-const K='aiques.global.profile.v1', sid='p004_'+Date.now().toString(36), admin=new URLSearchParams(location.search).get('admin')==='1';
+const K='bjtu.p004.session.v1', sid='p004_'+Date.now().toString(36), admin=new URLSearchParams(location.search).get('admin')==='1';
 const S={
   messages:[],turn:0,
   big:{openness:50,conscientiousness:50,extraversion:50,agreeableness:50,sensitivity:50},
   mbti:{ei:0,sn:0,tf:0,jp:0},
   pub:{curiosity:50,socialEnergy:50,reflection:50,action:50,warmth:50},
   clinical:{
-    phqLike:{signal:0,coverage:0,confidence:0,domains:new Set()},
-    gadLike:{signal:0,coverage:0,confidence:0,domains:new Set()},
-    pclLike:{signal:0,coverage:0,confidence:0,domains:new Set()},
-    capeLike:{signal:0,coverage:0,confidence:0,domains:new Set()}
+    phqLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()},
+    gadLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()},
+    pclLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()},
+    capeLike:{signal:0,coverage:0,evidenceStrength:0,domains:new Set()}
   },
   evidence:[],safety:{active:false,reason:null}
 };
@@ -63,7 +63,7 @@ function analyze(text){
  Object.entries(SYM).forEach(function(entry){
    const key=entry[0],cfg=entry[1],m=S.clinical[key];let hits=0;
    Object.entries(cfg.d).forEach(function(x){const h=score(t,x[1]);if(h){hits+=h;m.domains.add(x[0]);S.evidence.push({dimension:key,domain:x[0],kind:'support',quote:text.length>120?text.slice(0,117)+'…':text,turn:S.turn})}});
-   m.signal=clamp(m.signal+(hits?10+Math.min(18,hits*5):-0.8));m.coverage=Math.round(m.domains.size/cfg.den*100);m.confidence=clamp(Math.round(m.coverage*.55+Math.min(40,S.turn*4)));
+   m.signal=clamp(m.signal+(hits?10+Math.min(18,hits*5):-0.8));m.coverage=Math.round(m.domains.size/cfg.den*100);m.evidenceStrength=clamp(Math.round(m.coverage*.55+Math.min(40,S.turn*4)));
  });
  if(SAFE.some(w=>t.includes(w))){S.safety.active=true;S.safety.reason='self-harm language'}
  if(S.evidence.length===before&&text.length>20){const d=o?'openness':c?'conscientiousness':(e||i)?'extraversion':a?'agreeableness':r?'reflection':null;if(d)S.evidence.push({dimension:d,domain:'conversation cue',kind:'support',quote:text.slice(0,120),turn:S.turn})}
@@ -106,16 +106,17 @@ function report(){
 }
 function adminRender(){
  R.personality.innerHTML=BIG.map(x=>{const v=Math.round(S.big[x[0]]);return'<div class="metric-row"><strong>'+x[1]+'</strong><div class="metric-bar"><i style="width:'+v+'%"></i></div><em>'+v+'</em></div>'}).join('')+'<div class="metric-row"><strong>MBTI-like</strong><div class="metric-bar"><i style="width:'+Math.min(100,45+S.turn*4)+'%"></i></div><em>'+mbti()+'</em></div>';
- R.clinical.innerHTML=CLIN.map(x=>{const m=S.clinical[x[0]];return'<article class="clinical-card"><div class="clinical-card-head"><strong>'+x[1]+'</strong><b>'+Math.round(m.signal)+'</b></div><p>Exploratory conversational signal. Not a standardized score.</p><div class="mini-meta"><span>coverage '+m.coverage+'%</span><span>confidence '+m.confidence+'%</span></div></article>'}).join('');
+ R.clinical.innerHTML=CLIN.map(x=>{const m=S.clinical[x[0]];return'<article class="clinical-card"><div class="clinical-card-head"><strong>'+x[1]+'</strong><b>'+Math.round(m.signal)+'</b></div><p>Exploratory conversational signal. Not a standardized score.</p><div class="mini-meta"><span>coverage '+m.coverage+'%</span><span>evidence strength '+m.evidenceStrength+'%</span></div></article>'}).join('');
  R.evidence.innerHTML=S.evidence.length?S.evidence.slice().reverse().map(x=>'<div class="evidence-item"><span class="evidence-dim">'+esc(x.dimension)+' · '+esc(x.domain)+'</span><span class="evidence-quote">“'+esc(x.quote)+'”</span><span class="evidence-kind '+esc(x.kind)+'">'+(x.kind==='support'?'支持':'反向')+'</span></div>').join(''):'<div class="empty-evidence">暂无足够证据。继续自然聊天后，这里会逐步出现可追溯线索。</div>';
 }
 function persist(){
- const c={};Object.entries(S.clinical).forEach(x=>c[x[0]]={signal:x[1].signal,coverage:x[1].coverage,confidence:x[1].confidence,domains:Array.from(x[1].domains)});
- const p={version:1,updatedAt:new Date().toISOString(),p004:{sessionId:sid,turns:S.turn,personality:{bigFive:S.big,mbtiLike:mbti()},publicPortrait:Object.assign({},S.pub,{archetype:archetype().name}),clinicalInference:c,evidence:S.evidence,safety:S.safety}};
- try{const old=JSON.parse(localStorage.getItem(K)||'{}');localStorage.setItem(K,JSON.stringify(Object.assign({},old,p,{p004:p.p004})))}catch(e){}
+ const c={};Object.entries(S.clinical).forEach(x=>c[x[0]]={signal:x[1].signal,coverage:x[1].coverage,evidenceStrength:x[1].evidenceStrength,domains:Array.from(x[1].domains)});
+ const payload={version:2,updatedAt:new Date().toISOString(),sessionId:sid,turns:S.turn,personality:{bigFive:S.big,mbtiLike:mbti()},publicPortrait:Object.assign({},S.pub,{archetype:archetype().name}),clinicalInference:c,evidence:S.evidence,safety:S.safety};
+ try{sessionStorage.setItem(K,JSON.stringify(payload))}catch(e){}
+ try{window.dispatchEvent(new CustomEvent('p00:session',{detail:{module:'P004',type:'snapshot',snapshot:payload}}))}catch(e){}
 }
 function download(name,body,type){const b=new Blob([body],{type:type||'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
-function exportJSON(){let o={};try{o=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}download('p004-'+sid+'.json',JSON.stringify(o,null,2))}
+function exportJSON(){let o={};try{o=JSON.parse(sessionStorage.getItem(K)||'{}')}catch(e){}download('p004-'+sid+'.json',JSON.stringify(o,null,2))}
 function exportCSV(){const rows=[['session_id','turn','dimension','domain','kind','quote']];S.evidence.forEach(e=>rows.push([sid,e.turn,e.dimension,e.domain,e.kind,e.quote]));download('p004-'+sid+'-evidence.csv','\ufeff'+rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv;charset=utf-8')}
 function open(m){m.classList.remove('hidden');document.body.style.overflow='hidden'}function close(m){m.classList.add('hidden');document.body.style.overflow=''}
 async function submit(text){
@@ -126,8 +127,11 @@ async function submit(text){
 function resize(){R.input.style.height='auto';R.input.style.height=Math.min(150,R.input.scrollHeight)+'px'}
 R.form.addEventListener('submit',e=>{e.preventDefault();submit(R.input.value)});R.input.addEventListener('input',resize);R.input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();R.form.requestSubmit()}});
 document.querySelectorAll('.starter').forEach(b=>b.addEventListener('click',()=>{R.input.value=b.dataset.starter;resize();R.input.focus()}));
-$('resetBtn').addEventListener('click',()=>location.reload());$('openReportBtn').addEventListener('click',()=>{report();open(R.report)});R.adminBtn.addEventListener('click',()=>{adminRender();open(R.admin)});$('aboutBtn').addEventListener('click',()=>open(R.about));
+$('resetBtn').addEventListener('click',()=>{try{sessionStorage.removeItem(K)}catch(e){}location.reload()});$('openReportBtn').addEventListener('click',()=>{report();open(R.report)});R.adminBtn.addEventListener('click',()=>{adminRender();open(R.admin)});$('aboutBtn').addEventListener('click',()=>open(R.about));
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>close(x.dataset.close==='report'?R.report:x.dataset.close==='admin'?R.admin:R.about)));document.addEventListener('keydown',e=>{if(e.key==='Escape')[R.report,R.admin,R.about].forEach(close)});
 $('exportJsonBtn').addEventListener('click',exportJSON);$('exportCsvBtn').addEventListener('click',exportCSV);$('copyReportBtn').addEventListener('click',async()=>{const a=archetype(),t='P004 人物图鉴｜'+a.name+'\n'+a.sub+'\nMBTI-like: '+mbti()+'\n（趣味性对话画像，不是心理诊断）';try{await navigator.clipboard.writeText(t);$('copyReportBtn').textContent='已复制'}catch(e){}});
-if(admin)R.adminBtn.classList.remove('hidden');message('agent','我们不用做题。你可以从最近发生的一件小事开始，也可以直接说此刻脑子里最占位置的东西。');portrait();persist();
+if(admin)R.adminBtn.classList.remove('hidden');
+const shared=window.BJTU_PROFILE&&typeof window.BJTU_PROFILE.getFlat==='function'?window.BJTU_PROFILE.getFlat():{};
+if(shared.name&&$('portraitMonogram'))$('portraitMonogram').textContent=shared.name.slice(0,1);
+message('agent','我们不用做题。你可以从最近发生的一件小事开始，也可以直接说此刻脑子里最占位置的东西。');portrait();persist();
 })();
