@@ -1,11 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.2.0-prototype",
+  "study_version": "0.8.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "manifest_date": "2026-09-15",
-  "purpose": "Compare interaction formats for psychological-assessment research prototypes without claiming diagnostic or validated-score equivalence.",
+  "purpose": "Compare administrator-assigned presentation/measurement conditions for PCL-5 and Current CAPE-P15 without participant self-selection.",
   "language": {
     "ui": "zh-CN",
     "instrument_wording_status": "prototype_paraphrase",
@@ -17,70 +17,67 @@
       "items": 20,
       "response_encoding": "0-4",
       "source_status": "public-domain source instrument; Chinese wording in this repo is prototype paraphrase",
-      "distress_layer": null,
+      "response_instruction": "keep one worst/stressful experience in mind; rate how much each problem bothered the participant in the past month",
       "formal_baseline": false
     },
     "cape15": {
       "label": "Current CAPE-P15",
       "items": 15,
-      "response_encoding": "1-4 frequency only",
+      "response_encoding": "0-3 frequency + conditional 0-3 distress",
+      "scoring_scheme": "current-cape-p15-original-0-3",
+      "distress_layer": "implemented for questionnaire conditions when frequency >= 1",
       "source_status": "construct-based prototype paraphrase; not a validated Chinese version",
-      "distress_layer": "not implemented",
       "formal_baseline": false
     }
   },
-  "modes": {
-    "original": {
-      "public_label": "直接问卷",
-      "research_role": "baseline-like control",
-      "phase": "phase-1 candidate"
-    },
-    "vassip": {
-      "public_label": "VASSIP 式",
-      "research_role": "low-transformation experience layer",
-      "phase": "phase-1 candidate"
-    },
-    "emoji": {
-      "public_label": "Emoji Game 式",
-      "research_role": "low-transformation engagement layer",
-      "phase": "phase-1 candidate"
-    },
-    "itemscene": {
-      "public_label": "逐题情景化",
-      "research_role": "item-level scenario transformation",
-      "phase": "phase-1 candidate"
-    },
-    "construct": {
-      "public_label": "构念情景化",
-      "research_role": "construct-level SJT",
-      "phase": "phase-2"
-    },
-    "aisjt": {
-      "public_label": "AI-SJT",
-      "research_role": "frozen AI-style SJT bank",
-      "phase": "phase-2"
-    },
-    "psychogat": {
-      "public_label": "PsychoGAT-lite",
-      "research_role": "continuous interactive-fiction signal",
-      "phase": "phase-2"
-    },
-    "rush": {
-      "public_label": "HEXACO-RUSH 式",
-      "research_role": "continuous scenario-decision signal",
-      "phase": "phase-2"
+  "presentation_control": {
+    "participant_can_choose_condition": false,
+    "admin_page": "p002/admin.html",
+    "storage_key": "bjtu.p002.condition.v1",
+    "default_condition": "story",
+    "prototype_scope": "same-browser local control only",
+    "production_requirement": "server-authenticated administrator configuration",
+    "conditions": {
+      "story": {
+        "public_behavior": "story questionnaire",
+        "research_role": "default gamified self-report wrapper",
+        "item_wording_transformed": false,
+        "response_format_transformed": false,
+        "evidence_basis": "VASSIP-inspired storyfication / immersion / non-evaluable dynamics",
+        "evidence_doi": "10.1371/journal.pone.0302429"
+      },
+      "direct": {
+        "public_behavior": "direct questionnaire",
+        "research_role": "administrator-assigned baseline-like control",
+        "item_wording_transformed": false,
+        "response_format_transformed": false
+      },
+      "scenario": {
+        "public_behavior": "scenario selection",
+        "research_role": "administrator-assigned transformed assessment",
+        "item_wording_transformed": true,
+        "response_format_transformed": true,
+        "score_equivalent_to_source_scale": false,
+        "evidence_basis": "HEXACO-RUSH / gamified-SJT inspired",
+        "evidence_doi": "10.1016/j.chb.2024.108467"
+      }
     }
   },
-  "versioning_policy": {
-    "update_when": [
-      "instrument wording changes",
-      "item count or response encoding changes",
-      "mode scoring logic changes",
-      "research condition labels change",
-      "data-collection protocol changes"
-    ],
-    "freeze_before_formal_data_collection": true,
-    "participant_session_schema_required_before_formal_data_collection": true
+  "removed_features": [
+    "participant condition picker",
+    "Emoji Game",
+    "static PsychoGAT",
+    "itemscene",
+    "construct",
+    "AI-SJT"
+  ],
+  "presentation_rules": {
+    "participant_result_default": "completion_only",
+    "source_text_visible_by_default": false,
+    "source_debug_query": "?source=1",
+    "research_detail_query": "?research=1",
+    "construct_codes_visible": false,
+    "item_level_score_feedback": false
   },
   "safety": {
     "diagnostic_use": false,
