@@ -4,11 +4,11 @@
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.3.0';
+const MODULE_VERSION = '0.4.0';
 const ADMIN_SETTINGS_KEY = 'bjtu.p005.admin.v1';
 const HORIZON_OPTIONS = ['1y','2y','3y','4y','10y','age60'];
 
-const SCREENS = ['welcome', 'survey', 'portrait', 'generate', 'ready', 'chat', 'capsule'];
+const SCREENS = ['welcome', 'survey', 'portrait', 'generate', 'ready', 'chat', 'share', 'capsule'];
 const STEP_NAMES = {
   welcome: '开始',
   survey: '人生故事',
@@ -16,36 +16,51 @@ const STEP_NAMES = {
   generate: '生成',
   ready: '未来的你',
   chat: '对话',
+  share: '卡片',
   capsule: '之后'
 };
 
 const QUESTIONS = [
-  { section:'现在的你', key:'name', question:'希望未来的你怎么称呼你？', hint:'用你平时最习惯的称呼。', type:'text', placeholder:'例如：小林', required:true },
-  { section:'现在的你', key:'age', question:'你现在几岁？', hint:'Future Me 会使用管理员设定的未来时间锚点。', type:'number', placeholder:'22', required:true },
-  { section:'现在的你', key:'pronouns', question:'你希望未来的自己怎样称呼你？', hint:'可选。用于让未来自我的叙述更自然。', type:'text', placeholder:'例如：TA / 她 / 他' },
-  { section:'现在的你', key:'location', question:'你现在生活在哪里？', hint:'城市或一个你认同的地方都可以。', type:'text', placeholder:'例如：北京' },
-  { section:'现在的你', key:'currentWork', question:'现在，什么占据了你大部分时间？', hint:'学习、工作、研究、照顾家人，或者一段过渡期。', type:'textarea', placeholder:'说几句你现在的生活状态……' },
+  { section:'现在的你', key:'name', source:'paper-core', question:'希望未来的你怎么称呼你？', hint:'用你平时最习惯的称呼。', type:'text', placeholder:'例如：小林', required:true },
+  { section:'现在的你', key:'age', source:'paper-core', question:'你现在几岁？', hint:'Future Me 会使用管理员设定的未来时间锚点。', type:'number', placeholder:'22', required:true },
+  { section:'现在的你', key:'pronouns', source:'paper-core', question:'你希望未来的自己怎样称呼你？', hint:'研究复刻版为开放回答；低负担版可直接选择。', type:'text', guidedType:'single', options:['她 / 她','他 / 他','TA / TA','不特别指定','其他'], optionalDetail:true, placeholder:'可选' },
+  { section:'现在的你', key:'location', source:'paper-core', question:'你现在生活在哪里？', hint:'城市或一个你认同的地方都可以。', type:'text', placeholder:'例如：北京' },
+  { section:'现在的你', key:'currentWork', source:'p005-extension', question:'现在，什么占据了你大部分时间？', hint:'低负担版用它帮助 Future Me 更贴近你当下的生活。', type:'textarea', guidedType:'single', options:['学习 / 升学','研究 / 学术','全职工作','创业 / 自由职业','求职 / 过渡期','照顾家庭','其他'], optionalDetail:true },
 
-  { section:'人生故事', key:'people', question:'现在对你最重要的人是谁？', hint:'他们为什么重要？你们的关系是什么样？', type:'textarea', placeholder:'家人、伴侣、朋友、老师……' },
-  { section:'人生故事', key:'proud', question:'哪一个时刻，让你真正为自己骄傲？', hint:'不需要宏大。一个只有你知道意义的时刻也可以。', type:'textarea', placeholder:'那天发生了什么？' },
-  { section:'人生故事', key:'lowPoint', question:'你经历过的一段低谷是什么？', hint:'只写你愿意写的部分。', type:'textarea', placeholder:'最难的是什么？它后来怎样影响了你？' },
-  { section:'人生故事', key:'turningPoint', question:'哪件事明显改变了你的方向？', hint:'一次选择、一个人、一场失败或偶然都可以。', type:'textarea', placeholder:'从那之后，什么不一样了？' },
-  { section:'人生故事', key:'challenge', question:'现在最想跨过去的难题是什么？', hint:'Future Me 会把它当作未来记忆中的一个重要张力。', type:'textarea', placeholder:'例如：害怕失败、职业选择、关系边界……' },
+  { section:'人生故事', key:'people', source:'paper-core', question:'现在对你最重要的人是谁？', hint:'研究复刻版保持自由文本；低负担版可多选关系类型并补一句。', type:'textarea', guidedType:'multi', max:4, options:['父母 / 家人','伴侣','朋友','孩子','老师 / 导师','同事 / 合作者','自己','其他'], optionalDetail:true },
+  { section:'人生故事', key:'proud', source:'paper-core', question:'哪一个时刻，让你真正为自己骄傲？', hint:'不需要宏大。低负担版先选最接近的一类，再按需补充。', type:'textarea', guidedType:'single', options:['学习 / 学术突破','工作 / 项目成果','创作 / 作品','帮助了别人','跨过困难','独立做出重要选择','关系中的成长','其他'], optionalDetail:true },
+  { section:'人生故事', key:'lowPoint', source:'paper-core', question:'你经历过的一段低谷是什么？', hint:'只回答你愿意回答的部分。', type:'textarea', guidedType:'single', options:['学习 / 工作受挫','关系变化','失去重要的人或事','健康 / 压力','经济压力','方向迷茫','家庭事件','其他 / 不想细说'], optionalDetail:true },
+  { section:'人生故事', key:'turningPoint', source:'paper-core', question:'哪件事明显改变了你的方向？', hint:'选择最接近的一类即可，也可以补一句。', type:'textarea', guidedType:'single', options:['升学 / 专业选择','工作 / 职业选择','搬家 / 出国','一段重要关系','一次成功或失败','家庭事件','健康或失去','偶然机会','其他'], optionalDetail:true },
+  { section:'人生故事', key:'challenge', source:'p005-extension', question:'现在最想跨过去的难题是什么？', hint:'这是 P005 扩展题，不属于 2024 论文列出的核心 intake 字段。', type:'textarea', guidedType:'single', options:['方向选择','学业 / 工作压力','自信 / 害怕失败','关系 / 边界','金钱 / 安全感','健康 / 精力','时间管理','暂时没有','其他'], optionalDetail:true },
 
-  { section:'未来的你', key:'lifeProject', question:'如果有一件事值得投入很多年，会是什么？', hint:'事业、研究、家庭、创作、公益或一种生活方式。', type:'textarea', placeholder:'我希望长期投入……' },
-  { section:'未来的你', key:'career', question:'到 {future}，你希望自己做过什么？', hint:'想象职业和成就，但不要只写职位。', type:'textarea', placeholder:'我希望曾经……' },
-  { section:'未来的你', key:'finance', question:'那时，怎样的财务状态会让你觉得足够？', hint:'不是数字比赛。可以写安全感、自由度或责任。', type:'textarea', placeholder:'我希望钱能让我……' },
-  { section:'未来的你', key:'family', question:'那时，你希望亲密关系和家庭是什么样？', hint:'没有标准答案，也可以选择独居或非传统家庭。', type:'textarea', placeholder:'我希望身边……' },
-  { section:'未来的你', key:'futureLocation', question:'到 {future}，你想在哪里生活？', hint:'写地点，也可以写一种环境。', type:'textarea', placeholder:'也许在……' },
-  { section:'未来的你', key:'dailyLife', question:'想象那时一个很普通的星期二。', hint:'你几点起床？做什么？和谁吃饭？什么让一天值得？', type:'textarea', placeholder:'早上我会……' },
-  { section:'未来的你', key:'values', question:'无论未来怎么变，什么最好不要丢？', hint:'这是 Future Me 最重要的连续性线索。', type:'textarea', placeholder:'好奇、自由、关系、创造、诚实……' },
-  { section:'可能的分岔', key:'decision', question:'有一个你现在拿不准的 A / B 决定吗？', hint:'可选。当前 Future You 也在探索“两个可能未来”的决策路径。', type:'decision' }
+  { section:'未来的你', key:'lifeProject', source:'paper-prompt', question:'如果有一件事值得长期投入，会是什么？', hint:'这个字段出现在论文公开的 Future Memory prompt 中。', type:'textarea', guidedType:'single', options:['专业 / 研究','事业 / 创业','创作 / 作品','家庭 / 关系','教育 / 帮助他人','公益 / 社会影响','健康 / 生活方式','探索世界','还不知道','其他'], optionalDetail:true },
+  { section:'未来的你', key:'career', source:'paper-core', question:'到 {future}，你希望事业更接近哪种状态？', hint:'论文明确包含 career / professional accomplishments。', type:'textarea', guidedType:'multi', max:2, options:['成为某领域的专家','做有影响力的项目','带领团队','拥有自己的事业','更自由地工作','稳定且有生活平衡','帮助更多人','仍在探索'], optionalDetail:true },
+  { section:'未来的你', key:'finance', source:'paper-core', question:'到 {future}，怎样的财务状态会让你觉得够好？', hint:'论文明确包含 financial status。', type:'textarea', guidedType:'multi', max:3, options:['基本无经济焦虑','有稳定储蓄','没有高压债务','能支持家人','有选择工作的自由','实现财务独立','能为兴趣和体验花钱','不把钱当核心目标'], optionalDetail:true },
+  { section:'未来的你', key:'family', source:'paper-core', question:'到 {future}，你希望亲密关系和家庭是什么样？', hint:'论文明确包含 family life。', type:'textarea', guidedType:'multi', max:3, options:['有稳定伴侣','有孩子','和原生家庭亲近','和朋友像家人一样','独居但有稳定关系网','把工作伙伴视为重要关系','还不确定','其他'], optionalDetail:true },
+  { section:'未来的你', key:'personalLife', source:'paper-core', question:'到 {future}，你希望个人生活最明显的变化是什么？', hint:'论文明确提到 personal life outcomes。', type:'textarea', guidedType:'multi', max:3, options:['更自由自主','更平静稳定','更健康有精力','有更多时间给重要的人','持续学习成长','有更多创造和兴趣','常旅行 / 看世界','对生活更有掌控感'], optionalDetail:true },
+  { section:'未来的你', key:'futureLocation', source:'paper-prompt', question:'到 {future}，你想在哪里生活？', hint:'where_to_live 出现在论文公开 Future Memory prompt 中。', type:'textarea', guidedType:'single', options:['现在的城市','回到家乡 / 家人附近','中国另一座城市','海外生活','多个城市之间流动','更自然安静的地方','地点不重要','还不知道'], optionalDetail:true },
+  { section:'未来的你', key:'dailyLife', source:'paper-prompt', question:'到 {future}，普通的一天里你希望有什么？', hint:'daily_life 出现在论文公开 Future Memory prompt 中。', type:'textarea', guidedType:'multi', max:4, options:['专注工作 / 创作','运动 / 健康','陪伴家人 / 伴侣','和朋友见面','学习新东西','旅行 / 户外','社区 / 公益','安静独处','规律休息'], optionalDetail:true },
+  { section:'未来的你', key:'values', source:'current-site', question:'无论未来怎么变，什么最好不要丢？', hint:'当前 Future You 官网明确将 Values 纳入 intake；不属于 2024 论文逐项列出的核心字段。', type:'textarea', guidedType:'multi', max:3, options:['自由','关系','好奇','创造','成长','安全','诚实','成就','善意','独立','影响力','平静'], optionalDetail:true },
+  { section:'可能的分岔', key:'decision', source:'p005-extension', question:'有一个你现在拿不准的 A / B 决定吗？', hint:'可选。没有就直接跳过。', type:'decision' }
 ];
+
+function protocolMode(){
+  return runtimeConfig().intakeProtocol==='replication'?'replication':'guided';
+}
+function activeQuestions(){
+  return protocolMode()==='replication'
+    ? QUESTIONS.filter((q)=>q.source==='paper-core'||q.source==='paper-prompt')
+    : QUESTIONS;
+}
+function questionSourceLabel(source){
+  return ({'paper-core':'2024 论文核心','paper-prompt':'2024 Memory prompt','current-site':'当前官网扩展','p005-extension':'P005 扩展'})[source]||'';
+}
 
 const state = {
   screen:'welcome',
   surveyIndex:0,
   profile:{},
+  structuredAnswers:{},
   memory:null,
   messages:[],
   currentPortrait:'',
@@ -81,7 +96,12 @@ function adminSettings(){
   return local&&typeof local==='object'?local:{};
 }
 function runtimeConfig(){
-  return Object.assign({targetHorizon:'4y'},window.P005_FUTURE_ME_CONFIG||{},adminSettings());
+  return Object.assign({
+    targetHorizon:'4y',
+    intakeProtocol:'guided',
+    voiceId:'marin',
+    ttsInstructions:'自然、平静、像熟悉自己的真人，不要播音腔；中文语速略慢。'
+  },window.P005_FUTURE_ME_CONFIG||{},adminSettings());
 }
 function apiConfig(name){
   const config=runtimeConfig();
@@ -90,6 +110,8 @@ function apiConfig(name){
     memoryApi:window.FUTURE_ME_MEMORY_API,
     imageApi:window.FUTURE_ME_IMAGE_API,
     voiceApi:window.FUTURE_ME_VOICE_API,
+    transcribeApi:window.FUTURE_ME_TRANSCRIBE_API,
+    realtimeSessionApi:window.FUTURE_ME_REALTIME_SESSION_API,
     adminApi:window.P00_ADMIN_API
   };
   return direct[name]||config[name]||'';
@@ -184,10 +206,15 @@ function snapshot(includeMedia=false){
     module:MODULE_ID,
     version:MODULE_VERSION,
     profile:state.profile,
+    structuredAnswers:state.structuredAnswers,
+    personaBrief:buildPersonaBrief(),
     syntheticMemory:state.memory,
     messages:state.messages,
     capsules:state.capsules,
-    settings:Object.assign({},state.settings,{targetHorizon:horizonMode(),targetAge:targetAge(),targetYear:targetYear()}),
+    settings:Object.assign({},state.settings,{
+      targetHorizon:horizonMode(),targetAge:targetAge(),targetYear:targetYear(),
+      intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin'
+    }),
     screen:state.screen,
     surveyIndex:state.surveyIndex,
     media:{hasCurrentPortrait:Boolean(state.currentPortrait),hasFuturePortrait:Boolean(state.futurePortrait)},
@@ -224,6 +251,7 @@ function save(){
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       profile:state.profile,
+      structuredAnswers:state.structuredAnswers,
       memory:state.memory,
       messages:state.messages,
       currentPortrait:state.currentPortrait,
@@ -243,6 +271,7 @@ function migrateLegacy(){
     if(!legacy)continue;
     const migrated={
       profile:legacy.profile||{},
+      structuredAnswers:legacy.structuredAnswers||{},
       memory:legacy.memory||null,
       messages:legacy.messages||[],
       currentPortrait:legacy.currentPortrait||'',
@@ -262,6 +291,7 @@ function load(){
   const saved=parseJson(localStorage.getItem(STORAGE_KEY)||'');
   if(saved){
     state.profile=saved.profile||{};
+    state.structuredAnswers=saved.structuredAnswers||{};
     state.memory=saved.memory||null;
     state.messages=saved.messages||[];
     state.currentPortrait=saved.currentPortrait||'';
@@ -269,7 +299,7 @@ function load(){
     state.capsules=saved.capsules||[];
     state.settings=Object.assign({},state.settings,saved.settings||{});
     state.screen=normalizedSavedScreen(saved.screen);
-    state.surveyIndex=Math.max(0,Math.min(QUESTIONS.length-1,Number(saved.surveyIndex)||0));
+    state.surveyIndex=Math.max(0,Math.min(activeQuestions().length-1,Number(saved.surveyIndex)||0));
     state.generated=Boolean(state.memory);
   }
   mapSharedIntoProfile(sharedProfile());
@@ -290,7 +320,7 @@ function updateProgress(){
   const fill=$('#progressFill');
   if(label)label.textContent=STEP_NAMES[state.screen]||'';
   let ratio=SCREENS.indexOf(state.screen)/(SCREENS.length-1);
-  if(state.screen==='survey')ratio=.06+.35*((state.surveyIndex+1)/QUESTIONS.length);
+  if(state.screen==='survey')ratio=.06+.35*((state.surveyIndex+1)/activeQuestions().length);
   if(fill)fill.style.width=Math.round(Math.max(0,Math.min(1,ratio))*100)+'%';
 }
 
@@ -304,6 +334,7 @@ function show(name){
   if(state.screen==='generate')generateSequence();
   if(state.screen==='ready')renderReady();
   if(state.screen==='chat')startChat();
+  if(state.screen==='share')renderShareCard();
   if(state.screen==='capsule'){renderLetter();renderCapsules()}
   updateProgress();
   save();
@@ -314,77 +345,141 @@ function show(name){
 $$('[data-next]').forEach((button)=>button.addEventListener('click',()=>show(button.dataset.next)));
 $$('[data-prev]').forEach((button)=>button.addEventListener('click',()=>show(button.dataset.prev)));
 
+function selectedGuidedValues(q){
+  const stored=state.structuredAnswers[q.key]||{};
+  return Array.isArray(stored.selected)?stored.selected:[];
+}
+function renderGuidedChoices(q,root){
+  const selected=selectedGuidedValues(q);
+  const type=q.guidedType||'single';
+  const options=(q.options||[]).map((option)=>{
+    const on=selected.includes(option)?' selected':'';
+    return '<button type="button" class="answer-option'+on+'" data-answer-option="'+escapeHtml(option)+'">'+escapeHtml(option)+'</button>';
+  }).join('');
+  root.innerHTML='<div class="answer-options '+type+'">'+options+'</div>'+
+    (q.optionalDetail?'<input class="answer-detail" id="surveyDetail" placeholder="可选：补充一句，让 Future Me 更像你">':'');
+  const detail=$('#surveyDetail');
+  if(detail)detail.value=(state.structuredAnswers[q.key]||{}).detail||'';
+  $$('[data-answer-option]').forEach((button)=>button.addEventListener('click',()=>{
+    const value=button.dataset.answerOption;
+    let values=selectedGuidedValues(q);
+    if(type==='single'){
+      values=[value];
+      $$('[data-answer-option]').forEach((node)=>node.classList.toggle('selected',node===button));
+    }else{
+      if(values.includes(value))values=values.filter((x)=>x!==value);
+      else{
+        if(q.max&&values.length>=q.max){showToast('最多选择 '+q.max+' 项');return}
+        values=[...values,value];
+      }
+      button.classList.toggle('selected',values.includes(value));
+    }
+    state.structuredAnswers[q.key]={selected:values,detail:detail?detail.value:''};
+  }));
+}
 function renderSurvey(){
-  const q=QUESTIONS[state.surveyIndex];
+  const list=activeQuestions();
+  const q=list[state.surveyIndex];
   if(!q)return;
-  $('#surveySection').textContent=q.section;
-  $('#surveyCount').textContent=(state.surveyIndex+1)+' / '+QUESTIONS.length;
+  $('#surveySection').textContent=q.section+' · '+questionSourceLabel(q.source);
+  $('#surveyProtocol').textContent=protocolMode()==='replication'?'研究复刻版':'低负担版';
+  $('#surveyCount').textContent=(state.surveyIndex+1)+' / '+list.length;
   $('#surveyQuestion').textContent=interpolateQuestion(q.question);
   $('#surveyHint').textContent=interpolateQuestion(q.hint||'');
 
   const root=$('#surveyInput');
-  if(q.type==='decision'){
+  if(q.type==='decision'&&protocolMode()==='guided'){
     root.innerHTML=
+      '<div class="decision-presets">'+
+      ['升学 / 工作','留下 / 离开','稳定 / 冒险','这座城市 / 另一座城市','继续一段关系 / 结束','暂时没有'].map((x)=>'<button type="button" class="answer-option" data-decision-preset="'+x+'">'+x+'</button>').join('')+
+      '</div>'+
       '<div class="decision-inputs">'+
-      '<label><span>我正在决定</span><input id="decisionMain" placeholder="例如：继续读博，还是去工作"></label>'+
+      '<label><span>我正在决定</span><input id="decisionMain" placeholder="可选"></label>'+
       '<div class="decision-options">'+
-      '<label><span>Option A</span><input id="decisionA" placeholder="继续读博"></label>'+
-      '<label><span>Option B</span><input id="decisionB" placeholder="去工作"></label>'+
+      '<label><span>Option A</span><input id="decisionA" placeholder="A"></label>'+
+      '<label><span>Option B</span><input id="decisionB" placeholder="B"></label>'+
       '</div></div>';
     $('#decisionMain').value=state.profile.decision||'';
     $('#decisionA').value=state.profile.optionA||'';
     $('#decisionB').value=state.profile.optionB||'';
-    setTimeout(()=>$('#decisionMain').focus(),60);
+    $$('[data-decision-preset]').forEach((button)=>button.addEventListener('click',()=>{
+      const value=button.dataset.decisionPreset;
+      if(value==='暂时没有'){
+        $('#decisionMain').value='';$('#decisionA').value='';$('#decisionB').value='';
+        showToast('已跳过 A / B');
+        return;
+      }
+      $('#decisionMain').value=value;
+      $('#decisionMain').focus();
+    }));
+  }else if(protocolMode()==='guided'&&q.guidedType){
+    renderGuidedChoices(q,root);
   }else{
-    const tag=q.type==='textarea'?'textarea':'input';
+    const tag=q.type==='textarea'||(protocolMode()==='replication'&&!['name','age','pronouns','location'].includes(q.key))?'textarea':'input';
     const type=q.type==='number'?'number':'text';
     root.innerHTML=tag==='textarea'
-      ? '<textarea id="surveyField" rows="4" placeholder="'+escapeHtml(q.placeholder||'')+'"></textarea>'
+      ? '<textarea id="surveyField" rows="4" placeholder="'+escapeHtml(q.placeholder||'请用自己的话回答……')+'"></textarea>'
       : '<input id="surveyField" type="'+type+'" '+(q.type==='number'?'min="16" max="100" inputmode="numeric"':'')+' placeholder="'+escapeHtml(q.placeholder||'')+'">';
     $('#surveyField').value=state.profile[q.key]||'';
     setTimeout(()=>$('#surveyField').focus(),60);
   }
   $('#surveyBackBtn').textContent=state.surveyIndex===0?'返回首页':'上一题';
-  $('#surveyNextBtn').textContent=state.surveyIndex===QUESTIONS.length-1?'继续':'下一题';
+  $('#surveyNextBtn').textContent=state.surveyIndex===list.length-1?'继续':'下一题';
   updateProgress();
 }
 
 function captureSurvey(){
-  const q=QUESTIONS[state.surveyIndex];
+  const list=activeQuestions();
+  const q=list[state.surveyIndex];
   if(!q)return true;
-  if(q.type==='decision'){
+
+  if(q.type==='decision'&&protocolMode()==='guided'){
     state.profile.decision=clean($('#decisionMain').value,'');
     state.profile.optionA=clean($('#decisionA').value,'');
     state.profile.optionB=clean($('#decisionB').value,'');
     save();
-    syncAdmin('survey_answered',{key:'decision',value:{
+    syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),value:{
       decision:state.profile.decision,optionA:state.profile.optionA,optionB:state.profile.optionB
     },surveyIndex:state.surveyIndex});
     return true;
   }
+
+  if(protocolMode()==='guided'&&q.guidedType){
+    const current=state.structuredAnswers[q.key]||{};
+    const selected=Array.isArray(current.selected)?current.selected:[];
+    const detail=clean($('#surveyDetail')?$('#surveyDetail').value:current.detail,'');
+    if(q.required&&!selected.length&&!detail){showToast('先选择一项');return false}
+    state.structuredAnswers[q.key]={selected,detail};
+    state.profile[q.key]=[selected.join('、'),detail].filter(Boolean).join('；补充：');
+    save();
+    syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),structured:state.structuredAnswers[q.key],value:state.profile[q.key],surveyIndex:state.surveyIndex});
+    return true;
+  }
+
   const field=$('#surveyField');
-  const value=clean(field.value,'');
+  const value=clean(field&&field.value,'');
   if(q.required&&!value){
-    field.focus();
+    if(field)field.focus();
     showToast('先回答这一题');
     return false;
   }
-  if(q.key==='age'){
+  if(q.key==='age'&&value){
     const age=Number(value);
     if(!Number.isFinite(age)||age<16||age>100){
       showToast('请输入 16–100 之间的年龄');
-      field.focus();
+      if(field)field.focus();
       return false;
     }
   }
   state.profile[q.key]=value;
   save();
-  syncAdmin('survey_answered',{key:q.key,value,surveyIndex:state.surveyIndex});
+  syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),value,surveyIndex:state.surveyIndex});
   return true;
 }
 $('#surveyNextBtn').addEventListener('click',()=>{
+  const list=activeQuestions();
   if(!captureSurvey())return;
-  if(state.surveyIndex>=QUESTIONS.length-1){show('portrait');return}
+  if(state.surveyIndex>=list.length-1){show('portrait');return}
   state.surveyIndex+=1;
   renderSurvey();
 });
@@ -395,7 +490,7 @@ $('#surveyBackBtn').addEventListener('click',()=>{
   renderSurvey();
 });
 $('#surveyInput').addEventListener('keydown',(event)=>{
-  if(event.key==='Enter'&&!event.shiftKey&&event.target.tagName==='INPUT'&&state.surveyIndex<QUESTIONS.length-1){
+  if(event.key==='Enter'&&!event.shiftKey&&event.target.tagName==='INPUT'&&state.surveyIndex<activeQuestions().length-1&&protocolMode()==='replication'){
     event.preventDefault();
     $('#surveyNextBtn').click();
   }
@@ -462,6 +557,29 @@ $('#portraitInput').addEventListener('change',async(event)=>{
   }catch(error){console.error(error);showToast('照片读取失败')}
 });
 
+function safeExternalPersona(){
+  const context=window.P00_CONTEXT||{};
+  const candidate=context.selfProfile||context.persona||context.publicPersona||{};
+  if(!candidate||typeof candidate!=='object')return {};
+  const allowed=['traits','strengths','values','interests','roles','priorities','selfDescription'];
+  return Object.fromEntries(allowed.filter((k)=>candidate[k]).map((k)=>[k,candidate[k]]));
+}
+function buildPersonaBrief(){
+  const p=state.profile;
+  return {
+    identity:{name:p.name||'',age:p.age||'',pronouns:p.pronouns||'',location:p.location||'',currentWork:p.currentWork||''},
+    continuity:{
+      importantPeople:p.people||'',proudPoint:p.proud||'',lowPoint:p.lowPoint||'',turningPoint:p.turningPoint||'',
+      values:p.values||'',lifeProject:p.lifeProject||'',currentChallenge:p.challenge||''
+    },
+    futurePreferences:{
+      career:p.career||'',finance:p.finance||'',family:p.family||'',personalLife:p.personalLife||'',
+      futureLocation:p.futureLocation||'',dailyLife:p.dailyLife||''
+    },
+    p001SafeContext:safeExternalPersona()
+  };
+}
+
 function buildMemory(){
   const p=state.profile;
   const age=Number(p.age)||22;
@@ -475,8 +593,9 @@ function buildMemory(){
   const low=firstClause(p.lowPoint,'一段并不轻松的时期');
   const turning=firstClause(p.turningPoint,'一个改变方向的时刻');
   const futureLocation=firstClause(p.futureLocation,p.location||'一个让自己安稳的地方');
-  const daily=firstClause(p.dailyLife,'有工作，也有留给生活和关系的时间');
+  const daily=firstClause(p.dailyLife||p.personalLife,'有工作，也有留给生活和关系的时间');
   const family=firstClause(p.family,'和重要的人保持真实而稳定的关系');
+  const personalLife=firstClause(p.personalLife,'有更自由、健康而稳定的个人生活');
 
   const memories=[
     futurePhrase+'，我回头看“'+project+'”已经不再只是一个计划。最有满足感的不是结果，而是终于看见持续投入开始有自己的形状。',
@@ -487,7 +606,7 @@ function buildMemory(){
   const timeline=[
     {age,tag:'现在',text:'你带着“'+values+'”出发，也已经经历过'+low+'和'+turning+'。'},
     {age:Math.round((age+futureAge)/2),tag:'变化',text:'你开始围绕“'+project+'”积累作品、能力和关系，职业方向逐渐靠近“'+career+'”。'},
-    {age:futureAge,tag:'Future Me',text:'到'+futurePhrase+'，你生活在'+futureLocation+'。普通的一天是：'+daily+'。关系上，你希望'+family+'。'}
+    {age:futureAge,tag:'Future Me',text:'到'+futurePhrase+'，你生活在'+futureLocation+'。普通的一天是：'+daily+'。关系上，你希望'+family+'；个人生活更接近：'+personalLife+'。'}
   ];
 
   let branch=null;
@@ -516,6 +635,9 @@ async function generateMemory(){
     const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       module:MODULE_ID,
       profile:state.profile,
+      structuredAnswers:state.structuredAnswers,
+      personaBrief:buildPersonaBrief(),
+      intakeProtocol:protocolMode(),
       target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
       instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return JSON with summary, futureVignette, memories[3], timeline, and optional branch. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
     })});
@@ -732,11 +854,13 @@ async function getFutureReply(input){
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         module:MODULE_ID,
         profile:state.profile,
+        structuredAnswers:state.structuredAnswers,
+        personaBrief:buildPersonaBrief(),
         syntheticMemory:state.memory,
         messages:state.messages.filter((item)=>item.text!=='…'),
         userMessage:input,
         target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
-        instruction:'Act as one plausible future self at the configured target horizon, grounded in the supplied life story and future memory. Speak autobiographically using continuity cues such as "when I was at your current stage" when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
+        instruction:'Act as one plausible future self at the configured target horizon. Ground every response in the supplied personaBrief, life story, structured answers, and future memory. When relevant, naturally reference one or two concrete user-specific details (values, important people, proud point, turning point, current role, life project, or goals) rather than giving generic advice. Do not mechanically repeat profile fields. Speak autobiographically using continuity cues such as "when I was at your current stage" when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
       })});
       if(response.ok){
         const result=await response.json();
@@ -762,7 +886,17 @@ $('#chatForm').addEventListener('submit',async(event)=>{
 $$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
   $('#chatInput').value=button.textContent;$('#chatForm').requestSubmit();
 }));
-$('#finishChatBtn').addEventListener('click',()=>show('capsule'));
+function effectiveMessageCount(){return state.messages.filter((m)=>m.text!=='…').length}
+function endConversation(source){
+  const exchanged=effectiveMessageCount();
+  const early=protocolMode()==='replication'&&exchanged<16;
+  if(early&&!confirm('原 Future You 研究在 16 条交换消息后才出现完成入口。现在结束会被记录为提前结束，仍要继续吗？'))return;
+  syncAdmin('chat_ended',{source,exchanged,endedEarly:early,protocol:protocolMode()});
+  emitSessionEvent('chat_ended',{source,exchanged,endedEarly:early});
+  show('share');
+}
+$('#finishChatBtn').addEventListener('click',()=>endConversation('protocol_completion'));
+$('#endChatBtn').addEventListener('click',()=>endConversation('user_end_button'));
 
 async function speakText(text){
   if(!text)return;
@@ -770,7 +904,11 @@ async function speakText(text){
   if(endpoint){
     try{
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        text,voice:'future-self',language:'zh-CN',profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
+        text,
+        voice:runtimeConfig().voiceId||'marin',
+        instructions:runtimeConfig().ttsInstructions||'自然、平静、像熟悉自己的真人，不要播音腔。',
+        language:'zh-CN',
+        profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
       })});
       if(response.ok){
         const result=await response.json(),url=result.audioUrl||result.url||'';
@@ -781,7 +919,7 @@ async function speakText(text){
   if(!('speechSynthesis' in window)){showToast('当前浏览器不支持朗读');return}
   speechSynthesis.cancel();
   const utterance=new SpeechSynthesisUtterance(text);
-  utterance.lang='zh-CN';utterance.rate=.96;utterance.pitch=.92;
+  utterance.lang='zh-CN';utterance.rate=.95;utterance.pitch=.94;
   const voice=speechSynthesis.getVoices().find((v)=>/zh|Chinese|Mandarin/i.test(v.lang+' '+v.name));
   if(voice)utterance.voice=voice;
   speechSynthesis.speak(utterance);
@@ -789,17 +927,17 @@ async function speakText(text){
 
 function updateVoiceUI(){
   const active=Boolean(state.settings.voiceMode);
-  $('#voiceModeBtn').textContent=active?'关闭语音':'语音';
+  $('#voiceModeBtn').textContent=active?'关闭语音回复':'语音回复';
   const stateNode=$('#voiceState');
   if(stateNode){
     stateNode.classList.toggle('hidden',!active);
-    const label=stateNode.querySelector('span');if(label)label.textContent=active?'语音模式':'文字模式';
+    const label=stateNode.querySelector('span');if(label)label.textContent=active?'语音回复已开启':'文字模式';
   }
   updateChatModeNote();
 }
 $('#voiceModeBtn').addEventListener('click',()=>{
   state.settings.voiceMode=!state.settings.voiceMode;updateVoiceUI();save();
-  showToast(state.settings.voiceMode?'已开启自动朗读':'已关闭语音模式');
+  showToast(state.settings.voiceMode?'Future Me 会自动朗读回复':'已关闭语音回复');
 });
 $('#speakLastBtn').addEventListener('click',()=>{
   const last=state.messages.filter((x)=>x.role==='future'&&x.text!=='…').slice(-1)[0];
@@ -807,34 +945,156 @@ $('#speakLastBtn').addEventListener('click',()=>{
 });
 
 let recognition=null,recognitionActive=false;
+let recorder=null,recordingStream=null,audioChunks=[];
+
+function setListening(active,label='正在听'){
+  recognitionActive=active;
+  $('#micBtn').classList.toggle('listening',active);
+  $('#voiceListening').classList.toggle('hidden',!active);
+  const text=$('#voiceListening span');if(text)text.textContent=label;
+}
 function ensureRecognition(){
   if(recognition)return recognition;
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!Recognition)return null;
   recognition=new Recognition();recognition.lang='zh-CN';recognition.interimResults=true;recognition.continuous=false;
-  recognition.onstart=()=>{recognitionActive=true;$('#micBtn').classList.add('listening');$('#voiceListening').classList.remove('hidden')};
+  recognition.onstart=()=>setListening(true,'正在听');
   recognition.onresult=(event)=>{
-    let transcript='',final=false;
-    for(let i=event.resultIndex;i<event.results.length;i++){transcript+=event.results[i][0].transcript;if(event.results[i].isFinal)final=true}
+    let transcript='';
+    for(let i=event.resultIndex;i<event.results.length;i++)transcript+=event.results[i][0].transcript;
     $('#chatInput').value=transcript;
-    if(final&&state.settings.voiceMode&&transcript.trim())setTimeout(()=>$('#chatForm').requestSubmit(),120);
   };
   recognition.onerror=()=>showToast('语音识别失败，可以继续打字');
-  recognition.onend=()=>{recognitionActive=false;$('#micBtn').classList.remove('listening');$('#voiceListening').classList.add('hidden')};
+  recognition.onend=()=>setListening(false);
   return recognition;
 }
-$('#micBtn').addEventListener('click',()=>{
+async function transcribeRecordedAudio(blob){
+  const endpoint=apiConfig('transcribeApi');
+  if(!endpoint)return '';
+  const form=new FormData();
+  form.append('audio',blob,'future-me.webm');
+  form.append('language','zh');
+  form.append('context',JSON.stringify({module:MODULE_ID,name:state.profile.name||'',target:targetPhrase()}));
+  const response=await fetch(endpoint,{method:'POST',body:form});
+  if(!response.ok)throw new Error('transcribe api '+response.status);
+  const result=await response.json();
+  return String(result.text||result.transcript||'').trim();
+}
+async function startBackendRecording(){
+  recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  recorder=new MediaRecorder(recordingStream);
+  audioChunks=[];
+  recorder.ondataavailable=(event)=>{if(event.data&&event.data.size)audioChunks.push(event.data)};
+  recorder.onstop=async()=>{
+    setListening(true,'正在转成文字');
+    const blob=new Blob(audioChunks,{type:recorder.mimeType||'audio/webm'});
+    try{
+      const transcript=await transcribeRecordedAudio(blob);
+      if(transcript){$('#chatInput').value=transcript;$('#chatInput').focus()}
+      else showToast('没有识别到文字');
+    }catch(error){console.warn(error);showToast('语音转文字失败，可以继续打字')}
+    finally{
+      recordingStream&&recordingStream.getTracks().forEach((track)=>track.stop());
+      recordingStream=null;recorder=null;setListening(false);
+    }
+  };
+  recorder.start();
+  setListening(true,'再次点击结束录音');
+}
+$('#micBtn').addEventListener('click',async()=>{
+  if(apiConfig('transcribeApi')&&navigator.mediaDevices&&window.MediaRecorder){
+    if(recorder&&recorder.state==='recording'){recorder.stop();return}
+    try{await startBackendRecording()}catch(error){console.warn(error);showToast('无法使用麦克风')}
+    return;
+  }
   const engine=ensureRecognition();
-  if(!engine){showToast('当前浏览器不支持语音听写');return}
+  if(!engine){showToast('尚未配置语音转文字，且浏览器不支持听写');return}
   if(recognitionActive)engine.stop(); else try{engine.start()}catch(_){}
 });
 
 function updateChatModeNote(){
   const bits=[targetPhrase()];
   bits.push(apiConfig('chatApi')?'LLM':'本地原型');
-  if(state.settings.voiceMode)bits.push('语音');
+  if(apiConfig('transcribeApi'))bits.push('语音转文字');
+  if(state.settings.voiceMode)bits.push(apiConfig('voiceApi')?'真人感 TTS':'浏览器朗读');
   $('#chatModeNote').textContent=bits.join(' · ');
 }
+
+function cardValues(){
+  const raw=clean(state.profile.values,'保持真实、好奇、连接');
+  return raw.split(/[、，,；;\/]/).map((x)=>x.replace(/^补充：/,'').trim()).filter(Boolean).slice(0,3);
+}
+function latestFutureQuote(){
+  const item=state.messages.filter((x)=>x.role==='future'&&x.text!=='…').slice(-1)[0];
+  return firstClause(item?item.text:(state.memory&&state.memory.futureVignette)||'未来不是答案，而是一种看清今天的距离。');
+}
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines=99){
+  const chars=Array.from(String(text||''));let line='',lines=[];
+  for(const ch of chars){
+    const test=line+ch;
+    if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=ch;if(lines.length>=maxLines)break}
+    else line=test;
+  }
+  if(line&&lines.length<maxLines)lines.push(line);
+  lines.forEach((row,i)=>ctx.fillText(row,x,y+i*lineHeight));
+  return y+lines.length*lineHeight;
+}
+function renderShareCard(){
+  const canvas=$('#shareCardCanvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#5b3cf6';ctx.fillRect(72,72,16,16);
+  ctx.fillStyle='#151515';ctx.font='700 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('FUTURE ME',112,93);
+  ctx.fillStyle='#8a8a8f';ctx.font='500 22px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('一个可能的未来，不是预测',72,150);
+
+  ctx.fillStyle='#151515';ctx.font='650 72px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  let y=300;
+  y=wrapCanvasText(ctx,clean(state.profile.name,'我')+' × '+targetPhrase()+'的我',72,y,900,92,2)+38;
+
+  ctx.strokeStyle='#e6e6e8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(1008,y);ctx.stroke();y+=70;
+
+  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('我想守住',72,y);y+=54;
+  ctx.fillStyle='#151515';ctx.font='600 42px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  const vals=cardValues();
+  ctx.fillText(vals.join('  ·  '),72,y);y+=110;
+
+  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('未来片段',72,y);y+=48;
+  ctx.fillStyle='#333338';ctx.font='400 30px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  y=wrapCanvasText(ctx,(state.memory&&state.memory.futureVignette)||'未来仍然有变化，但重要的东西没有完全丢掉。',72,y,900,48,4)+70;
+
+  ctx.fillStyle='#8a8a8f';ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('Future Me 留给我的一句话',72,y);y+=54;
+  ctx.fillStyle='#151515';ctx.font='500 38px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  y=wrapCanvasText(ctx,'“'+latestFutureQuote()+'”',72,y,900,58,5);
+
+  ctx.fillStyle='#b0b0b5';ctx.font='500 20px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('P005 · '+new Date().toLocaleDateString('zh-CN'),72,h-86);
+  syncAdmin('share_card_generated',{target:targetPhrase()});
+}
+function cardBlob(){
+  return new Promise((resolve)=>$('#shareCardCanvas').toBlob(resolve,'image/png',.95));
+}
+$('#downloadCardBtn').addEventListener('click',async()=>{
+  renderShareCard();
+  const blob=await cardBlob();if(!blob)return;
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='Future-Me-card-'+new Date().toISOString().slice(0,10)+'.png';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),600);
+  syncAdmin('share_card_saved',{});showToast('卡片已保存');
+});
+$('#shareCardBtn').addEventListener('click',async()=>{
+  renderShareCard();
+  const blob=await cardBlob();if(!blob)return;
+  const file=new File([blob],'future-me-card.png',{type:'image/png'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'Future Me',text:'和未来的自己聊了一次。'});syncAdmin('share_card_shared',{});return}catch(error){if(error&&error.name==='AbortError')return}
+  }
+  showToast('当前浏览器不支持直接分享，可先保存图片');
+});
 
 function letterHtml(){
   const p=state.profile,action=clean($('#nextAction').value,'');
@@ -903,6 +1163,6 @@ load();
 updateProgress();
 updateChatModeNote();
 emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
-syncAdmin('session_started',{targetHorizon:horizonMode()});
+syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin'});
 
 })();
