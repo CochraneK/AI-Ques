@@ -487,7 +487,7 @@ function buildMemory() {
 
 function generateSequence() {
   collect();
-  if (!state.memory) state.memory = buildMemory();
+  state.memory = buildMemory();
   state.generated = true;
   save();
 
@@ -555,10 +555,9 @@ $('#agePortraitBtn').addEventListener('click', async function () {
 
   const endpoint = apiConfig('imageApi');
   if (!endpoint) {
-    state.futurePortrait = state.currentPortrait;
-    renderFuturePortrait();
+    $('#futurePortrait').classList.add('has-image');
+    $('#futurePortraitImg').src = state.currentPortrait;
     $('#portraitStatus').textContent = '当前照片占位 · 未连接年龄化 API';
-    save();
     showToast('图像 API 未连接，暂用当前照片占位');
     return;
   }
@@ -1056,7 +1055,6 @@ function updateChatModeNote() {
 
 load();
 renderDots();
-renderReady();
 updateChatModeNote();
 
 if (state.screen !== 'welcome' && state.screen !== 'generate') {
