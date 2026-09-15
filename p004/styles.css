@@ -31,3 +31,33 @@
   .micro-section{margin-top:11px;padding-top:10px}
   .creator-actions{padding:9px 18px}
 }
+
+.circumplex-note{display:flex;justify-content:space-between;gap:10px;margin:-8px 0 10px;padding:7px 9px;border-radius:10px;background:#f3f3ef;color:var(--muted);font-size:7.4px}
+.feel-cloud{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(78px,1fr));gap:7px;position:relative}
+.feel-chip{min-height:78px;padding:8px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.feel-chip b{display:block;font-size:8.5px;margin-top:2px}
+.feel-chip small{display:block;margin-top:3px;max-width:150px;color:var(--muted);font-size:6.8px;line-height:1.35}
+.feel-chip.selected small{color:#6f668b}
+.feel-chip[data-pos="n"]{grid-column:2;grid-row:1}
+.feel-chip[data-pos="ne"]{grid-column:3;grid-row:1}
+.feel-chip[data-pos="e"]{grid-column:3;grid-row:2}
+.feel-chip[data-pos="se"]{grid-column:3;grid-row:3}
+.feel-chip[data-pos="s"]{grid-column:2;grid-row:3}
+.feel-chip[data-pos="sw"]{grid-column:1;grid-row:3}
+.feel-chip[data-pos="w"]{grid-column:1;grid-row:2}
+.feel-chip[data-pos="nw"]{grid-column:1;grid-row:1}
+.circumplex-center{grid-column:2;grid-row:2;border:1px dashed var(--line);border-radius:50%;display:grid;place-items:center;align-content:center;text-align:center;background:radial-gradient(circle,#fff 0%,#f5f3ff 72%,#ece8ff 100%);color:var(--muted);pointer-events:none}
+.circumplex-center b{font-size:11px;color:var(--ink)}
+.circumplex-center small{font-size:6.7px;line-height:1.5}
+.api-presets{flex-wrap:wrap}
+@media(max-height:760px) and (min-width:801px){
+  .feel-cloud{grid-template-rows:repeat(3,minmax(65px,1fr))}
+  .feel-chip{min-height:65px;padding:6px}
+  .feel-chip span{font-size:13px;margin-bottom:1px}
+  .feel-chip small{font-size:6.3px}
+  .circumplex-note{margin-bottom:6px;padding:5px 7px}
+}
+@media(max-width:800px){
+  .feel-cloud{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(74px,1fr))}
+  .feel-chip{min-height:74px}
+}
