@@ -5,12 +5,12 @@
     {
       "id": "P001",
       "slug": "future-me",
-      "title": "未来自我",
-      "subtitle": "现在的我 · 未来的我 · 理想的我",
-      "route": "../future-me/",
-      "status": "active",
+      "title": "现在 / 未来 / 理想的我",
+      "subtitle": "Current · Future · Ideal Self",
+      "route": "#",
+      "status": "building",
       "accent": "warm",
-      "description": "未来自我、价值澄清与交互式反思。"
+      "description": "30 特征、排序、现在/未来/理想自我交互；等待并行 P001 工作线合入。"
     },
     {
       "id": "P002",
@@ -45,12 +45,12 @@
     {
       "id": "P005",
       "slug": "p005",
-      "title": "Future Self",
+      "title": "Future Me / 未来的我",
       "subtitle": "Future You × FutureMe",
-      "route": "#",
-      "status": "building",
+      "route": "../future-me/",
+      "status": "active",
       "accent": "amber",
-      "description": "未来自我对话、语音与未来形象体验。"
+      "description": "未来自我、可能人生路径、对话、语音/图像 API 与时间胶囊。"
     }
   ]
 }
