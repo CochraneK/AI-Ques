@@ -1,5 +1,7 @@
 # P005 · Future Me / 未来的我
 
+> V0.4: Chinese-first typography, protocol-aware intake, voice I/O, profile-grounded chat, explicit ending, and share card.
+
 P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的公开研究机制为主线，并把 FutureMe 式时间胶囊降为对话后的可选延伸。
 
 详细机制拆解见 [RESEARCH_NOTES.md](RESEARCH_NOTES.md)。
@@ -275,3 +277,63 @@ p005/runtime-config.js
 - 为降低不必要敏感数据收集，P005 **没有照论文 prompt 收集 sexual orientation**。
 
 因此它是 **机制级忠实复刻 + 中文/研究伦理适配**，不是声称逐字复制原版问卷。
+
+
+## V0.4 · 研究协议与低负担输入
+
+管理员可以选择：
+
+- `guided`（默认）：结构化低负担版。单选题尽量使用 MECE 分类；多维构念使用有限多选；每题只保留一个可选短补充。
+- `replication`：论文对齐版。只显示 `paper-core` / `paper-prompt` 字段，并保持 sequential free-text。
+
+这两个条件必须在论文中分开报告，不能把 guided 描述为原 Future You 问卷的直接复刻。
+
+字段来源与偏差清单见：
+
+`p005/METHODS_MAPPING.md`
+
+## V0.4 · 语音
+
+当前前端支持三层能力：
+
+1. **voiceApi**：Future Me 文本 → 自然 TTS。请求会发送 `voiceId` 和中文风格 instructions。
+2. **transcribeApi**：浏览器 MediaRecorder → 后端 STT → 文本回填到输入框。
+3. **浏览器 fallback**：未配置后端时，用 SpeechRecognition / speechSynthesis（浏览器支持时）。
+
+预留：
+
+`realtimeSessionApi`
+
+用于后续 WebRTC / full-duplex Realtime 会话。它需要后端签发临时会话凭证，不能把模型 API key 放到 GitHub Pages。
+
+如果使用真实人物的 custom / cloned voice，必须使用该说话人的明确授权和同意流程，并记录 voice provenance / consent；默认产品不做未经授权的仿声。
+
+## V0.4 · Future Me 个性化
+
+Chat API 现在同时接收：
+
+- `profile`
+- `structuredAnswers`
+- `personaBrief`
+- `syntheticMemory`
+- 对话历史
+- future target
+
+`personaBrief` 只包含用户侧安全信息：身份背景、重要关系、高光/低谷/转折、价值与长期目标，以及未来可接入的 P001 非临床画像。
+
+P004 clinical-like inference 不进入 Future Me 用户侧人格事实。
+
+## V0.4 · 结束与分享
+
+聊天顶部始终提供“结束”按钮，确保用户可退出。
+
+- replication 模式若不足 16 条有效交换，会明确提示，并记录 `endedEarly=true`；
+- 达到 16 条时仍会出现与原论文机制一致的非侵入式完成入口。
+
+结束后进入一张 1080×1440 的竖版分享卡片，内容包括：
+- 现在的我 × N 年后的我；
+- 最想守住的 3 个关键词；
+- 一个 future memory 片段；
+- Future Me 留下的一句话。
+
+支持保存 PNG；浏览器支持 Web Share + files 时可直接调系统分享面板。

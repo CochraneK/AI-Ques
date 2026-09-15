@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="P005 Future Me：基于人生故事、未来记忆与未来自我对话的研究原型。" />
   <title>P005 · Future Me</title>
-  <link rel="stylesheet" href="styles.css?v=20260915-fy2" />
+  <link rel="stylesheet" href="styles.css?v=20260915-v04" />
 </head>
 <body>
   <header class="topbar">
@@ -50,7 +50,7 @@
       <div class="survey-shell">
         <div class="survey-meta">
           <span id="surveySection">现在的你</span>
-          <span id="surveyCount">1 / 18</span>
+          <span><b id="surveyProtocol">低负担版</b> · <span id="surveyCount">1 / 1</span></span>
         </div>
         <h2 id="surveyQuestion">希望未来的你怎么称呼你？</h2>
         <p id="surveyHint" class="survey-hint"></p>
@@ -133,8 +133,9 @@
             <div><b id="chatName">Future Me</b><small id="chatModeNote">4 年后 · 文字模式</small></div>
           </div>
           <div class="chat-tools">
-            <button class="quiet-action" id="voiceModeBtn" type="button">语音</button>
+            <button class="quiet-action" id="voiceModeBtn" type="button">语音回复</button>
             <button class="quiet-action" id="speakLastBtn" type="button">朗读</button>
+            <button class="quiet-action end-chat-action" id="endChatBtn" type="button">结束</button>
           </div>
         </div>
 
@@ -157,9 +158,31 @@
         </form>
 
         <div class="chat-finish">
-          <button class="text-button hidden" id="finishChatBtn" type="button">结束这次对话 →</button>
+          <button class="text-button hidden" id="finishChatBtn" type="button">完成本次对话 →</button>
         </div>
         <div class="voice-state hidden" id="voiceState"><i></i><span>文字模式</span></div>
+      </div>
+    </section>
+
+    <section class="screen share-screen" id="screen-share">
+      <div class="share-shell">
+        <p class="kicker">YOUR FUTURE SELF CARD</p>
+        <h2>把这次对话，留成一张卡片。</h2>
+        <p class="section-copy">只放少量内容：你想守住的东西、一个未来片段，以及这次对话留下的一句话。</p>
+
+        <div class="share-card-wrap">
+          <canvas id="shareCardCanvas" width="1080" height="1440" aria-label="Future Me 分享卡片"></canvas>
+        </div>
+
+        <div class="share-actions">
+          <button class="secondary" id="downloadCardBtn" type="button">保存图片</button>
+          <button class="primary" id="shareCardBtn" type="button">分享</button>
+        </div>
+
+        <div class="share-secondary">
+          <button class="text-button" data-prev="share" type="button">返回卡片</button>
+          <button class="text-button" data-next="capsule" type="button">再留一封信 →</button>
+        </div>
       </div>
     </section>
 
@@ -200,6 +223,6 @@
 
   <script src="../shared/profile.js?v=1"></script>
   <script src="runtime-config.js?v=1"></script>
-  <script src="app.js?v=20260915-fix3"></script>
+  <script src="app.js?v=20260915-v04"></script>
 </body>
 </html>
