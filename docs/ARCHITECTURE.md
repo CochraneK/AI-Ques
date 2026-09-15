@@ -7,10 +7,10 @@ AI-Ques is the static P00 hub for multiple psychology-informed interaction proto
 ## 2. Module boundaries
 
 - **P002** owns assessment wording, modes, scoring prototypes and its study manifest.
-- **P004** owns conversation, public portrait and private research-side exploratory inference.
+- **P004** owns Character Cards, NPC conversation, optional NVWA Skill artifacts, relationship memory and private research-side longitudinal inference.
 - **P005** owns future-self narrative, media hooks, conversation and time capsules.
 
-No module should silently read another module's private storage.
+Modules should not silently read another module's private storage. P004 is the explicit cross-module Observer exception: its UI discloses that user-authored P005 / Future You open responses may contribute to the same research evidence pool. Production must move this aggregation behind consent-aware authenticated APIs.
 
 ## 3. Public shared profile
 
@@ -24,7 +24,9 @@ The adapter can migrate safe fields from older keys, but clinical inference, evi
 
 ## 4. Private module data
 
-- P004: `sessionStorage["bjtu.p004.session.v1"]` for the current tab only.
+- P004 Character Cards / threads / relationship memory: module-scoped `localStorage` in the static prototype.
+- P004 distilled Skill artifacts: IndexedDB `bjtu-p004-skill-vault`, with explicit `SKILL.md` export.
+- P004 Observer evidence: `localStorage["bjtu.p004.observer.v2"]` in the prototype only; production must use protected server-side storage with RBAC, retention and deletion controls.
 - P005: `localStorage["bjtu.p005.state.v1"]` because the product explicitly offers resume and time-capsule behavior.
 - P002 currently does not persist assessment answers.
 
