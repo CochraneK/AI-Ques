@@ -35,11 +35,12 @@ const context = vm.createContext({
   console,
   document,
   window: { scrollTo() {} },
+  location: { search: "" },
   setTimeout,
   clearTimeout,
 });
 
-for (const file of ["../p002/app.js", "../p002/experiments.js"]) {
+for (const file of ["../p002/app.js"]) {
   const source = fs.readFileSync(new URL(file, import.meta.url), "utf8");
   vm.runInContext(source, context, { filename: file });
 }
@@ -57,26 +58,20 @@ assert.equal(evaluate("SCALES.pcl5.items.length"), 20, "PCL-5 prototype should e
 assert.equal(evaluate("SCALES.cape15.items.length"), 15, "CAPE-P15 prototype should expose 15 items");
 assert.equal(evaluate("SCALES.pcl5.choices.length"), 5, "PCL-5 response format should remain 0-4");
 assert.equal(evaluate("SCALES.cape15.choices.length"), 4, "CAPE prototype should remain four frequency choices");
-assert.equal(evaluate("SCALES.cape15.scoreOffset"), 1, "CAPE prototype should remain 1-4 encoded");
+assert.equal(evaluate("SCALES.cape15.scoringScheme"), "current-cape-p15-original-0-3", "CAPE should declare the original 0-3 scoring scheme");
+assert.equal(evaluate("SCALES.cape15.distressChoices.length"), 4, "CAPE should expose four distress choices");
+assert.equal(evaluate("SCALES.cape15.scoreOffset"), undefined, "CAPE should not apply the old +1 score offset");
+assert.match(evaluate("SCALES.pcl5.instruction"), /同一段最困扰的压力经历/, "PCL instruction should preserve a single stressful-event anchor");
+assert.match(evaluate("SCALES.pcl5.instruction"), /困扰到你/, "PCL instruction should ask degree of bother, not frequency");
+assert.equal(evaluate("state.emojiIndex"), null, "emoji placement should initialize once per run rather than using many fixed items");
 
-const expectedModes = [
-  "original", "vassip", "emoji", "rush",
-  "itemscene", "construct", "aisjt", "psychogat"
-];
+const expectedModes = ["original", "vassip", "emoji", "rush"];
 
 assert.deepEqual(
   Array.from(evaluate("Object.keys(MODES)")).sort(),
   [...expectedModes].sort(),
-  "P002 runtime registry should expose exactly the documented eight modes"
+  "P002 runtime registry should expose exactly the four active modes"
 );
-
-for (const mode of ["itemscene", "construct", "aisjt", "psychogat"]) {
-  assert.equal(
-    evaluate(`typeof MODE_HANDLERS["${mode}"]?.renderStep`),
-    "function",
-    `${mode} should register an explicit renderStep handler`
-  );
-}
 
 const manifest = JSON.parse(
   fs.readFileSync(new URL("../p002/study-manifest.json", import.meta.url), "utf8")
@@ -94,10 +89,6 @@ const smokeResult = evaluate(`
   const failures = [];
   const terminalIndex = (scale, mode) => {
     if (mode === "rush") return RUSH[scale].length;
-    if (mode === "itemscene") return SCALES[scale].items.length;
-    if (mode === "construct") return CONSTRUCT_SCENES[scale].length;
-    if (mode === "aisjt") return AI_SJT_BANK[scale].length;
-    if (mode === "psychogat") return PSYCHOGAT_NODES[scale].length;
     return SCALES[scale].items.length;
   };
 
@@ -125,4 +116,19 @@ const smokeResult = evaluate(`
 
 assert.deepEqual(Array.from(smokeResult), [], "all P002 scale × mode start/end smoke paths should execute");
 
-console.log("P002 smoke tests passed: 2 scales × 8 modes, registry + manifest + start/end paths.");
+console.log("P002 smoke tests passed: 2 scales × 4 active modes, registry + manifest + start/end paths.");
+
+
+const appSource = fs.readFileSync(new URL("../p002/app.js", import.meta.url), "utf8");
+const htmlSource = fs.readFileSync(new URL("../p002/index.html", import.meta.url), "utf8");
+
+assert.ok(!appSource.includes("高信号"), "participant-facing source should not contain scoring feedback labels");
+assert.ok(!appSource.includes("中等信号"), "participant-facing source should not contain scoring feedback labels");
+assert.ok(!htmlSource.includes("START AN EXPERIMENT"), "launcher should avoid redundant research UI chrome");
+assert.ok(!htmlSource.includes("正式研究或服务部署前"), "ethics/governance copy belongs in research docs, not repeated participant footer");
+assert.match(appSource,/state\.index===state\.emojiIndex/, "Emoji Game should use one session-level placement");
+assert.match(appSource,/SHOW_RESEARCH/, "raw research scores should be gated behind research view");
+
+assert.ok(!appSource.includes("emoji-counter"), "no persistent Emoji counter should clutter the questionnaire");
+assert.ok(!appSource.includes("构念启发"), "participant SJT screens should not expose construct-language chrome");
+assert.ok(!appSource.includes("item.cluster}</div>"), "participant item labels should not append construct codes");
