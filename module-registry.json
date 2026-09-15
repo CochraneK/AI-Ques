@@ -8,9 +8,9 @@
   "modules": [
     {
       "id": "P001",
-      "name": "Self Concept",
-      "status": "external-development",
-      "path": null
+      "name": "Self Concept / Future Self Continuity",
+      "status": "prototype",
+      "path": "p001/"
     },
     {
       "id": "P002",

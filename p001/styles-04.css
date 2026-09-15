@@ -1,0 +1,42 @@
+
+.swipe-card-stack{height:400px;position:relative;display:grid;place-items:center;perspective:1100px;z-index:2}
+.swipe-card{position:absolute;width:min(100%,390px);min-height:330px;border-radius:32px;background:linear-gradient(155deg,#fffdf9,#fff7ed);border:1px solid rgba(108,83,65,.14);box-shadow:0 26px 60px rgba(65,45,30,.15);padding:26px;display:flex;flex-direction:column;justify-content:center;touch-action:none;user-select:none;cursor:grab;will-change:transform,opacity}
+.swipe-card:active{cursor:grabbing}
+.swipe-card::before{content:"";position:absolute;inset:0 auto 0 0;width:8px;background:var(--facet-color,#d5b071);border-radius:32px 0 0 32px}
+.swipe-card .facet-domain{display:inline-flex;align-items:center;gap:8px;width:max-content;padding:7px 10px;border-radius:999px;background:color-mix(in srgb,var(--facet-color) 14%,white);color:#564b43;font-size:12px;font-weight:700}
+.swipe-card h3{font:600 36px/1.15 "Songti SC","STSong","Noto Serif SC",serif;margin:20px 0 12px}
+.swipe-card p{color:var(--muted);font-size:16px;line-height:1.75;margin:0}
+.swipe-stamp{position:absolute;top:24px;padding:9px 14px;border:3px solid currentColor;border-radius:13px;font-weight:900;letter-spacing:.08em;opacity:0;transform:rotate(-8deg);pointer-events:none}
+.swipe-stamp.left{right:20px;color:#c97878;transform:rotate(8deg)}
+.swipe-stamp.right{left:20px;color:#58a67b}
+.swipe-side{display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center;color:#9e8f83;opacity:.78;z-index:1}
+.swipe-side svg{width:30px;height:30px}
+.swipe-side.left b{color:#bb7777}.swipe-side.right b{color:#509774}
+.swipe-footer{display:flex;justify-content:center;align-items:center;gap:18px;max-width:520px;margin:10px auto 0;color:var(--muted)}
+.swipe-footer .tool-btn:disabled{opacity:.35;cursor:not-allowed}
+.value-note{display:inline-flex;align-items:center;gap:8px;background:#fff6df;border:1px solid #ead5a2;border-radius:999px;padding:8px 12px;color:#7d6538;margin:6px 0 10px}
+.value-dot{width:10px;height:10px;border-radius:50%;background:#d8b15c;box-shadow:0 0 0 5px rgba(216,177,92,.12)}
+.value-grid .choice-card{--facet-color:#d8b15c}
+.value-grid .choice-card.on{border-color:#d8b15c;background:#fff7df}
+
+/* Stable overlap interaction: fixed future orb, current orb only moves on x-axis */
+.overlap-stage{position:relative;height:320px;border-radius:32px;overflow:hidden;margin:20px 0;background:radial-gradient(circle at 20% 50%,var(--orb-now-halo),transparent 34%),radial-gradient(circle at 78% 50%,var(--orb-future-halo),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,250,244,.72));border:1px solid var(--line)}
+.overlap-rail{position:absolute;left:9%;right:9%;top:50%;height:8px;transform:translateY(-50%);border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,.35),rgba(160,137,120,.16),rgba(255,255,255,.35))}
+.current-anchor,.future-anchor{position:absolute;top:50%;width:132px;height:132px;transform:translate(-50%,-50%);z-index:3}
+.current-anchor{left:20%;touch-action:none;cursor:grab}.current-anchor.dragging{cursor:grabbing}.future-anchor{left:76%}
+.orb-sphere{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;text-align:center;color:white;font-weight:800;line-height:1.35;text-shadow:0 1px 7px rgba(52,39,30,.18);box-shadow:0 18px 55px rgba(0,0,0,.10),inset 0 0 22px rgba(255,255,255,.38)}
+.orb-sphere::before,.orb-sphere::after{content:"";position:absolute;border-radius:50%;pointer-events:none}.orb-sphere::before{inset:-18px;filter:blur(20px);opacity:.75;animation:breathe 4.6s ease-in-out infinite}.orb-sphere::after{inset:-38px;filter:blur(40px);opacity:.34;animation:breathe 6s ease-in-out infinite}
+.now-sphere{background:radial-gradient(circle at 34% 30%,var(--orb-now-soft),var(--orb-now) 56%,color-mix(in srgb,var(--orb-now) 84%,#fff 16%))}.now-sphere::before,.now-sphere::after{background:var(--orb-now-halo)}
+.future-sphere{background:radial-gradient(circle at 34% 30%,var(--orb-future-soft),var(--orb-future) 56%,color-mix(in srgb,var(--orb-future) 84%,#fff 16%))}.future-sphere::before,.future-sphere::after{background:var(--orb-future-halo)}
+.orb-sphere span{position:relative;z-index:2}.overlap-glow{position:absolute;width:150px;height:150px;border-radius:50%;filter:blur(28px);background:var(--orb-overlap);opacity:.08;transform:translate(-50%,-50%);pointer-events:none;z-index:2}
+.overlap-help{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}.now-key::before,.future-key::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}.now-key::before{background:var(--orb-now)}.future-key::before{background:var(--orb-future)}
+.stj-undo-row{display:flex;justify-content:center;margin-top:12px}.stj-undo-row .tool-btn:disabled{opacity:.35}.pk-card{touch-action:none}.pk-card .choice-meaning{margin-top:auto;padding-top:16px;color:#7d6d62;font-size:12px;font-weight:700}
+@media(max-width:760px){.swipe-zone{grid-template-columns:1fr;min-height:470px}.swipe-side{position:absolute;z-index:1;top:57%;font-size:11px}.swipe-side.left{left:6px}.swipe-side.right{right:6px}.swipe-side svg{width:22px;height:22px}.swipe-card-stack{height:410px}.swipe-card{width:min(82vw,360px);min-height:335px}.current-anchor,.future-anchor{width:108px;height:108px}.future-anchor{left:78%}.current-anchor{left:20%}.overlap-stage{height:280px}.overlap-help{font-size:11px}}
+
+/* Beta 5.1 desktop input: touch devices swipe; fine-pointer desktops use buttons/keys. */
+.desktop-choice-actions,.desktop-key-hint{display:none}
+@media (hover:hover) and (pointer:fine){
+  .desktop-choice-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:620px;margin:4px auto 8px}
+  .desktop-choice{min-height:58px;border:1px solid var(--line);border-radius:18px;background:#fffdf9;color:var(--ink);padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:12px;font-weight:800;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+  .desktop-choice:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(60,42,28,.08)}
+  .desktop-choice.left-choice:hover{border-color:#d79a9a;background:#fff8f7}.desktop-choice.right-choice:hover{border-color:#7fc7a1;background:#f6fffa}

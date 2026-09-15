@@ -6,7 +6,7 @@
 
 | 模块 | 方向 | 当前仓库状态 |
 | --- | --- | --- |
-| P001 | 现在的我 / 未来的我 / 理想的我 | 独立推进，待接入 |
+| P001 | 现在的我 / 理想的我 / 未来的我 | `/p001/` |
 | P002 | PCL-5 × Current CAPE-P15 交互实验 | `/p002/` |
 | P003 | 人生模拟器 | 独立推进，待接入 |
 | P004 | 对话式人物画像 | `/p004/` |
@@ -43,6 +43,7 @@ AI-Ques/
 ├── app.js                   # 总入口 + 公共资料编辑
 ├── styles.css
 ├── module-registry.json
+├── p001/                    # 自我概念 / 理想自我 / 未来自我交互原型
 ├── shared/
 │   └── profile.js           # 唯一公共 profile adapter
 ├── p002/                    # PCL / CAPE 交互实验
@@ -72,6 +73,7 @@ python -m http.server 8000
 访问：
 
 - `http://localhost:8000/`
+- `http://localhost:8000/p001/`
 - `http://localhost:8000/p002/`
 - `http://localhost:8000/p004/`
 - `http://localhost:8000/p005/`
@@ -80,6 +82,8 @@ python -m http.server 8000
 
 ~~~bash
 node --check app.js
+node --check p001/report.js
+node --check p001/static-api.js
 node --check shared/profile.js
 node --check p002/app.js
 node --check p002/experiments.js

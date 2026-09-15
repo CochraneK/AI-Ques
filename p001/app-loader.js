@@ -1,0 +1,1 @@
+new Function(window.__P001_APP_SOURCE||'')(); delete window.__P001_APP_SOURCE;

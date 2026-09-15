@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "module": "P001",
+  "version": "5.2-pages",
+  "status": "prototype_only",
+  "formal_data_collection_authorized": false,
+  "constructs": {
+    "current_self_facets": {
+      "pool": 30,
+      "domains": ["N","E","O","A","C"],
+      "method": "randomized swipe + adaptive paired comparison"
+    },
+    "ideal_self_facets": {
+      "pool": 24,
+      "domains": ["E","O","A","C"],
+      "excludes": ["N"],
+      "method": "randomized swipe + adaptive paired comparison"
+    },
+    "personal_values": {
+      "pool": 16,
+      "method": "swipe + paired comparison",
+      "note": "activity-adapted; UI categories are not validated scale dimensions"
+    },
+    "future_self_distance": {"type":"continuous slider"},
+    "future_self_overlap": {"type":"continuous overlap game"}
+  },
+  "pages_storage": {
+    "mode": "localStorage demo only",
+    "not_for_sensitive_or_formal_research": true
+  },
+  "terminology": ["现在的我","理想的我","未来的我"]
+}

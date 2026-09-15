@@ -16,11 +16,12 @@ const byId = Object.fromEntries(registry.modules.map((m) => [m.id, m]));
 assert.equal(byId.P002.path, "p002/");
 assert.equal(byId.P004.path, "p004/");
 assert.equal(byId.P005.path, "p005/");
-assert.equal(byId.P001.path, null);
+assert.equal(byId.P001.path, "p001/");
 assert.equal(byId.P003.path, null);
 
 for (const file of [
   "shared/profile.js",
+  "p001/index.html", "p001/report.js", "p001/static-api.js", "p001/study-manifest.json", "p001/app-loader.js",
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
   "p004/index.html", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
@@ -34,6 +35,15 @@ assert.match(rootIndex, /href="p002\/"/);
 assert.match(rootIndex, /href="p004\/"/);
 assert.match(rootIndex, /href="p005\/"/);
 assert.doesNotMatch(rootIndex, /SIDE EXPERIMENT\s*·\s*FUTURE ME/i);
+
+const p001Manifest = JSON.parse(read("p001/study-manifest.json"));
+assert.equal(p001Manifest.status, "prototype_only");
+assert.equal(p001Manifest.formal_data_collection_authorized, false);
+assert.equal(p001Manifest.constructs.current_self_facets.pool, 30);
+assert.equal(p001Manifest.constructs.ideal_self_facets.pool, 24);
+assert.deepEqual(p001Manifest.constructs.ideal_self_facets.excludes, ["N"]);
+assert.equal(p001Manifest.constructs.personal_values.pool, 16);
+assert.equal(p001Manifest.pages_storage.not_for_sensitive_or_formal_research, true);
 
 const shared = read("shared/profile.js");
 assert.match(shared, /bjtu\.p00\.profile\.v1/);
