@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.2.0-prototype",
+  "study_version": "0.3.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "manifest_date": "2026-09-15",
@@ -23,10 +23,11 @@
     "cape15": {
       "label": "Current CAPE-P15",
       "items": 15,
-      "response_encoding": "1-4 frequency only",
+      "response_encoding": "0-3 frequency + conditional 0-3 distress",
       "source_status": "construct-based prototype paraphrase; not a validated Chinese version",
-      "distress_layer": "not implemented",
-      "formal_baseline": false
+      "distress_layer": "implemented for core-item modes when frequency >= 1",
+      "formal_baseline": false,
+      "scoring_scheme": "current-cape-p15-original-0-3"
     }
   },
   "modes": {
@@ -88,5 +89,10 @@
     "ethics_review_required_before_formal_research": true,
     "consent_and_withdrawal_flow_required": true,
     "risk_escalation_plan_required_for_screening_use": true
+  },
+  "presentation_rules": {
+    "baseline_construct_codes_visible": false,
+    "source_text_visible_by_default": false,
+    "source_debug_query": "?source=1"
   }
 }
