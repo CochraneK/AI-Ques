@@ -1,149 +1,94 @@
-# AI-Ques
+# BJTU · P00 Lab
 
-AI + 心理健康教育的低成本交互原型仓库。
+这个仓库现在是 **P001–P005 的统一入口与静态研究原型壳**，不再把 P002 当成整个仓库首页，也不再把 P005 叫作 side experiment。
 
-当前版本把同一心理测评做成 **8 种不同完成方式**，重点比较：改编得越有趣，测量形式究竟改变了多少。
+## 模块
 
-> 研究原型，不用于诊断。当前中文直接问卷本身也是原型转述；任何直接呈现、重写、情景化、自动生成或游戏化版本都不能在未经验证时直接继承原量表的效度、阈值或诊断解释。
+| 模块 | 方向 | 当前仓库状态 |
+| --- | --- | --- |
+| P001 | 现在的我 / 未来的我 / 理想的我 | 独立推进，待接入 |
+| P002 | PCL-5 × Current CAPE-P15 交互实验 | `/p002/` |
+| P003 | 人生模拟器 | 独立推进，待接入 |
+| P004 | 对话式人物画像 | `/p004/` |
+| P005 | Future Me / 未来自我 | `/p005/` |
 
-## 当前量表
+线上入口：<https://cochranek.github.io/AI-Ques/>
 
-### 1. PCL-5
+## 统一资料
 
-- PTSD Checklist for DSM-5，20 项。
-- VA National Center for PTSD 官方说明为 public domain / not copyrighted。
-- 过去一个月，0–4 级评分，总分 0–80。
-- 可观察 DSM-5 的 B/C/D/E 症状簇。
-- 本仓库保留公开英文来源题用于核对，中文为原型转述；正式部署应替换成合规、验证过的目标语言版本。
+`shared/profile.js` 是唯一公共 profile adapter。
 
-### 2. Current CAPE-P15
+Canonical key：
 
-- 15 项，聚焦过去 3 个月的 psychotic-like experiences。
-- 三个维度：Persecutory Ideation (PI, 5)、Bizarre Experiences (BE, 7)、Perceptual Abnormalities (PA, 3)。
-- 当前原型按 1–4 编码频率，第一版暂未加入困扰度追问。
-- 本仓库不宣称当前中文为正式验证中文版。
+~~~text
+localStorage["bjtu.p00.profile.v1"]
+~~~
 
-## 八种模式
+公共 profile 只允许跨模块复用低敏感字段：
 
-### 1. 直接问卷（baseline-like control）
+- name
+- age
+- origin
+- location
+- currentWork
+- values
 
-不加故事、不加 Emoji，不额外情景化；直接呈现仓库当前的原型题干。它是交互研究中的 baseline-like control，而不是验证版心理测量金标准。PCL-5 中文和 CAPE-P15 中文在本仓库都仍属于原型转述。
+**禁止**把 P004 的 clinical-like inference、evidence quotes、安全状态等写进公共 profile。P004 的研究侧快照只保存在当前标签页的 `sessionStorage`；P005 的人生故事、对话、照片和时间胶囊保存在自己的模块状态中。
 
-### 2. 逐题情景化（item-level scenario）
+## 目录
 
-每一道当前直接问卷题都对应一个具体生活情景，保持“一题 ↔ 一情景”的映射。
+~~~text
+AI-Ques/
+├── index.html               # P00 总入口
+├── app.js                   # 总入口 + 公共资料编辑
+├── styles.css
+├── module-registry.json
+├── shared/
+│   └── profile.js           # 唯一公共 profile adapter
+├── p002/                    # PCL / CAPE 交互实验
+├── p004/                    # 对话式人物画像
+├── p005/                    # Future Me
+├── future-me/               # 仅兼容旧 URL 的跳转页
+├── docs/
+│   └── ARCHITECTURE.md
+├── scripts/
+│   └── quality_sensor.py
+└── tests/
+~~~
 
-适合研究：同一参与者完成直接问卷条件和情景版后，逐题比较相关、均值偏移、回答分布与测量等价性。
+## 研究与产品边界
 
-### 3. 构念情景化（construct-level SJT）
+- P002 的当前中文题干仍是原型转述，不能把原量表的验证结论自动继承给改写版本。
+- P004 用户端只展示趣味 / 中性人物画像；临床样信号只属于研究侧启发式观察，不是标准化分数或诊断。
+- P005 的 Future Me 是一种可能未来，不是预测、占卜或治疗建议。
+- GitHub Pages 是静态原型，不构成正式的管理员权限或敏感数据治理方案。
 
-不要求情景逐题对应，而是围绕 B/C/D/E 或 PI/BE/PA 构念设计多个独立情境。
+## 本地运行
 
-输出的是构念信号，不是 PCL-5 / CAPE-P15 正式分数。
-
-### 4. AI-SJT（当前为预生成题库）
-
-遵循“构念 → 校园情境 → 梯度行为选项”的自动题目生成思路。
-
-当前 GitHub Pages 版不调用在线 LLM，而是使用预生成并冻结的 AI-style SJT 题库，以保持零后端和可复现实验。后续接 LLM 时应加入：专家审核、去偏差、版本冻结、难度控制、重复题检测和心理测量验证。
-
-### 5. PsychoGAT-lite
-
-参考 Yang et al. (ACL 2024) 的 PsychoGAT（Psychological Game AgenTs）范式：
-
-1. 标准量表提供心理构念和节点；
-2. Game Designer 组织故事结构；
-3. Game Controller 把当前节点实例化为互动剧情；
-4. Critic 检查连贯性、选择偏差和遗漏；
-5. Memory 保持长故事连续性；
-6. psychometric evaluator 在后台根据选择计分。
-
-当前仓库先实现 **10 回合、预生成内容的 PsychoGAT-lite**：玩家看不到原题，选择会进入故事记忆并影响连续体验，但结果只显示实验性构念信号。
-
-这不是 PsychoGAT 作者官方代码的复现，也不宣称达到论文报告的心理测量性能。
-
-### 6. VASSIP 式
-
-当前直接问卷题干和反应格式保持不变，在外面增加 storyfication、immersion 和不计分小游戏。
-
-### 7. Emoji Game 式
-
-当前直接问卷题干和评分逻辑不变，只加入寻找 Emoji 的轻任务；Emoji 收集与心理得分完全分离。
-
-### 8. HEXACO-RUSH 式
-
-用连续情景决策推进故事，形成维度信号。它代表更深层的 game-based / SJT 路线，需要重新验证。
-
-## 现在最值得比较的四个情景化层次
-
-```text
-直接问卷（baseline-like）
-  ↓
-逐题情景化        保留 item-level 对应
-  ↓
-构念情景化        只保留 construct-level 对应
-  ↓
-AI-SJT            自动生成大量候选情景
-  ↓
-PsychoGAT         把量表节点串成连续互动小说
-```
-
-越往下体验自由度越高，但越不能直接继承原量表的信效度。
-
-## 运行
-
-纯静态原型：
-
-```bash
+~~~bash
 python -m http.server 8000
-```
+~~~
 
-打开 `http://localhost:8000`。
+访问：
 
-线上 Demo：<https://cochranek.github.io/AI-Ques/>
+- `http://localhost:8000/`
+- `http://localhost:8000/p002/`
+- `http://localhost:8000/p004/`
+- `http://localhost:8000/p005/`
 
-## 研究版本清单
+## 质量检查
 
-当前研究/原型边界由 `study-manifest.json` 明确记录，包括：
-
-- 当前量表题数、编码与语言版本状态；
-- 8 种模式的研究角色和 Phase 1 / Phase 2 定位；
-- `formal_data_collection_authorized: false`；
-- 正式收数前必须冻结的版本字段与治理条件。
-
-修改题干、评分逻辑、模式角色或正式研究协议时，应同步更新 manifest。当前 manifest 明确标记为 **prototype_only**，不能被解释为已批准的正式研究版本。
-
-## 本地质量检查
-
-在提交研究逻辑或模式修改前运行：
-
-```bash
+~~~bash
 node --check app.js
-node --check experiments.js
+node --check shared/profile.js
+node --check p002/app.js
+node --check p002/experiments.js
+node --check p004/app.js
+node --check p004/api-client.js
+node --check p005/app.js
 node tests/smoke.mjs
+node tests/structure.mjs
 python scripts/quality_sensor.py --strict
-python scripts/next_quality_target.py
-```
+~~~
 
-`tests/smoke.mjs` 会加载真实的 `app.js + experiments.js`，验证 2 个量表、8 种模式、manifest/registry 一致性，以及每个 scale × mode 的开始与结束路径至少能执行而不崩溃。
-
-## 推荐验证路线
-
-1. **体验层**：完成率、耗时、漏答、主观负担、趣味性、沉浸感。
-2. **逐题层**：直接问卷条件 vs 逐题情景版，检查 item-level 相关和系统偏差。
-3. **构念层**：直接问卷条件 vs SJT / AI-SJT，检查内部一致性、收敛/区分效度、重测信度、因子结构。
-4. **连续游戏层**：PsychoGAT / RUSH 需要单独建立计分模型，并预注册构念映射和验证方案。
-
-## Sources
-
-- PCL-5 official page, VA National Center for PTSD: https://www.ptsd.va.gov/professional/assessment/adult-sr/ptsd-checklist.asp
-- PCL-5 standard form: https://www.ptsd.va.gov/professional/assessment/documents/pcl5_standard_form.pdf
-- Capra et al., *Current CAPE-15: a measure of recent psychotic-like experiences and associated distress*: https://doi.org/10.1111/eip.12245
-- Ramos-Villagrasa et al. (2024), VASSIP: https://doi.org/10.1371/journal.pone.0302429
-- Kleiman et al. (2025), Emoji Game: https://doi.org/10.1037/pas0001371
-- Nikolaou & Katsadoraki (2025), HEXACO-RUSH: https://doi.org/10.1016/j.chb.2024.108467
-- Yang et al. (2024), *PsychoGAT: A Novel Psychological Measurement Paradigm through Interactive Fiction Games with LLM Agents*: https://doi.org/10.18653/v1/2024.acl-long.779
-
-## Safety / research boundary
-
-本项目是研究与体验设计原型，不是医疗器械，不提供诊断或治疗建议。正式用于学生筛查前，需要完成伦理审批、知情同意、数据治理、目标语言版本授权/验证、风险处置与人工转介流程。
+正式数据收集前仍需伦理审批、知情同意、目标语言验证/授权、版本冻结、风险处置和后端数据治理。

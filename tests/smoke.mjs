@@ -39,8 +39,8 @@ const context = vm.createContext({
   clearTimeout,
 });
 
-for (const file of ["app.js", "experiments.js"]) {
-  const source = fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+for (const file of ["../p002/app.js", "../p002/experiments.js"]) {
+  const source = fs.readFileSync(new URL(file, import.meta.url), "utf8");
   vm.runInContext(source, context, { filename: file });
 }
 
@@ -51,7 +51,7 @@ function evaluate(expression) {
 assert.deepEqual(
   Array.from(evaluate("Object.keys(SCALES)")),
   ["pcl5", "cape15"],
-  "expected the two declared scale prototypes"
+  "P002 should expose exactly the two declared scale prototypes"
 );
 assert.equal(evaluate("SCALES.pcl5.items.length"), 20, "PCL-5 prototype should expose 20 items");
 assert.equal(evaluate("SCALES.cape15.items.length"), 15, "CAPE-P15 prototype should expose 15 items");
@@ -63,10 +63,11 @@ const expectedModes = [
   "original", "vassip", "emoji", "rush",
   "itemscene", "construct", "aisjt", "psychogat"
 ];
+
 assert.deepEqual(
   Array.from(evaluate("Object.keys(MODES)")).sort(),
   [...expectedModes].sort(),
-  "runtime mode registry should expose exactly the documented eight modes"
+  "P002 runtime registry should expose exactly the documented eight modes"
 );
 
 for (const mode of ["itemscene", "construct", "aisjt", "psychogat"]) {
@@ -77,11 +78,13 @@ for (const mode of ["itemscene", "construct", "aisjt", "psychogat"]) {
   );
 }
 
-const manifest = JSON.parse(fs.readFileSync(new URL("../study-manifest.json", import.meta.url), "utf8"));
+const manifest = JSON.parse(
+  fs.readFileSync(new URL("../p002/study-manifest.json", import.meta.url), "utf8")
+);
 assert.deepEqual(
   Object.keys(manifest.modes).sort(),
   [...expectedModes].sort(),
-  "study manifest mode list should match the runtime mode registry"
+  "P002 study manifest mode list should match the runtime mode registry"
 );
 assert.equal(manifest.formal_data_collection_authorized, false);
 assert.equal(manifest.status, "prototype_only");
@@ -120,6 +123,6 @@ const smokeResult = evaluate(`
 })()
 `);
 
-assert.deepEqual(Array.from(smokeResult), [], "all scale × mode start/end smoke paths should execute");
+assert.deepEqual(Array.from(smokeResult), [], "all P002 scale × mode start/end smoke paths should execute");
 
-console.log("AI-Ques smoke tests passed: 2 scales × 8 modes, registry + manifest + start/end paths.");
+console.log("P002 smoke tests passed: 2 scales × 8 modes, registry + manifest + start/end paths.");

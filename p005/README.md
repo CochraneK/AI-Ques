@@ -38,7 +38,7 @@ python -m http.server 8000
 然后打开：
 
 ~~~text
-http://localhost:8000/future-me/
+http://localhost:8000/p005/
 ~~~
 
 ## 前端配置
@@ -156,12 +156,13 @@ P005 在关键事件后可发送：
 
 ## P001–P005 共享资料
 
-P005 会尝试读取以下共享入口：
+P005 通过仓库统一的 `shared/profile.js` 读取公共资料：
 
-- window.P00_CONTEXT
-- localStorage:bjtu_p00_profile_v1
-- localStorage:bjtu_profile_v1
-- localStorage:aiques_shared_profile_v1
+- `window.BJTU_PROFILE`
+- canonical storage: `localStorage["bjtu.p00.profile.v1"]`
+- `window.P00_CONTEXT.profile` 仅作为兼容入口
+
+旧版 key 只由 shared adapter 做安全迁移，P005 自身不再维护多套全局 profile key。
 
 当前只自动复用适合用户体验的非诊断性资料，例如称呼、年龄、城市、当前角色与价值取向。P004 的管理员侧诊断 / 风险推断不应直接展示为 Future Me 对用户的“事实”。
 
@@ -205,7 +206,7 @@ P005 的目标是提升 future-self continuity、自我反思与长期思考，�
 ~~~bash
 node --check app.js
 node --check experiments.js
-node --check future-me/app.js
+node --check p005/app.js
 node tests/smoke.mjs
 python scripts/quality_sensor.py --strict
 python scripts/next_quality_target.py

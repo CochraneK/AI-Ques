@@ -1,6 +1,5 @@
-const STORAGE_KEY = 'bjtu_p005_future_me_v2';
-const LEGACY_KEY = 'aiques_future_me_v1';
-const SHARED_KEYS = ['bjtu_p00_profile_v1', 'bjtu_profile_v1', 'aiques_shared_profile_v1'];
+const STORAGE_KEY = 'bjtu.p005.state.v1';
+const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
 const MODULE_VERSION = '0.1.0';
 
@@ -91,22 +90,10 @@ function showToast(message) {
 }
 
 function sharedProfile() {
-  const merged = {};
-  SHARED_KEYS.forEach(function (key) {
-    const value = parseJson(localStorage.getItem(key) || '');
-    if (!value || typeof value !== 'object') return;
-    const candidate = value.profile && typeof value.profile === 'object' ? value.profile : value;
-    Object.keys(candidate).forEach(function (k) {
-      if (candidate[k] !== undefined && candidate[k] !== null && candidate[k] !== '') merged[k] = candidate[k];
-    });
-  });
-  if (window.P00_CONTEXT && typeof window.P00_CONTEXT === 'object') {
-    const candidate = window.P00_CONTEXT.profile || window.P00_CONTEXT;
-    Object.keys(candidate).forEach(function (k) {
-      if (candidate[k] !== undefined && candidate[k] !== null && candidate[k] !== '') merged[k] = candidate[k];
-    });
+  if (window.BJTU_PROFILE && typeof window.BJTU_PROFILE.getFlat === 'function') {
+    return window.BJTU_PROFILE.getFlat();
   }
-  return merged;
+  return (window.P00_CONTEXT && window.P00_CONTEXT.profile) || {};
 }
 
 function mapSharedIntoProfile(shared) {
@@ -130,18 +117,15 @@ function mapSharedIntoProfile(shared) {
 }
 
 function writeSharedProfile() {
-  const current = parseJson(localStorage.getItem('aiques_shared_profile_v1') || '') || {};
-  const next = Object.assign({}, current, {
-    name: state.profile.name || current.name || '',
-    age: state.profile.age || current.age || '',
-    origin: state.profile.origin || current.origin || '',
-    location: state.profile.location || current.location || '',
-    currentWork: state.profile.currentWork || current.currentWork || '',
-    values: state.profile.values || current.values || '',
-    updatedBy: MODULE_ID,
-    updatedAt: new Date().toISOString()
-  });
-  try { localStorage.setItem('aiques_shared_profile_v1', JSON.stringify(next)); } catch (e) {}
+  if (!window.BJTU_PROFILE || typeof window.BJTU_PROFILE.update !== 'function') return;
+  window.BJTU_PROFILE.update({
+    name: state.profile.name || '',
+    age: state.profile.age || '',
+    origin: state.profile.origin || '',
+    location: state.profile.location || '',
+    currentWork: state.profile.currentWork || '',
+    values: state.profile.values || ''
+  }, MODULE_ID);
 }
 
 function snapshot(includeMedia) {
@@ -221,11 +205,30 @@ function save() {
 
 function migrateLegacy() {
   if (localStorage.getItem(STORAGE_KEY)) return;
-  const legacy = parseJson(localStorage.getItem(LEGACY_KEY) || '');
-  if (!legacy) return;
-  state.profile = legacy.profile || {};
-  state.memory = legacy.memory || null;
-  state.messages = legacy.messages || [];
+  for (const key of LEGACY_KEYS) {
+    const legacy = parseJson(localStorage.getItem(key) || '');
+    if (!legacy) continue;
+    state.profile = legacy.profile || {};
+    state.memory = legacy.memory || null;
+    state.messages = legacy.messages || [];
+    state.currentPortrait = legacy.currentPortrait || '';
+    state.futurePortrait = legacy.futurePortrait || '';
+    state.capsules = legacy.capsules || [];
+    state.settings = Object.assign({}, state.settings, legacy.settings || {});
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        profile: state.profile,
+        memory: state.memory,
+        messages: state.messages,
+        currentPortrait: state.currentPortrait,
+        futurePortrait: state.futurePortrait,
+        capsules: state.capsules,
+        settings: state.settings,
+        screen: legacy.screen || 'welcome'
+      }));
+    } catch (e) {}
+    break;
+  }
 }
 
 function fillForms() {
@@ -335,7 +338,7 @@ $('#resumeBtn').addEventListener('click', function () {
 $('#resetBtn').addEventListener('click', function () {
   if (!confirm('清空本地的 P005 回答、照片、对话和时间胶囊，重新开始？')) return;
   localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(LEGACY_KEY);
+  LEGACY_KEYS.forEach(function (key) { localStorage.removeItem(key); });
   location.reload();
 });
 
