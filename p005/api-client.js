@@ -43,8 +43,10 @@
   }
 
   function isConfigured(){
-    const s=readDirect();
-    return Boolean(s.baseUrl&&s.apiKey&&s.chatModel);
+    return Object.values(capabilities()).some(Boolean);
+  }
+  function isChatConfigured(){
+    return capabilities().chat;
   }
 
   function endpoint(path,baseOverride){
@@ -192,6 +194,7 @@
 
   window.P005_API=Object.freeze({
     get configured(){return isConfigured()},
+    get chatConfigured(){return isChatConfigured()},
     capabilities,
     readDirect,
     saveDirect,
