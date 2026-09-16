@@ -307,7 +307,7 @@ function snapshot(includeMedia=false){
     version:MODULE_VERSION,
     profile:state.profile,
     structuredAnswers:state.structuredAnswers,
-    personaBrief:buildPersonaBrief(),
+    personaBrief:buildPersonaBrief(false),
     syntheticMemory:state.memory,
     messages:state.messages,
     capsules:state.capsules,
@@ -690,9 +690,9 @@ function p004SafeContext(){
     continuityMemories:raw.continuityMemories
   };
 }
-function buildPersonaBrief(){
+function buildPersonaBrief(includeExternalContext=true){
   const p=state.profile;
-  return {
+  const brief={
     identity:{name:p.name||'',age:p.age||'',gender:p.gender||'',pronouns:p.pronouns||'',location:p.location||'',currentWork:p.currentWork||''},
     continuity:{
       importantPeople:p.people||'',proudPoint:p.proud||'',lowPoint:p.lowPoint||'',turningPoint:p.turningPoint||'',
@@ -701,10 +701,13 @@ function buildPersonaBrief(){
     futurePreferences:{
       career:p.career||'',finance:p.finance||'',family:p.family||'',personalLife:p.personalLife||'',
       futureLocation:p.futureLocation||'',dailyLife:p.dailyLife||''
-    },
-    p004SafeContext:p004SafeContext(),
-    optionalCollectionContext:safeExternalPersona()
+    }
   };
+  if(includeExternalContext){
+    brief.p004SafeContext=p004SafeContext();
+    brief.optionalCollectionContext=safeExternalPersona();
+  }
+  return brief;
 }
 
 function buildMemory(){
@@ -785,8 +788,7 @@ async function requestFuturePortrait(){
     image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:targetAge(),
     instruction:'Preserve identity. Create a respectful photorealistic portrait at the configured future age. Apply only natural age progression appropriate to the age difference; do not alter race, gender presentation, or core facial identity.'
   };
-  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
-  if(directCaps.image){
+  if(apiCapabilities().image){
     try{
       const result=await window.P005_API.image(payload);
       if(result&&result.imageUrl){
@@ -865,7 +867,7 @@ function renderReady(){
   $('#chatName').textContent=clean(state.profile.name,'Future Me')+' · '+targetPhrase();
   $('#futureIntro').textContent=state.memory.futureVignette||'一个由你现在的故事延伸出来的可能版本。';
   renderFuturePortrait();
-  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  const caps=apiCapabilities();
   $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(caps.image||apiConfig('imageApi'))));
 
   const memories=Array.isArray(state.memory.memories)&&state.memory.memories.length
@@ -881,7 +883,7 @@ function renderReady(){
 
 $('#agePortraitBtn').addEventListener('click',async()=>{
   if(!state.currentPortrait){showToast('先加入一张现在的照片');show('portrait');return}
-  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  const caps=apiCapabilities();
   if(!(caps.image||apiConfig('imageApi'))){showToast('尚未配置可用的图像编辑模型');return}
   const button=$('#agePortraitBtn'),old=button.textContent;
   button.disabled=true;button.textContent='生成中…';
