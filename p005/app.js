@@ -930,7 +930,7 @@ function renderPersonalizedPrompts(){
     p.people?'你和'+firstClause(p.people)+'后来怎么样？':'后来哪些关系一直留在身边？',
     p.turningPoint?'回头看，“'+firstClause(p.turningPoint)+'”真的改变了人生吗？':'最大的意外是什么？'
   ];
-  $$('#promptChips button').forEach((button,i)=>{if(prompts[i])button.textContent=prompts[i]});
+  $$$('#promptChips button').forEach((button,i)=>{if(prompts[i])button.textContent=prompts[i]});
 }
 function startChat(){ensureGreeting();renderPersonalizedPrompts();renderMessages();updateVoiceUI();updateChatModeNote()}
 
