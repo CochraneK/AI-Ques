@@ -116,6 +116,13 @@ assert.match(read("p004/NVWA_CONTRACT.md"), /fdb181f0e057e837e15942707b1ea358458
 const p004Styles = read("p004/styles.css");
 assert.match(p004Styles, /100dvh/);
 assert.match(p004Styles, /creator-modal[^}]*overflow:hidden/);
+const workflowText = read(".github/workflows/quality-gate.yml") + "\n" + read(".github/workflows/pages.yml");
+assert.doesNotMatch(workflowText, /uses:\s*[^\s#]+@v\d+/);
+assert.match(workflowText, /actions\/checkout@d23441a48e516b6c34aea4fa41551a30e30af803/);
+assert.match(workflowText, /actions\/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b/);
+assert.match(workflowText, /actions\/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b/);
+assert.match(workflowText, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
+
 
 const p005 = read("p005/app.js");
 assert.match(p005, /bjtu\.p005\.state\.v1/);
