@@ -24,8 +24,9 @@ jobs:
           node --check p001/app.js
           node --check p001/report.js
           node --check p001/static-api.js
+          node --check p002/condition-config.js
           node --check p002/app.js
-          node --check p002/experiments.js
+          node --check p002/admin.js
           node --check p004/core.js
           node --check p004/app.js
           node --check p004/api-client.js
