@@ -88,7 +88,7 @@ window.P004_CONFIG = {
 };
 ```
 
-所有 API key 都应只保存在后端。
+正式部署的服务端密钥应只保存在后端。P004 另外提供明确的用户自带密钥（BYOK）例外：用户主动填写的 OpenAI-compatible Key 只保存在当前标签页 sessionStorage，并由浏览器直接调用用户指定的服务。
 
 ## Design references
 
