@@ -34,7 +34,9 @@ P002 已接入共享研究 runtime：
 - 管理员页可查看本浏览器 P002 会话，并导出 JSON / CSV
 - `shared/config.js` 中 `apiBase` 为空时只保存在本地；配置后按 `POST /v1/events` 尝试发送 pending events
 
-因此当前版本已经具备**可追溯的本地研究事件流与同步队列**，但仍不把 GitHub Pages/localStorage 冒充正式研究后台。正式跨设备收数仍需服务端、管理员鉴权、数据保留/删除策略与伦理流程。
+因此当前版本已经具备**可追溯的本地研究事件流与同步队列**。参与者与管理员都可以清除当前浏览器中的 P002 sessions/events/pending sync；共享 participant_id 与其他模块数据不会被 P002 清除。管理员页还可以设置非秘密 `apiBase` 以连接未来后端。
+
+但仓库仍不把 GitHub Pages/localStorage 冒充正式研究后台。正式跨设备收数仍需服务端、管理员鉴权、数据保留/删除策略与伦理流程；接口要求见 `p002/BACKEND_CONTRACT.md`。
 
 ## 量表边界
 
@@ -86,5 +88,7 @@ P002 已接入共享研究 runtime：
 
 - `status = prototype_only`
 - `formal_data_collection_authorized = false`
-- 正式收数前需要冻结目标语言题干、来源/权限、响应编码、条件逻辑、session schema、伦理/同意/退出流程和数据治理
-- 当前证据与版本边界详见 `p002/RESEARCH_NOTES.md`
+- 管理员页会从 `study-manifest.json` 读取 machine-readable formal collection gate，并明确显示 `BLOCKED`
+- 当前代码已完成：条件控制、participant/session/event 数据契约、本地导出、pending sync、API Base 配置、P002-scoped local deletion、回归测试
+- 仍需外部/生产事项：正式中文量表资产与权限、伦理/同意/退出、scenario 条件效度、生产后端与 RBAC、retention/deletion policy
+- 当前证据与版本边界详见 `p002/RESEARCH_NOTES.md`，后端契约详见 `p002/BACKEND_CONTRACT.md`
