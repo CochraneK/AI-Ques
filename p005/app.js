@@ -890,6 +890,12 @@ async function generateMemory(){
     target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
     instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return ONLY valid JSON with summary, futureVignette, memories (3 strings), and timeline. Ground it in the user profile and P004 safe context when available. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
   };
+  if(researchSessionReady()){
+    try{
+      const result=await window.P005_RESEARCH.memory(payload);
+      if(result&&result.summary&&Array.isArray(result.memories))return result;
+    }catch(error){console.warn('P005 research memory unavailable; trying other fallbacks',error)}
+  }
   if(apiCapabilities().chat){
     try{
       const r=await window.P005_API.chat(Object.assign({},payload,{
@@ -919,6 +925,16 @@ async function requestFuturePortrait(){
     image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:targetAge(),
     instruction:'Preserve identity. Create a respectful photorealistic portrait at the configured future age. Apply only natural age progression appropriate to the age difference; do not alter race, gender presentation, or core facial identity.'
   };
+  if(researchSessionReady()){
+    try{
+      const result=await window.P005_RESEARCH.image(payload);
+      if(result&&result.imageUrl){
+        state.futurePortrait=result.imageUrl;save();
+        emitSessionEvent('future_portrait_generated',{source:'research-api'});syncAdmin('future_portrait_generated',{source:'research-api'});
+        return true;
+      }
+    }catch(error){console.warn('P005 research image unavailable; trying other fallbacks',error)}
+  }
   if(apiCapabilities().image){
     try{
       const result=await window.P005_API.image(payload);
@@ -999,7 +1015,7 @@ function renderReady(){
   $('#futureIntro').textContent=state.memory.futureVignette||'一个由你现在的故事延伸出来的可能版本。';
   renderFuturePortrait();
   const caps=apiCapabilities();
-  $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(caps.image||apiConfig('imageApi'))));
+  $('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&state.consent.media&&(researchSessionReady()||caps.image||apiConfig('imageApi'))));
 
   const memories=Array.isArray(state.memory.memories)&&state.memory.memories.length
     ? state.memory.memories.slice(0,3)
@@ -1134,6 +1150,12 @@ async function getFutureReply(input){
         target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
     instruction:'Act as one plausible future self at the configured target horizon. Ground every response in the supplied personaBrief, life story, structured answers, future memory, and P004 safe context when available. When relevant, naturally reference one or two concrete user-specific details rather than giving generic advice. Never expose P004 clinical/admin inference. Do not mechanically repeat profile fields. Speak autobiographically using continuity cues when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
   };
+  if(researchSessionReady()){
+    try{
+      const result=await window.P005_RESEARCH.chat(payload);
+      if(result&&result.reply)return String(result.reply);
+    }catch(error){console.warn('P005 research chat unavailable; trying other fallbacks',error)}
+  }
   if(apiCapabilities().chat){
     try{
       const result=await window.P005_API.chat(payload);
@@ -1189,6 +1211,16 @@ async function speakText(text){
     language:'zh-CN',
     profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
   };
+  if(researchSessionReady()){
+    try{
+      const result=await window.P005_RESEARCH.speak(voicePayload);
+      if(result&&result.audioUrl){
+        const audio=new Audio(result.audioUrl);
+        if(result.revoke)audio.addEventListener('ended',()=>URL.revokeObjectURL(result.audioUrl),{once:true});
+        await audio.play();return;
+      }
+    }catch(error){console.warn('P005 research TTS unavailable; trying other fallbacks',error)}
+  }
   if(apiCapabilities().tts){
     try{
       const result=await window.P005_API.speak(voicePayload);
@@ -1262,6 +1294,12 @@ function ensureRecognition(){
   return recognition;
 }
 async function transcribeRecordedAudio(blob){
+  if(researchSessionReady()){
+    try{
+      const result=await window.P005_RESEARCH.transcribe(blob);
+      if(result&&result.text)return String(result.text).trim();
+    }catch(error){console.warn('P005 research STT unavailable; trying other fallbacks',error)}
+  }
   if(apiCapabilities().stt){
     try{
       const result=await window.P005_API.transcribe(blob);
@@ -1315,9 +1353,9 @@ $('#micBtn').addEventListener('click',async()=>{
 function updateChatModeNote(){
   const caps=apiCapabilities();
   const bits=[targetPhrase()];
-  bits.push(caps.chat?'BYOK':apiConfig('chatApi')?'LLM':'本地原型');
-  if(caps.stt||apiConfig('transcribeApi'))bits.push('语音转文字');
-  if(state.settings.voiceMode)bits.push((caps.tts||apiConfig('voiceApi'))?'真人感 TTS':'浏览器朗读');
+  bits.push(researchSessionReady()?'研究服务器':caps.chat?'BYOK':apiConfig('chatApi')?'LLM':'本地原型');
+  if(researchSessionReady()||caps.stt||apiConfig('transcribeApi'))bits.push('语音转文字');
+  if(state.settings.voiceMode)bits.push((researchSessionReady()||caps.tts||apiConfig('voiceApi'))?'真人感 TTS':'浏览器朗读');
   $('#chatModeNote').textContent=bits.join(' · ');
 }
 
