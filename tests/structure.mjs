@@ -21,7 +21,9 @@ assert.equal(byId.P002.path, "p002/");
 assert.equal(byId.P002.admin_path, "p002/admin.html");
 assert.equal(byId.P002.default_presentation, "story");
 assert.equal(byId.P002.participant_condition_picker, false);
-assert.equal(byId.P002.study_version, "0.11.0-prototype");
+assert.equal(byId.P002.study_version, "0.12.0-prototype");
+assert.equal(byId.P002.formal_collection_ready, false);
+assert.equal(byId.P002.backend_contract, "p002/BACKEND_CONTRACT.md");
 assert.equal(byId.P002.formal_data_collection_authorized, false);
 assert.equal(byId.P004.path, "p004/");
 assert.equal(byId.P005.path, "p005/");
@@ -31,7 +33,7 @@ assert.equal(byId.P003.path, null);
 for (const file of [
   "shared/profile.js", "shared/config.js", "shared/core.js",
   "p001/index.html", "p001/report.js", "p001/static-api.js", "p001/study-manifest.json", "p001/app-loader.js",
-  "p002/index.html", "p002/app.js", "p002/condition-config.js", "p002/admin.html", "p002/admin.js", "p002/admin.css", "p002/study-manifest.json", "p002/RESEARCH_NOTES.md",
+  "p002/index.html", "p002/app.js", "p002/condition-config.js", "p002/admin.html", "p002/admin.js", "p002/admin.css", "p002/study-manifest.json", "p002/RESEARCH_NOTES.md", "p002/BACKEND_CONTRACT.md",
   "p004/index.html", "p004/core.js", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/api-client.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
   "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs", "tests/p005-runtime.mjs"
@@ -50,13 +52,22 @@ assert.match(p002ResearchCore, /createSession/);
 assert.match(p002ResearchCore, /appendEvent/);
 
 const p002Manifest = JSON.parse(read("p002/study-manifest.json"));
-assert.equal(p002Manifest.study_version, "0.11.0-prototype");
+assert.equal(p002Manifest.study_version, "0.12.0-prototype");
+assert.equal(p002Manifest.formal_collection_gate.ready, false);
+assert.equal(p002Manifest.data_contract.local_clear.preserves_shared_participant_id, true);
 assert.equal(p002Manifest.scales.cape15.response_encoding, "1-4 frequency + conditional 1-4 distress");
 assert.equal(p002Manifest.scales.cape15.scoring_scheme, "published-response-codes-1-4");
 assert.equal(p002Manifest.scales.cape15.chinese_evidence.doi, "10.1016/j.schres.2020.06.003");
 assert.equal(p002Manifest.scales.pcl5.chinese_evidence.doi, "10.1080/26408066.2019.1676858");
 assert.equal(p002Manifest.instrument_assets.formal_target_language_wording_frozen, false);
 assert.match(read("p002/RESEARCH_NOTES.md"), /1 = never.*4 = nearly always/s);
+assert.match(read("p002/BACKEND_CONTRACT.md"), /POST \/v1\/events/);
+assert.match(read("p002/BACKEND_CONTRACT.md"), /GET \/v1\/admin\/events/);
+assert.match(read("p002/index.html"), /clearLocalBtn/);
+assert.match(read("p002/admin.html"), /apiBaseInput/);
+assert.match(read("p002/admin.html"), /readinessList/);
+assert.match(read("shared/core.js"), /clearProjectData/);
+assert.doesNotMatch(read("docs/ARCHITECTURE.md"), /P002 currently does not persist assessment answers/);
 assert.equal(p002Manifest.data_contract.sync.endpoint, "POST /v1/events");
 assert.equal(p002Manifest.data_contract.sync.cross_device_sync_available, false);
 assert.deepEqual(p002Manifest.data_contract.admin_export, ["JSON", "CSV"]);
