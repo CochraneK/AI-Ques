@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="P005 Future Me：基于人生故事、未来记忆与未来自我对话的研究原型。" />
   <title>P005 · Future Me</title>
-  <link rel="stylesheet" href="styles.css?v=20260917-v07" />
+  <link rel="stylesheet" href="styles.css?v=20260917-prod1" />
 </head>
 <body>
   <header class="topbar">
@@ -34,7 +34,7 @@
         <h1>和未来的自己，<br>聊一次。</h1>
         <p class="lead">不是预测。我们会用你写下的人生故事与未来目标，构造一个<strong id="welcomeTarget">4 年后的可能版本</strong>，让你和它对话。</p>
         <div class="welcome-actions">
-          <button class="primary" data-next="survey">开始</button>
+          <button class="primary" data-next="consent">开始</button>
           <button class="text-button" id="resumeBtn" type="button">继续上次</button>
         </div>
         <p class="storage-note">此静态原型会把回答、对话和照片保存在当前浏览器，关闭页面后仍会保留。共用设备上请在结束后点“清除”。</p>
@@ -48,6 +48,42 @@
         <div class="pair-face pair-now"><span>NOW</span></div>
         <div class="pair-line"></div>
         <div class="pair-face pair-future"><span id="pairFuture">4 年后</span></div>
+      </div>
+    </section>
+
+    <section class="screen consent-screen" id="screen-consent">
+      <div class="consent-shell">
+        <p class="kicker">BEFORE YOU BEGIN</p>
+        <h2>开始前，确认三件事。</h2>
+        <p class="section-copy">Future Me 是一个可能的未来版本，不是预测。正式研究模式会保存你的回答和对话；照片与语音分别单独授权。</p>
+
+        <div class="consent-list">
+          <label>
+            <input id="consentFuture" type="checkbox">
+            <span><b>我知道这不是对未来的预测。</b><small>系统会生成一个可对话的可能版本，而不是告诉我“未来一定会怎样”。</small></span>
+          </label>
+          <label>
+            <input id="consentResearch" type="checkbox">
+            <span><b>我同意本次回答和对话用于本研究。</b><small>研究记录包含题目回答、Future Memory、对话、时间点与交互事件。</small></span>
+          </label>
+          <label>
+            <input id="consentPrivacy" type="checkbox">
+            <span><b>我已了解数据会被保存，并可要求删除。</b><small>正式模式使用匿名 participant / session 标识；研究管理员才能访问完整记录。</small></span>
+          </label>
+        </div>
+
+        <div class="consent-optional">
+          <p>可选</p>
+          <label><input id="consentMedia" type="checkbox"><span>允许上传照片并生成未来头像</span></label>
+          <label><input id="consentVoice" type="checkbox"><span>允许使用麦克风、语音转文字和语音回复</span></label>
+          <label class="hidden" id="consentP004Wrap"><input id="consentP004" type="checkbox"><span>允许参考我在 P004 里自己说过的话和长期记忆</span></label>
+        </div>
+
+        <div class="consent-actions">
+          <button class="text-button" data-prev="welcome" type="button">返回</button>
+          <button class="primary" id="acceptConsentBtn" type="button">同意并继续</button>
+        </div>
+        <p class="consent-status" id="consentStatus"></p>
       </div>
     </section>
 
@@ -310,8 +346,9 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script src="../shared/profile.js?v=1"></script>
-  <script src="runtime-config.js?v=1"></script>
+  <script src="runtime-config.js?v=2"></script>
+  <script src="research-api.js?v=1"></script>
   <script src="api-client.js?v=3"></script>
-  <script src="app.js?v=20260917-v07"></script>
+  <script src="app.js?v=20260917-prod1"></script>
 </body>
 </html>
