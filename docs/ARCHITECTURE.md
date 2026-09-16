@@ -10,7 +10,7 @@ AI-Ques is the static P00 hub for multiple psychology-informed interaction proto
 - **P004** owns Character Cards, NPC conversation, optional NVWA Skill artifacts, relationship memory and private research-side longitudinal inference.
 - **P005** owns future-self narrative, media hooks, conversation and time capsules.
 
-Modules should not silently read another module's private storage. P004 and P005 are the only explicit bilateral interoperability pair: P004 may use user-authored P005 responses/conversation as research evidence, and P005 may use user-authored P004 conversation/memory as non-clinical continuity context. P004 private clinical/admin inference must never be exposed to P005 as user-visible facts. Production must move this aggregation behind consent-aware authenticated APIs.
+Modules must not silently read another module's private storage. P004 and P005 are the only explicit bilateral interoperability pair, and **both directions require user opt-in**: P004 may use user-authored P005 responses/conversation as research evidence, while P005 may use user-authored P004 conversation/memory as non-clinical continuity context. P004 private clinical/admin inference must never be exposed to P005 as user-visible facts. Production must move this aggregation behind consent-aware authenticated APIs.
 
 ## 3. Public shared profile
 
@@ -21,6 +21,8 @@ Only `shared/profile.js` may define the canonical cross-module profile key:
 Allowed cross-module fields are intentionally narrow: name, age, origin, location, currentWork, values.
 
 The adapter can migrate safe fields from older keys, but clinical inference, evidence quotes, raw conversations and media are never imported into the shared profile.
+
+**P004 and P005 no longer consume this shared-profile adapter at runtime.** It remains available to the P00 shell and earlier modules, but the two future standalone products collect their own required intake.
 
 ## 4. Private module data
 
@@ -66,10 +68,11 @@ Architectural consequences:
 
 - P004 must not require P001, P002 or P003 to function.
 - P005 must not require P001, P002 or P003 to function.
-- Current monorepo reuse of P001 content/assets is an optional compatibility convenience only; P005 must always provide its own fallback intake.
-- P004 and P005 may reuse each other's already-created user data when both are present.
-- The direction is order-dependent: if P004 was completed first, P005 may use safe P004 user-authored context; if P005 was completed first, P004 may use safe P005 user-authored context.
+- P005 may mirror the same 24-quality / 16-value content basis used elsewhere, but it owns a local copy and must not read P001 runtime state, storage or shared-profile data.
+- P004 and P005 may reuse each other's already-created user-authored data when both are present **only after explicit consent in the receiving module**.
+- The direction is order-dependent: if P004 was completed first, P005 may use safe P004 user-authored context after opt-in; if P005 was completed first, P004 may use safe P005 user-authored context after opt-in.
 - P004 clinical/admin-only observer signals are not part of the bilateral public bridge.
+- P005 peer context is model-only context: raw P004 text must not be copied into P005 export/admin snapshots; only consent state and aggregate counts may be logged.
 - Future extraction should preserve stable module-scoped storage/API contracts so either module can be moved without rewriting its core flow.
 
 This is a standing architecture constraint, not a temporary UI preference.
