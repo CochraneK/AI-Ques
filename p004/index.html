@@ -11,7 +11,7 @@
 <body>
 <header class="topbar">
   <a class="brand" href="../"><span class="brand-mark">04</span><span><b>角色世界</b><small>P004 · character conversations</small></span></a>
-  <div class="top-actions"><span id="runtimeBadge" class="runtime"><i></i> local first</span><button id="apiBtn" class="api-pill"><i></i><span id="apiBtnText">接入 API</span></button><button id="newCharacterBtn" class="quiet">＋ 新角色</button><button id="adminBtn" class="quiet hidden">研究视图</button></div>
+  <div class="top-actions"><span id="runtimeBadge" class="runtime"><i></i> local first</span><button id="apiBtn" class="api-pill"><i></i><span id="apiBtnText">接入 API</span></button><button id="dataBtn" class="quiet">数据</button><button id="newCharacterBtn" class="quiet">＋ 新角色</button><button id="adminBtn" class="quiet hidden">研究视图</button></div>
 </header>
 
 <main class="workspace">
@@ -42,7 +42,7 @@
       <div class="meta-stack"><div><span>人格</span><p id="cardPersonality"></p></div><div><span>场景</span><p id="cardScenario"></p></div><div><span>说话方式</span><p id="cardStyle"></p></div></div>
     </section>
     <section class="side-card"><div class="card-topline"><span class="eyebrow">MEMORY</span><span id="memoryCount" class="tiny-badge">0</span></div><div id="memoryList" class="memory-list"></div></section>
-    <section class="side-card observer-card"><div class="card-topline"><span class="eyebrow">BACKGROUND OBSERVER</span><i></i></div><p>只在后台累计用户主动表达。P004 对话与 Future You 的开放式回答会进入同一证据池。</p><div id="sourceCounts" class="source-counts"></div></section>
+    <section class="side-card observer-card"><div class="card-topline"><span class="eyebrow">BACKGROUND OBSERVER</span><i></i></div><p>P004 会在本地累计你在本模块主动表达的线索。Future You 内容默认不读取，只有你在“数据”中明确允许后才会加入同一证据池。</p><div id="sourceCounts" class="source-counts"></div></section>
   </aside>
 </main>
 
@@ -161,6 +161,43 @@
   </section>
 </div>
 
+<div id="dataModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="backdrop" data-close="data"></div>
+  <section class="modal-card data-modal">
+    <button class="modal-close" data-close="data">×</button>
+    <p class="eyebrow">LOCAL DATA · PRIVACY</p>
+    <h2>你决定哪些内容留下。</h2>
+    <p class="modal-lead">角色、聊天、关系记忆与后台 Observer 目前保存在这个浏览器。它们不会自动同步到 GitHub。共用设备上使用时，建议结束后清除。</p>
+
+    <section class="privacy-setting">
+      <div>
+        <b>允许使用 Future You（P005）内容</b>
+        <p>开启后，P004 才会读取你在 Future You 的开放式回答与本人发言，用于同一套长期人物画像。默认关闭；关闭时会撤回并删除 P004 中已有的 P005 evidence。</p>
+        <small id="p005ConsentState">默认关闭 · Future You 不会被读取</small>
+      </div>
+      <label class="toggle-control" aria-label="允许使用 Future You 内容">
+        <input id="p005ConsentToggle" type="checkbox">
+        <i></i>
+      </label>
+    </section>
+
+    <section class="data-inventory">
+      <span>当前 P004 可能保存</span>
+      <div><b>角色与设定</b><small>localStorage</small></div>
+      <div><b>聊天记录</b><small>localStorage</small></div>
+      <div><b>关系记忆</b><small>localStorage</small></div>
+      <div><b>Observer evidence</b><small>localStorage · research prototype</small></div>
+      <div><b>NVWA / Character Skill</b><small>IndexedDB</small></div>
+      <div><b>API Key</b><small>sessionStorage · 当前标签页</small></div>
+    </section>
+
+    <div class="danger-zone">
+      <div><b>清除 P004 本地数据</b><p>只清除 P004 的角色、聊天、记忆、Observer、Skill Vault 与当前标签页 API Key；不会删除 P001/P002/P005 或全局 Persona。</p></div>
+      <button id="clearP004DataBtn" class="danger" type="button">清除全部 P004 本地数据</button>
+    </div>
+  </section>
+</div>
+
 <div id="adminModal" class="modal hidden" role="dialog" aria-modal="true">
   <div class="backdrop" data-close="admin"></div><section class="modal-card admin-modal">
     <button class="modal-close" data-close="admin">×</button>
@@ -173,7 +210,8 @@
 
 <div id="toast" class="toast"></div>
 <script src="../shared/profile.js?v=1"></script>
-<script src="api-client.js?v=20260916-theory"></script>
-<script src="app.js?v=20260916-theory"></script>
+<script src="core.js?v=20260916-audit"></script>
+<script src="api-client.js?v=20260916-audit"></script>
+<script src="app.js?v=20260916-audit"></script>
 </body>
 </html>
