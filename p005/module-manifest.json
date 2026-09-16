@@ -2,9 +2,9 @@
   "schema_version": 1,
   "module_id": "P005",
   "public_name": "Future Me / 未来的我",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "status": "prototype",
-  "updated_at": "2026-09-16",
+  "updated_at": "2026-09-17",
   "purpose": "Future-self continuity, reflective conversation and time-capsule interaction prototype.",
   "experience": {
     "inspiration": [
@@ -14,7 +14,7 @@
     "target_future_age": null,
     "core_flow": [
       "protocol-aware sequential life-story intake",
-      "P001 profile reuse or compact 24-quality / 16-value matrices",
+      "standalone 24-quality / 16-value profile matrices",
       "optional present portrait upload",
       "optional age-progressed portrait API",
       "future-memory generation",
@@ -63,39 +63,21 @@
       "positive_qualities": {
         "pool": 24,
         "max_selected": 6,
-        "source": "P001 shared content asset"
+        "source": "P005-owned standalone content asset"
       },
       "important_values": {
         "pool": 16,
         "max_selected": 4,
-        "source": "P001 shared content asset"
+        "source": "P005-owned standalone content asset"
       },
-      "interaction": "flat matrix selection, intentionally not P001 interaction"
+      "interaction": "flat matrix selection; content lineage mirrors the same research basis previously used in P001, but no P001 runtime data is read"
     }
   },
   "shared_profile": {
-    "adapter": "../shared/profile.js",
-    "canonical_key": "bjtu.p00.profile.v1",
-    "reads": [
-      "window.BJTU_PROFILE",
-      "window.P00_CONTEXT.profile",
-      "window.P00_CONTEXT.p001",
-      "window.P001_PROFILE",
-      "window.P001_PROFILE_ASSETS"
-    ],
-    "auto_reuse_fields": [
-      "name",
-      "age",
-      "origin",
-      "location",
-      "currentWork",
-      "values",
-      "gender",
-      "positiveQualities",
-      "selectedQualities",
-      "selectedValues"
-    ],
-    "clinical_admin_fields_exposed_to_user": false
+    "runtime_dependency": false,
+    "reads": [],
+    "writes": [],
+    "note": "P005 is standalone by design and does not read P001-P003 shared-profile runtime data."
   },
   "api_hooks": {
     "chat": "P005_FUTURE_ME_CONFIG.chatApi or FUTURE_ME_API",
@@ -117,7 +99,9 @@
         "/audio/transcriptions"
       ],
       "secret_in_export": false,
-      "secret_in_admin_snapshot": false
+      "secret_in_admin_snapshot": false,
+      "capabilities_independent": true,
+      "chat_model_required_for_non_chat_capabilities": false
     }
   },
   "admin_events": [
@@ -133,7 +117,8 @@
     "chat_ended",
     "share_card_generated",
     "share_card_saved",
-    "share_card_shared"
+    "share_card_shared",
+    "peer_context_consent_changed"
   ],
   "local_storage": {
     "primary_key": "bjtu.p005.state.v1",
@@ -168,7 +153,9 @@
   "admin_data": {
     "receives_full_text_snapshot_when_admin_api_configured": true,
     "portrait_binary_in_event_api": false,
-    "production_requires_server_auth_and_consent": true
+    "production_requires_server_auth_and_consent": true,
+    "peer_context_raw_copied_into_snapshot": false,
+    "peer_context_metadata_only": true
   },
   "research": {
     "methods_mapping": "METHODS_MAPPING.md",
@@ -211,17 +198,29 @@
   "interoperability": {
     "standalone_future": true,
     "required_predecessors": [],
-    "optional_collection_sources": [
-      "P001"
-    ],
+    "optional_collection_sources": [],
     "bilateral_peer": "P004",
     "p004_safe_reads": [
-      "bjtu.p004.threads.v2 user messages",
-      "bjtu.p004.memory.v2 memory text"
+      "bjtu.p004.threads.v2 user-authored messages, only after consent",
+      "bjtu.p004.memory.v2 continuity memory text, only after consent"
     ],
     "forbidden_p004_reads": [
       "bjtu.p004.observer.v2 clinical/admin inference"
     ],
-    "order_independent": true
+    "order_independent": true,
+    "p004_requires_explicit_user_consent": true,
+    "no_p001_p002_p003_runtime_reads": true,
+    "peer_raw_content_in_export": false
+  },
+  "testing": {
+    "structure_invariants": "tests/structure.mjs",
+    "runtime_behavior": "tests/p005-runtime.mjs",
+    "runtime_behavior_scope": [
+      "independent BYOK chat/image/TTS/STT capabilities",
+      "session-only key lifecycle",
+      "standalone module boundaries",
+      "explicit P004 peer-context consent",
+      "peer raw context excluded from P005 snapshots"
+    ]
   }
 }
