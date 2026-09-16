@@ -28,7 +28,8 @@ The adapter can migrate safe fields from older keys, but clinical inference, evi
 - P004 distilled Skill artifacts: IndexedDB `bjtu-p004-skill-vault`, with explicit `SKILL.md` export.
 - P004 Observer evidence: `localStorage["bjtu.p004.observer.v2"]` in the prototype only; production must use protected server-side storage with RBAC, retention and deletion controls.
 - P005: `localStorage["bjtu.p005.state.v1"]` because the product explicitly offers resume and time-capsule behavior.
-- P002 currently does not persist assessment answers.
+- P002 persists browser-local research sessions/events through `shared/core.js`, including a pending-sync queue. Participant and administrator surfaces both expose P002-scoped local deletion. This is still prototype storage, not a formal research backend.
+- P002 production transport/authentication requirements are frozen in `p002/BACKEND_CONTRACT.md`; no production backend is implied by that contract.
 
 Future production backends should replace browser-only storage for sensitive research data and enforce consent, authentication, RBAC, retention and deletion policies.
 
