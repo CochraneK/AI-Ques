@@ -512,6 +512,40 @@ function load(){
   state.screen='welcome';
 }
 
+function applyRemoteSnapshot(remote){
+  if(!remote||typeof remote!=='object')return false;
+  if(remote.profile)state.profile=remote.profile;
+  if(remote.structuredAnswers)state.structuredAnswers=remote.structuredAnswers;
+  if(remote.consent)state.consent=Object.assign({},state.consent,remote.consent);
+  if(remote.syntheticMemory!==undefined)state.memory=remote.syntheticMemory;
+  if(Array.isArray(remote.messages))state.messages=remote.messages;
+  if(Array.isArray(remote.capsules))state.capsules=remote.capsules;
+  if(remote.settings)state.settings=Object.assign({},state.settings,remote.settings);
+  if(Number.isFinite(Number(remote.surveyIndex)))state.surveyIndex=Math.max(0,Math.min(activeQuestions().length-1,Number(remote.surveyIndex)));
+  state.screen=normalizedSavedScreen(remote.screen||'welcome');
+  state.generated=Boolean(state.memory);
+  restorePortraits();
+  renderSurvey();
+  updateVoiceUI();
+  renderCapsules();
+  renderTargetLabels();
+  return true;
+}
+async function restoreResearchState(){
+  if(!researchConfigured()||!window.P005_RESEARCH.session||!window.P005_RESEARCH.session.sessionId)return false;
+  try{
+    const data=await window.P005_RESEARCH.restore();
+    if(!data||!data.session)return false;
+    state.consent=Object.assign({},state.consent,data.session.consent||{});
+    if(data.session.currentState)applyRemoteSnapshot(data.session.currentState);
+    save();
+    return true;
+  }catch(error){
+    console.warn('P005 research restore unavailable',error);
+    return false;
+  }
+}
+
 function updateProgress(){
   const label=$('#stepLabel');
   const fill=$('#progressFill');
@@ -1560,12 +1594,28 @@ $('#saveCapsuleBtn').addEventListener('click',()=>{
   emitSessionEvent('capsule_saved',{unlockAt:capsule.unlockAt});syncAdmin('capsule_saved');showToast('已封存');
 });
 
-load();
-updateProgress();
-renderP004Bridge();
-renderApiRuntime();
-updateChatModeNote();
-emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
-syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin',p001ProfileReused:Boolean((state.structuredAnswers.p001Qualities||{}).reusedFromP001||(state.structuredAnswers.p001Values||{}).reusedFromP001)});
+async function initApp(){
+  if(window.P005_RESEARCH&&window.P005_RESEARCH.configured){
+    try{await window.P005_RESEARCH.init()}catch(error){console.warn('P005 research init failed',error)}
+  }
+  load();
+  const restored=await restoreResearchState();
+  state.screen='welcome';
+  $('.screen').forEach((node)=>node.classList.toggle('active',node.id==='screen-welcome'));
+  updateProgress();
+  renderConsent();
+  renderP004Bridge();
+  renderApiRuntime();
+  updateChatModeNote();
+  emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode(),researchRestored:restored});
+  if(researchSessionReady()){
+    syncAdmin('session_resumed',{
+      targetHorizon:horizonMode(),
+      intakeProtocol:protocolMode(),
+      moduleVersion:MODULE_VERSION
+    });
+  }
+}
+initApp();
 
 })();
