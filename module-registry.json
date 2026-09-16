@@ -20,12 +20,14 @@
       "admin_path": "p002/admin.html",
       "default_presentation": "story",
       "participant_condition_picker": false,
-      "study_version": "0.10.0-prototype",
+      "study_version": "0.11.0-prototype",
       "event_stream": true,
       "local_admin_export": [
         "json",
         "csv"
-      ]
+      ],
+      "instrument_evidence_notes": "p002/RESEARCH_NOTES.md",
+      "formal_data_collection_authorized": false
     },
     {
       "id": "P003",
