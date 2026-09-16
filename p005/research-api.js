@@ -65,7 +65,10 @@
     if(existing.sessionId&&existing.resumeToken){
       try{
         const restored=await restore();
-        if(restored?.session)return restored;
+        if(restored?.session){
+          const updated=await setConsent(consent);
+          return {session:updated?.session||restored.session,protocol:restored.protocol};
+        }
       }catch(error){
         if(error.status!==401)throw error;
         clear();
@@ -106,6 +109,16 @@
       headers:authHeaders(false)
     });
   }
+  async function setConsent(consent){
+    const s=read();
+    if(!s.sessionId||!s.resumeToken)return null;
+    return await request('/api/v1/sessions/'+encodeURIComponent(s.sessionId)+'/consent',{
+      method:'POST',
+      headers:authHeaders(true),
+      body:JSON.stringify(consent||{})
+    });
+  }
+
   async function event(type,payload={},snapshot=null){
     const s=read();
     if(!s.sessionId||!s.resumeToken||!base())return null;
@@ -160,6 +173,7 @@
     ensureSession,
     restore,
     event,
+    setConsent,
     deleteSession,
     chat:(payload)=>aiJson('chat',payload),
     memory:(payload)=>aiJson('memory',payload),
