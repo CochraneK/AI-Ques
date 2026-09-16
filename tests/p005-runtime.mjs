@@ -86,4 +86,27 @@ assert.equal(
   "connection test must use the candidate key rather than the previously saved key"
 );
 
-console.log("P005 API runtime checks passed: independent capabilities + ephemeral connection test.");
+api.saveDirect({
+  baseUrl:"https://future.test/v1",
+  apiKey:"future-key",
+  chatModel:"future-model"
+});
+requests.length=0;
+await api.chat({
+  instruction:"Act as Future Me.",
+  profile:{name:"小林"},
+  structuredAnswers:{p001Values:{selected:["保持好奇"]}},
+  personaBrief:{continuity:{values:"保持好奇"}},
+  syntheticMemory:{summary:"四年后仍在持续研究。"},
+  target:{mode:"4y",phrase:"4 年后"},
+  messages:[{role:"user",text:"后来怎么样？"}],
+  userMessage:"后来怎么样？"
+});
+const payload=JSON.parse(requests[0].options.body);
+const system=payload.messages[0].content;
+assert.match(system,/Future Me context/);
+assert.match(system,/四年后仍在持续研究/);
+assert.match(system,/4 年后/);
+assert.match(system,/保持好奇/);
+
+console.log("P005 API runtime checks passed: independent capabilities + ephemeral test + grounded Future Me context.");
