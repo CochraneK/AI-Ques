@@ -25,7 +25,7 @@ for (const file of [
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
   "p004/index.html", "p004/core.js", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/api-client.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
-  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs"
+  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs", "tests/p005-runtime.mjs"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
 }
@@ -60,6 +60,9 @@ assert.match(p004, /indexedDB\.open\(K\.skillDb/);
 assert.match(p004, /roleplayMustYieldToSafety:true/);
 assert.match(p004, /doNotExposeClinicalLabels:true/);
 assert.doesNotMatch(p004, /aiques\.global\.profile\.v1/);
+assert.doesNotMatch(p004, /BJTU_PROFILE|P00_CONTEXT/, "P004 standalone runtime must not read P001-P003 shared profile");
+assert.match(p004, /function peerProfile\(\)/);
+assert.doesNotMatch(p004Index, /\.\.\/shared\/profile\.js/);
 
 const p004Index = read("p004/index.html");
 assert.match(p004Index, /CHARACTER CARD/);
@@ -68,7 +71,7 @@ assert.match(p004Index, /NVWA/);
 assert.doesNotMatch(p004Index, /清除本次画像/);
 
 const p004Manifest = JSON.parse(read("p004/module-manifest.json"));
-assert.equal(p004Manifest.version, "2.3.0");
+assert.equal(p004Manifest.version, "2.4.0");
 assert.equal(p004Manifest.user_experience.clinical_labels_visible, false);
 assert.equal(p004Manifest.user_experience.nvwa_distillation_optional, true);
 assert.equal(p004Manifest.user_experience.openai_compatible_byok, true);
@@ -127,7 +130,7 @@ assert.match(workflowText, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0feba
 
 const p005 = read("p005/app.js");
 assert.match(p005, /bjtu\.p005\.state\.v1/);
-assert.match(p005, /BJTU_PROFILE/);
+assert.doesNotMatch(p005, /BJTU_PROFILE|P00_CONTEXT|P001_PROFILE/, "P005 standalone runtime must not read P001-P003 profile state");
 assert.doesNotMatch(p005, /const SHARED_KEYS/);
 assert.match(p005, /const QUESTIONS = \[/);
 assert.match(p005, /surveyIndex/);
@@ -140,9 +143,10 @@ assert.match(p005, /transcribeApi/);
 assert.match(p005, /MediaRecorder/);
 assert.match(p005, /function renderShareCard\(\)/);
 assert.match(p005, /personaBrief:buildPersonaBrief\(\)/);
-assert.match(p005, /P001_PROFILE_ASSETS_FALLBACK/);
-assert.match(p005, /p001Qualities/);
-assert.match(p005, /p001Values/);
+assert.match(p005, /const PROFILE_ASSETS =/);
+assert.match(p005, /key:'positiveQualities'/);
+assert.match(p005, /key:'importantValues'/);
+assert.doesNotMatch(p005, /p001Sources|p001Assets|hydrateP001Selections/);
 assert.match(p005, /max:6/);
 assert.match(p005, /max:4/);
 assert.match(p005, /options:\['男','女'\]/);
@@ -159,6 +163,12 @@ assert.doesNotMatch(p005, /(?<!\$)\$\('#promptChips button'\)\.forEach/);
 assert.match(p005, /bjtu\.p004\.threads\.v2/);
 assert.match(p005, /bjtu\.p004\.memory\.v2/);
 assert.doesNotMatch(p005, /bjtu\.p004\.observer\.v2/);
+assert.match(p005, /useP004Context:false/);
+assert.match(p005, /peer_context_consent_changed/);
+assert.match(p005, /buildPersonaBrief\(\{includePeerContext:false\}\)/);
+assert.match(read("p005/index.html"), /p004ContextToggle/);
+assert.doesNotMatch(read("p005/index.html"), /\.\.\/shared\/profile\.js/);
+assert.match(read("p005/index.html"), /href="\.\/" aria-label="Future Me 首页"/);
 const p005Api = read("p005/api-client.js");
 assert.match(p005Api, /chat\/completions/);
 assert.match(p005Api, /images\/edits/);
@@ -171,8 +181,8 @@ assert.match(p005Api, /ttsModel:''/);
 assert.match(p005Api, /sttModel:''/);
 assert.match(p005Api, /function capabilities\(/);
 assert.match(p005Api, /fetchWithTimeout/);
-assert.match(read("p005/index.html"), /MODEL SETTINGS · BYOK/);
-assert.match(read("p005/index.html"), /只想用文字 Future Me，填到这里就够了/);
+assert.match(read("p005/index.html"), /MODEL SETTINGS · SESSION BYOK/);
+assert.match(read("p005/index.html"), /至少填一种能力/);
 assert.match(read("p005/index.html"), /图像与语音/);
 assert.match(p005, /HORIZON_OPTIONS = \['1y','2y','3y','4y','10y','age60'\]/);
 assert.doesNotMatch(p005, /if\(name==='generate'\).*survey/);
@@ -183,8 +193,17 @@ assert.match(read("p005/runtime-config.js"), /transcribeApi/);
 assert.match(read("p005/METHODS_MAPPING.md"), /sequential, one question per screen/);
 assert.match(read("docs/DESIGN_PRINCIPLES.md"), /Less is more/);
 assert.match(read("docs/ARCHITECTURE.md"), /P004 \/ P005 future standalone decision/);
-assert.equal(JSON.parse(read("p005/module-manifest.json")).interoperability.required_predecessors.length, 0);
+const p005Manifest = JSON.parse(read("p005/module-manifest.json"));
+assert.equal(p005Manifest.version, "0.7.0");
+assert.equal(p005Manifest.interoperability.required_predecessors.length, 0);
+assert.equal(p005Manifest.interoperability.optional_collection_sources.length, 0);
+assert.equal(p005Manifest.interoperability.p004_requires_explicit_user_consent, true);
+assert.equal(p005Manifest.admin_data.peer_context_raw_copied_into_snapshot, false);
+assert.equal(p005Manifest.shared_profile.runtime_dependency, false);
 assert.equal(JSON.parse(read("p004/module-manifest.json")).interoperability.bilateral_peer, "P005");
+assert.equal(JSON.parse(read("p004/module-manifest.json")).interoperability.shared_profile_runtime_dependency, false);
+assert.match(workflowText, /node tests\/p005-runtime\.mjs/);
+assert.match(workflowText, /node --check p005\/api-client\.js/);
 
 const legacyFuture = fs.readdirSync(path.join(root, "future-me")).sort();
 assert.deepEqual(legacyFuture, ["index.html"], "future-me must be redirect-only");
@@ -203,3 +222,11 @@ for (const forbidden of [
 }
 
 console.log("Repository structure checks passed: P00 hub + P002/P004/P005 boundaries + shared/private storage.");
+
+const p005Index = read("p005/index.html");
+assert.doesNotMatch(p005Index, /P001 共用画像|不重复 P001 的玩法/);
+assert.doesNotMatch(p005, /source:'p001-reuse'/);
+assert.ok(
+  !/key:'p001Qualities'|key:'p001Values'/.test(p005),
+  "legacy P001 answer keys may only appear in migration references, never active question definitions"
+);
