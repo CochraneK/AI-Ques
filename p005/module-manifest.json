@@ -2,9 +2,9 @@
   "schema_version": 1,
   "module_id": "P005",
   "public_name": "Future Me / 未来的我",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "status": "prototype",
-  "updated_at": "2026-09-16",
+  "updated_at": "2026-09-17",
   "purpose": "Future-self continuity, reflective conversation and time-capsule interaction prototype.",
   "experience": {
     "inspiration": [
@@ -63,12 +63,12 @@
       "positive_qualities": {
         "pool": 24,
         "max_selected": 6,
-        "source": "P001 shared content asset"
+        "source": "P001 v5.6-pages canonical E/O/A/C ideal-self facet mirror"
       },
       "important_values": {
         "pool": 16,
         "max_selected": 4,
-        "source": "P001 shared content asset"
+        "source": "P001 v5.6-pages canonical personal-values mirror"
       },
       "interaction": "flat matrix selection, intentionally not P001 interaction"
     }
@@ -117,7 +117,9 @@
         "/audio/transcriptions"
       ],
       "secret_in_export": false,
-      "secret_in_admin_snapshot": false
+      "secret_in_admin_snapshot": false,
+      "capabilities_independent": true,
+      "connection_test_persists_candidate": false
     }
   },
   "admin_events": [
@@ -133,7 +135,8 @@
     "chat_ended",
     "share_card_generated",
     "share_card_saved",
-    "share_card_shared"
+    "share_card_shared",
+    "context_bridge_changed"
   ],
   "local_storage": {
     "primary_key": "bjtu.p005.state.v1",
@@ -222,6 +225,14 @@
     "forbidden_p004_reads": [
       "bjtu.p004.observer.v2 clinical/admin inference"
     ],
-    "order_independent": true
+    "order_independent": true,
+    "p004_requires_explicit_opt_in": true,
+    "p004_context_in_p005_export": false,
+    "p004_context_in_admin_snapshot": false,
+    "p004_context_model_limits": {
+      "recent_user_turns": 12,
+      "continuity_memories": 8,
+      "max_chars_each": 260
+    }
   }
 }
