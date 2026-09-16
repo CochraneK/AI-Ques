@@ -119,7 +119,7 @@ The guided Chinese condition also:
 - asks gender as a direct male/female choice;
 - uses one primary current-role category rather than slash-combined labels;
 - allows multiple important-person categories;
-- removes the previous A/B decision item entirely.
+- removes the previous binary decision decision item entirely.
 
 The replication condition remains separate and continues to use the paper-aligned free-text fields.
 
