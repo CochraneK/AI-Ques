@@ -4,13 +4,13 @@
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.6.0';
+const MODULE_VERSION = '0.7.0';
 const ADMIN_SETTINGS_KEY = 'bjtu.p005.admin.v1';
 const HORIZON_OPTIONS = ['1y','2y','3y','4y','10y','age60'];
 
-const P001_PROFILE_ASSETS_FALLBACK = {
-  // Temporary mirror until the authoritative P001 24+16 word list is exposed to the shared runtime.
-  // P001 research basis in the project map: IPIP public-domain trait content + Miller Personal Values Card Sort.
+const PROFILE_ASSETS = {
+  // P005-owned standalone copy. Content lineage mirrors the same research basis used in P001,
+  // but P005 never reads P001 runtime state or storage.
   qualities:[
     '好奇','创造','勤奋','自律','可靠','负责',
     '勇敢','坚持','真诚','善良','同理','合作',
@@ -24,64 +24,9 @@ const P001_PROFILE_ASSETS_FALLBACK = {
     '影响力','帮助他人','体验','内心平静'
   ]
 };
-
-function p001Sources(){
-  const root=window.P00_CONTEXT||{};
-  const sources=[root.p001,root.P001,window.P001_PROFILE].filter((x)=>x&&typeof x==='object');
-  try{
-    for(let i=0;i<localStorage.length;i++){
-      const key=localStorage.key(i)||'';
-      if(!/p[-_.]?001/i.test(key))continue;
-      const raw=parseJson(localStorage.getItem(key)||'');
-      if(raw&&typeof raw==='object')sources.push(raw);
-    }
-  }catch(_){}
-  return sources;
+function profileAssets(){
+  return {qualities:[...PROFILE_ASSETS.qualities],values:[...PROFILE_ASSETS.values]};
 }
-function nestedCandidates(source){
-  if(!source||typeof source!=='object')return [];
-  const out=[source];
-  for(const key of ['profile','result','results','answers','self','data','summary']){
-    const value=source[key];
-    if(value&&typeof value==='object'&&!Array.isArray(value))out.push(value);
-  }
-  return out;
-}
-function p001Context(){
-  const sources=p001Sources();
-  return sources.length?sources[0]:{};
-}
-function p001Assets(){
-  let ext=window.P001_PROFILE_ASSETS||null;
-  if(!ext){
-    for(const source of p001Sources()){
-      for(const candidate of nestedCandidates(source)){
-        if(candidate.assets&&typeof candidate.assets==='object'){ext=candidate.assets;break}
-      }
-      if(ext)break;
-    }
-  }
-  ext=ext||{};
-  const qualities=Array.isArray(ext.positiveQualities)&&ext.positiveQualities.length===24
-    ? ext.positiveQualities
-    : P001_PROFILE_ASSETS_FALLBACK.qualities;
-  const values=Array.isArray(ext.values)&&ext.values.length===16
-    ? ext.values
-    : P001_PROFILE_ASSETS_FALLBACK.values;
-  return {qualities:[...qualities],values:[...values]};
-}
-function firstArray(source,keys){
-  const sources=source?[source]:p001Sources();
-  for(const item of sources){
-    for(const candidate of nestedCandidates(item)){
-      for(const key of keys){
-        if(Array.isArray(candidate&&candidate[key]))return candidate[key].filter(Boolean).map(String);
-      }
-    }
-  }
-  return [];
-}
-
 
 const SCREENS = ['welcome', 'survey', 'portrait', 'generate', 'ready', 'chat', 'share', 'capsule'];
 const STEP_NAMES = {
@@ -110,8 +55,8 @@ const QUESTIONS = [
     '暂时没有固定安排','其他'
   ], optionalDetail:true },
 
-  { section:'快速画像', key:'p001Qualities', source:'p001-reuse', guidedOnly:true, question:'哪些积极品质最像现在的你？', hint:'最多选 6 个。这里只做快速画像，不重复 P001 的玩法。', type:'matrix', asset:'qualities', max:6, required:true },
-  { section:'快速画像', key:'p001Values', source:'p001-reuse', guidedOnly:true, question:'对你来说，哪些事情真的重要？', hint:'最多选 4 个。', type:'matrix', asset:'values', max:4, required:true },
+  { section:'快速画像', key:'positiveQualities', source:'profile-matrix', guidedOnly:true, question:'哪些积极品质最像现在的你？', hint:'最多选 6 个。', type:'matrix', asset:'qualities', max:6, required:true },
+  { section:'快速画像', key:'importantValues', source:'profile-matrix', guidedOnly:true, question:'对你来说，哪些事情真的重要？', hint:'最多选 4 个。', type:'matrix', asset:'values', max:4, required:true },
 
   { section:'人生故事', key:'people', source:'paper-core', question:'现在对你最重要的人是谁？', hint:'可以多选。研究复刻版保持自由文本。', type:'textarea', guidedType:'multi', max:5, options:['父母','其他家人','伴侣','孩子','朋友','老师或导师','同学或同事','自己','其他'], optionalDetail:true },
   { section:'人生故事', key:'proud', source:'paper-core', question:'哪一个时刻，让你真正为自己骄傲？', hint:'先选最接近的一类，也可以补一句。', type:'textarea', guidedType:'single', options:['学习突破','科研突破','工作成果','创作作品','帮助他人','跨过困难','独立做出重要选择','关系中的成长','体育或比赛','其他'], optionalDetail:true },
@@ -137,7 +82,7 @@ function activeQuestions(){
     : QUESTIONS.filter((q)=>!q.replicationOnly);
 }
 function questionSourceLabel(source){
-  return ({'paper-core':'2024 论文核心','paper-prompt':'2024 Memory prompt','p001-reuse':'P001 共用画像','p005-extension':'P005 扩展'})[source]||'';
+  return ({'paper-core':'2024 论文核心','paper-prompt':'2024 Memory prompt','profile-matrix':'快速画像','p005-extension':'P005 扩展'})[source]||'';
 }
 
 const state = {
@@ -151,7 +96,7 @@ const state = {
   futurePortrait:'',
   capsules:[],
   generated:false,
-  settings:{ voiceMode:false, unlockMonths:12, shareCardStyle:'minimal' }
+  settings:{ voiceMode:false, unlockMonths:12, shareCardStyle:'minimal', useP004Context:false }
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -253,40 +198,6 @@ function showToast(message){
   window.__p005ToastTimer=setTimeout(()=>toast.classList.remove('show'),1800);
 }
 
-function sharedProfile(){
-  if(window.BJTU_PROFILE&&typeof window.BJTU_PROFILE.getFlat==='function')return window.BJTU_PROFILE.getFlat();
-  return (window.P00_CONTEXT&&window.P00_CONTEXT.profile)||{};
-}
-function mapSharedIntoProfile(shared){
-  const allowed=['name','age','origin','location','currentWork','values','gender'];
-  for(const key of allowed){
-    if(!state.profile[key]&&shared&&shared[key])state.profile[key]=shared[key];
-  }
-}
-function hydrateP001Selections(){
-  const qualities=firstArray(null,['selectedQualities','positiveQualities','qualities','strengths','traits']).slice(0,6);
-  const values=firstArray(null,['selectedValues','valueChoices','importantValues','values','priorities']).slice(0,4);
-  if(qualities.length&&!(state.structuredAnswers.p001Qualities&&state.structuredAnswers.p001Qualities.selected&&state.structuredAnswers.p001Qualities.selected.length)){
-    state.structuredAnswers.p001Qualities={selected:qualities,detail:'',reusedFromP001:true};
-    state.profile.positiveQualities=qualities.join('、');
-  }
-  if(values.length&&!(state.structuredAnswers.p001Values&&state.structuredAnswers.p001Values.selected&&state.structuredAnswers.p001Values.selected.length)){
-    state.structuredAnswers.p001Values={selected:values,detail:'',reusedFromP001:true};
-    state.profile.values=values.join('、');
-  }
-}
-function writeSharedProfile(){
-  if(!window.BJTU_PROFILE||typeof window.BJTU_PROFILE.update!=='function')return;
-  window.BJTU_PROFILE.update({
-    name:state.profile.name||'',
-    age:state.profile.age||'',
-    origin:state.profile.origin||'',
-    location:state.profile.location||'',
-    currentWork:state.profile.currentWork||'',
-    values:state.profile.values||''
-  },MODULE_ID);
-}
-
 function normalizedScreen(name){
   if(['identity','present','future'].includes(name))return 'survey';
   return SCREENS.includes(name)?name:'welcome';
@@ -303,7 +214,7 @@ function snapshot(includeMedia=false){
     version:MODULE_VERSION,
     profile:state.profile,
     structuredAnswers:state.structuredAnswers,
-    personaBrief:buildPersonaBrief(),
+    personaBrief:buildPersonaBrief({includePeerContext:false}),
     syntheticMemory:state.memory,
     messages:state.messages,
     capsules:state.capsules,
@@ -357,7 +268,6 @@ function save(){
       screen:state.screen,
       surveyIndex:state.surveyIndex
     }));
-    writeSharedProfile();
   }catch(error){console.warn('P005 local save failed',error)}
 }
 function migrateLegacy(){
@@ -388,6 +298,12 @@ function load(){
   if(saved){
     state.profile=saved.profile||{};
     state.structuredAnswers=saved.structuredAnswers||{};
+    if(!state.structuredAnswers.positiveQualities&&state.structuredAnswers.p001Qualities){
+      state.structuredAnswers.positiveQualities=state.structuredAnswers.p001Qualities;
+    }
+    if(!state.structuredAnswers.importantValues&&state.structuredAnswers.p001Values){
+      state.structuredAnswers.importantValues=state.structuredAnswers.p001Values;
+    }
     state.memory=saved.memory||null;
     state.messages=saved.messages||[];
     state.currentPortrait=saved.currentPortrait||'';
@@ -398,9 +314,8 @@ function load(){
     state.surveyIndex=Math.max(0,Math.min(activeQuestions().length-1,Number(saved.surveyIndex)||0));
     state.generated=Boolean(state.memory);
   }
-  mapSharedIntoProfile(sharedProfile());
-  hydrateP001Selections();
   restorePortraits();
+  renderPeerContextConsent();
   renderSurvey();
   updateVoiceUI();
   renderCapsules();
@@ -447,7 +362,7 @@ function selectedGuidedValues(q){
   return Array.isArray(stored.selected)?stored.selected:[];
 }
 function renderMatrixQuestion(q,root){
-  const assets=p001Assets();
+  const assets=profileAssets();
   const options=assets[q.asset]||[];
   const stored=state.structuredAnswers[q.key]||{};
   const selected=Array.isArray(stored.selected)?stored.selected:[];
@@ -538,7 +453,7 @@ function captureSurvey(){
     const selected=Array.isArray(current.selected)?current.selected:[];
     if(q.required&&!selected.length){showToast('至少选择 1 个');return false}
     if(selected.length>q.max){showToast('最多选择 '+q.max+' 个');return false}
-    state.profile[q.key==='p001Qualities'?'positiveQualities':'values']=selected.join('、');
+    state.profile[q.key==='positiveQualities'?'positiveQualities':'values']=selected.join('、');
     save();
     syncAdmin('survey_answered',{key:q.key,source:q.source,protocol:protocolMode(),structured:current,value:selected,surveyIndex:state.surveyIndex});
     return true;
@@ -599,6 +514,16 @@ $('#resumeBtn').addEventListener('click',()=>{
   const destination=state.memory?(state.messages.length?'chat':'ready'):(Object.keys(state.profile).length?'survey':'welcome');
   show(destination);
 });
+const peerToggle=$('#p004ContextToggle');
+if(peerToggle)peerToggle.addEventListener('change',()=>{
+  state.settings.useP004Context=Boolean(peerToggle.checked);
+  save();
+  renderPeerContextConsent();
+  emitSessionEvent('peer_context_consent_changed',{enabled:state.settings.useP004Context});
+  syncAdmin('peer_context_consent_changed',{enabled:state.settings.useP004Context});
+  showToast(state.settings.useP004Context?'已有对话只会用于增强 Future Me':'已停止使用已有对话');
+});
+
 $('#resetBtn').addEventListener('click',()=>{
   if(!confirm('清空 P005 在此浏览器中的回答、照片、对话和时间胶囊？'))return;
   syncAdmin('session_reset',{});
@@ -663,7 +588,13 @@ function safeExternalPersona(){
   const allowed=['traits','strengths','values','interests','roles','priorities','selfDescription'];
   return Object.fromEntries(allowed.filter((k)=>candidate[k]).map((k)=>[k,candidate[k]]));
 }
+function hasP004PeerData(){
+  try{
+    return Boolean(localStorage.getItem('bjtu.p004.threads.v2')||localStorage.getItem('bjtu.p004.memory.v2'));
+  }catch(_){return false}
+}
 function p004SafeContext(){
+  if(!state.settings.useP004Context)return {available:false};
   const threads=parseJson(localStorage.getItem('bjtu.p004.threads.v2')||'')||{};
   const memories=parseJson(localStorage.getItem('bjtu.p004.memory.v2')||'')||{};
   const userTurns=Object.values(threads).flat().filter((m)=>m&&m.role==='user'&&clean(m.text)).map((m)=>clean(m.text)).slice(-40);
@@ -674,9 +605,28 @@ function p004SafeContext(){
     continuityMemories
   };
 }
-function buildPersonaBrief(){
-  const p=state.profile;
+function peerContextMeta(){
+  const allowed=Boolean(state.settings.useP004Context);
+  if(!allowed)return {detected:hasP004PeerData(),allowed:false};
+  const ctx=p004SafeContext();
   return {
+    detected:true,
+    allowed:true,
+    userTurnCount:(ctx.recentUserTurns||[]).length,
+    memoryCount:(ctx.continuityMemories||[]).length
+  };
+}
+function renderPeerContextConsent(){
+  const box=$('#peerContextOffer'),toggle=$('#p004ContextToggle');
+  if(!box||!toggle)return;
+  const detected=hasP004PeerData();
+  box.classList.toggle('hidden',!detected);
+  toggle.checked=Boolean(state.settings.useP004Context);
+}
+function buildPersonaBrief(options={}){
+  const includePeerContext=options.includePeerContext!==false;
+  const p=state.profile;
+  const brief={
     identity:{name:p.name||'',age:p.age||'',gender:p.gender||'',pronouns:p.pronouns||'',location:p.location||'',currentWork:p.currentWork||''},
     continuity:{
       importantPeople:p.people||'',proudPoint:p.proud||'',lowPoint:p.lowPoint||'',turningPoint:p.turningPoint||'',
@@ -686,9 +636,10 @@ function buildPersonaBrief(){
       career:p.career||'',finance:p.finance||'',family:p.family||'',personalLife:p.personalLife||'',
       futureLocation:p.futureLocation||'',dailyLife:p.dailyLife||''
     },
-    p004SafeContext:p004SafeContext(),
-    optionalCollectionContext:safeExternalPersona()
+    peerContext:peerContextMeta()
   };
+  if(includePeerContext&&state.settings.useP004Context)brief.p004SafeContext=p004SafeContext();
+  return brief;
 }
 
 function buildMemory(){
@@ -730,6 +681,11 @@ function buildMemory(){
   };
 }
 
+function directCapabilities(){
+  if(!window.P005_API||typeof window.P005_API.capabilities!=='function')return {chat:false,image:false,tts:false,stt:false};
+  return window.P005_API.capabilities();
+}
+
 async function generateMemory(){
   const payload={
     module:MODULE_ID,
@@ -740,7 +696,7 @@ async function generateMemory(){
     target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
     instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return ONLY valid JSON with summary, futureVignette, memories (3 strings), and timeline. Ground it in the user profile and P004 safe context when available. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
   };
-  if(window.P005_API&&window.P005_API.configured){
+  if(directCapabilities().chat){
     try{
       const r=await window.P005_API.chat(Object.assign({},payload,{
         messages:[{role:'user',text:'根据提供的画像生成 Future Memory。只返回 JSON。'}],
@@ -985,7 +941,7 @@ async function getFutureReply(input){
         target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
     instruction:'Act as one plausible future self at the configured target horizon. Ground every response in the supplied personaBrief, life story, structured answers, future memory, and P004 safe context when available. When relevant, naturally reference one or two concrete user-specific details rather than giving generic advice. Never expose P004 clinical/admin inference. Do not mechanically repeat profile fields. Speak autobiographically using continuity cues when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
   };
-  if(window.P005_API&&window.P005_API.configured){
+  if(directCapabilities().chat){
     try{
       const result=await window.P005_API.chat(payload);
       if(result&&result.reply)return String(result.reply);
@@ -1035,7 +991,7 @@ async function speakText(text){
   if(!text)return;
   const voicePayload={
     text,
-    voice:(window.P005_API&&window.P005_API.configured?window.P005_API.readDirect().voice:runtimeConfig().voiceId)||'marin',
+    voice:(directCapabilities().tts?window.P005_API.readDirect().voice:runtimeConfig().voiceId)||'marin',
     instructions:runtimeConfig().ttsInstructions||'自然、平静、像熟悉自己的真人，不要播音腔。',
     language:'zh-CN',
     profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
@@ -1214,11 +1170,17 @@ function closeApiSettings(){
 function validateApiCandidate(x){
   if(!x.baseUrl)return'需要 Base URL';
   if(!x.apiKey)return'需要 API Key';
-  if(!x.chatModel)return'至少需要文字对话模型';
+  if(![x.chatModel,x.imageModel,x.ttsModel,x.sttModel].some(Boolean))return'至少填写一种模型能力';
+  return'';
+}
+function validateChatCandidate(x){
+  const base=validateApiCandidate(x);
+  if(base)return base;
+  if(!x.chatModel)return'测试对话需要填写文字对话模型';
   return'';
 }
 async function testApiSettings(){
-  const candidate=apiCandidate(),problem=validateApiCandidate(candidate),box=$('#apiTestResult');
+  const candidate=apiCandidate(),problem=validateChatCandidate(candidate),box=$('#apiTestResult');
   if(problem){box.textContent=problem;box.classList.remove('hidden');box.classList.add('error');return}
   $('#testApiBtn').disabled=true;box.classList.remove('hidden','error');box.textContent='正在测试文字对话接口…';
   try{
@@ -1313,7 +1275,7 @@ function renderShareCard(){
 
   ctx.strokeStyle=style.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(72,y);ctx.lineTo(1008,y);ctx.stroke();y+=70;
 
-  const qualities=(state.structuredAnswers.p001Qualities&&state.structuredAnswers.p001Qualities.selected)||[];
+  const qualities=(state.structuredAnswers.positiveQualities&&state.structuredAnswers.positiveQualities.selected)||[];
   if(qualities.length){
     ctx.fillStyle=style.muted;ctx.font='600 21px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText('现在的我',72,y);y+=50;
@@ -1435,6 +1397,6 @@ updateProgress();
 renderApiRuntime();
 updateChatModeNote();
 emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
-syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin',p001ProfileReused:Boolean((state.structuredAnswers.p001Qualities||{}).reusedFromP001||(state.structuredAnswers.p001Values||{}).reusedFromP001)});
+syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin'.reusedFromP001||(state.structuredAnswers.p001Values||{}).reusedFromP001)});
 
 })();
