@@ -1,6 +1,6 @@
 # P005 · Future Me / 未来的我
 
-> V0.6: in-product multimodal API settings, P004↔P005 continuity bridge, and standalone-ready boundaries.
+> V0.7: true standalone runtime, explicit P004↔P005 consent, isolated peer context, and independent multimodal BYOK capabilities.
 
 P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的公开研究机制为主线，并把 FutureMe 式时间胶囊降为对话后的可选延伸。
 
@@ -9,7 +9,7 @@ P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的�
 ## V0.2 核心流程
 
 ```text
-共享基础资料
+本模块基础资料
   ↓
 一题一屏的人生故事访谈
   ↓
@@ -114,7 +114,7 @@ Memory API 请求包含 `profile`、管理员设定的 `target`（1/2/3/4/10 年
 
 Future Me 的对话原则：
 
-- 是**一个可能的** 60 岁未来自我；
+- 是管理员设定时间点的**一个可能未来自我**；
 - 必须扎根于用户的 life story 与 future memory；
 - 可以自然使用 “when I was your age...” 一类连续性语言；
 - 同时讲预期内与预期外的人生结果；
@@ -135,12 +135,7 @@ V0.2 按原 Future You 论文机制：累计 16 条有效交换消息后，才�
 
 ## 数据
 
-公共跨模块资料只通过：
-
-```text
-shared/profile.js
-localStorage["bjtu.p00.profile.v1"]
-```
+P005 V0.7 不再读取 P001–P003 的 shared profile、localStorage 或运行时对象。姓名、年龄、快速画像等需要的数据都由 P005 自己收集。
 
 P005 自身状态：
 
@@ -185,6 +180,8 @@ http://localhost:8000/p005/
 
 ```bash
 node --check p005/app.js
+node --check p005/api-client.js
+node tests/p005-runtime.mjs
 node tests/structure.mjs
 python scripts/quality_sensor.py --strict
 ```
@@ -337,20 +334,16 @@ P004 clinical-like inference 不进入 Future Me 用户侧人格事实。
 支持保存 PNG；浏览器支持 Web Share + files 时可直接调系统分享面板。
 
 
-## V0.5 · 直接复用 P001 快速画像
+## V0.5 / V0.7 · 24 + 16 快速画像
 
-P005 的低负担版现在增加两张**矩阵选择页**，只复用 P001 的内容资产，不复刻 P001 的书架、滑卡或球体交互：
+P005 的低负担版保留两张极简矩阵：
 
 - 24 个积极品质：最多选 6 个。
 - 16 个重要价值：最多选 4 个。
 
-如果运行环境已经通过 `window.P00_CONTEXT.p001` 或 `window.P001_PROFILE` 提供 P001 结果，P005 会优先复用这些结果并预填，不要求用户重复选择。
+V0.7 起，这两组内容是 **P005 自己拥有的 standalone asset**。内容研究脉络与项目里先前的 P001 设计同源，但运行时不会读取 P001 的结果、localStorage、`P00_CONTEXT`、`BJTU_PROFILE` 或任何共享资料。
 
-P001 当前项目快照记录的内容依据是：
-- 特质内容：IPIP public-domain content；
-- 价值内容：Miller Personal Values Card Sort。
-
-当前仓库无法直接取得 P001 权威版 24+16 的逐项中文词表，因此 P005 把本地 24+16 定义集中在 `P001_PROFILE_ASSETS_FALLBACK`。一旦 P001 暴露正式 `assets.positiveQualities[24]` 与 `assets.values[16]`，P005 会自动优先使用权威词表，不需要改交互代码。
+因此把 P005 单独拆成仓库后，快速画像仍然完整可用。
 
 ## V0.5 · 中国背景低负担输入
 
@@ -395,9 +388,9 @@ BYOK 使用 `p005/api-client.js`，目前按 OpenAI-compatible 路径调用：
 - `/audio/speech`
 - `/audio/transcriptions`
 
-默认示例模型只是 UI 默认值，不是研究协议的一部分。生产环境应优先改用服务端代理。
+模型名由用户或部署方填写，不属于研究协议的一部分。生产环境应优先改用服务端代理。
 
-当 BYOK 可用时，同一个文字对话模型也会优先用于 Future Memory 的 JSON 生成；失败后再降级到部署方 memory API 或本地 deterministic fallback。
+四种能力现在彼此独立：只配图像模型也能生成年龄化头像，只配 TTS/STT 也能使用语音，不再强制先配置文字模型。若文字模型已配置，它会优先用于 Future Memory JSON 与 Future Me 对话；失败后再降级到部署方 API 或本地 deterministic fallback。
 
 ## V0.6 · P004 ↔ P005
 
@@ -405,10 +398,24 @@ BYOK 使用 `p005/api-client.js`，目前按 OpenAI-compatible 路径调用：
 
 因此：
 
-- P005 不得把 P001/P002/P003 当作必需前置条件；
-- P001 的 24+16 复用仅是当前合集里的可选便利，P005 永远保留自己的矩阵 fallback；
-- 如果先做过 P004，P005 可以读取 P004 的**用户本人发言**与**长期记忆文本**作为 Future Me continuity context；
-- P005 明确不读取 `bjtu.p004.observer.v2`，也不把 P004 的 PHQ/GAD/PCL/CAPE 或其他管理员推断当作用户事实；
-- 如果先做 P005，P004 已经可以导入 P005 的用户开放回答与对话作为自身 Observer 的证据来源。
+- P005 不读取 P001/P002/P003 的运行时数据；
+- 24+16 快速画像由 P005 自带；
+- 如果检测到 P004，P005 只展示一个**默认关闭**的“使用已有角色对话”选项；用户明确勾选后，才读取 P004 的用户发言与长期记忆文本；
+- P005 永远不读取 `bjtu.p004.observer.v2`，也不把 PHQ/GAD/PCL/CAPE 或其他管理员推断当作用户事实；
+- P004 读取 P005 同样要求 P004 侧用户显式授权；
+- P004 原始对话在 P005 中属于 **model-only context**：不会复制进 P005 导出 JSON 或 admin snapshot，snapshot 只记录 consent 状态与条目计数。
 
-也就是说，P004/P005 是双向可互用，但两者都可以独立启动。
+所以 P004/P005 是**双向可互用、双向显式同意、各自可独立启动**。
+
+
+## V0.7 · Self-audit fixes
+
+V0.7 是一次架构清理而不是功能堆叠：
+
+1. 移除 P005 对 `../shared/profile.js` 的页面依赖，首页标识也不再跳到父级 P00。
+2. 删除 P001–P003 运行时读取；旧版 `p001Qualities / p001Values` 只做一次字段迁移，迁移后立即删除旧键。
+3. P004 → P005 改成用户显式 opt-in；默认不读取。
+4. P004 peer raw text 只注入生成/聊天模型，不进入 P005 export/admin snapshot。
+5. P004 自身也不再读取全局 shared profile；只有在 P004 的 P005 授权开启时，才取 P005 的少量用户侧 profile。
+6. BYOK chat / image / TTS / STT 改为独立能力。
+7. 新增 `tests/p005-runtime.mjs`，CI 验证 image-only、voice-only、chat-only 配置和 session-only key 生命周期。

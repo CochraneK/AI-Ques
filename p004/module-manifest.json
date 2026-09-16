@@ -1,6 +1,6 @@
 {
   "module": "P004",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "name": "角色世界 / Character Conversations",
   "status": "prototype_only",
   "purpose": "NPC/character text conversations with optional NVWA distillation, local skill artifacts, long-term memory and administrator-only longitudinal personality inference.",
@@ -30,7 +30,8 @@
     "production_recommendation": "server-side encrypted storage + authenticated access controls",
     "byok_api_key": "sessionStorage only; current browser tab",
     "p005_observer_consent": "localStorage; default false; explicit opt-in and withdrawal",
-    "clear_all_p004_control": true
+    "clear_all_p004_control": true,
+    "shared_profile_runtime_dependency": false
   },
   "api_contract": [
     "chat",
@@ -53,7 +54,10 @@
     "bilateral_peer": "P005",
     "may_import_user_authored_p005_data": "explicit opt-in only",
     "p004_admin_clinical_signals_never_exported_to_p005": true,
-    "order_independent": true
+    "order_independent": true,
+    "shared_profile_runtime_dependency": false,
+    "p005_profile_reuse": "explicit opt-in only",
+    "no_p001_p002_p003_runtime_reads": true
   },
   "nvwa_reference_commit": "fdb181f0e057e837e15942707b1ea35845850979",
   "testing": {
@@ -67,7 +71,8 @@
       "BYOK-success",
       "BYOK-http-error",
       "BYOK-network-error",
-      "session-key-lifecycle"
+      "session-key-lifecycle",
+      "standalone peer-profile boundary"
     ]
   }
 }

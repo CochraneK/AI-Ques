@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="P005 Future Me：基于人生故事、未来记忆与未来自我对话的研究原型。" />
   <title>P005 · Future Me</title>
-  <link rel="stylesheet" href="styles.css?v=20260916-v061" />
+  <link rel="stylesheet" href="styles.css?v=20260917-v07" />
 </head>
 <body>
   <header class="topbar">
-    <a class="wordmark" href="../" aria-label="返回 P00">
+    <a class="wordmark" href="./" aria-label="Future Me 首页">
       <span class="wordmark-dot"></span>
       <span>Future Me</span>
     </a>
@@ -38,6 +38,10 @@
           <button class="text-button" id="resumeBtn" type="button">继续上次</button>
         </div>
         <p class="storage-note">此静态原型会把回答、对话和照片保存在当前浏览器，关闭页面后仍会保留。共用设备上请在结束后点“清除”。</p>
+        <label class="peer-context-offer hidden" id="peerContextOffer">
+          <input id="p004ContextToggle" type="checkbox">
+          <span><b>使用已有角色对话</b><small>检测到以前的角色对话时，你可以允许 Future Me 使用它们来保持连续感。只用于本次生成与对话，不复制进导出或管理员记录。</small></span>
+        </label>
       </div>
 
       <div class="future-pair" aria-hidden="true">
@@ -231,13 +235,13 @@
     <section class="api-panel">
       <div class="api-panel-head">
         <div>
-          <p class="kicker">MODEL SETTINGS · BYOK</p>
+          <p class="kicker">MODEL SETTINGS · SESSION BYOK</p>
           <h2 id="apiModalTitle">模型设置</h2>
         </div>
         <button class="quiet-action" data-api-close type="button">关闭</button>
       </div>
 
-      <p class="api-intro">可以直接连接 OpenAI-compatible 接口。API Key 只保存在当前浏览器标签页的 sessionStorage，关闭标签页即清除；正式研究仍建议走服务端代理。</p>
+      <p class="api-intro">可以直接连接兼容接口。API Key 只保存在当前浏览器标签页的 sessionStorage，关闭标签页即清除。文字接口通常兼容性最好；图像和语音端点需要服务商实际支持。</p>
 
       <div class="api-form">
         <label class="api-field api-field-wide">
@@ -256,9 +260,9 @@
         </label>
 
         <label class="api-field api-field-wide api-primary-model">
-          <span>文字对话模型 <b>必填</b></span>
-          <input id="apiChatModel" spellcheck="false" placeholder="例如 auto、gpt-5.6-luna 或你的模型名">
-          <small>只想用文字 Future Me，填到这里就够了。</small>
+          <span>文字对话模型 <b>可选</b></span>
+          <input id="apiChatModel" spellcheck="false" placeholder="例如 auto 或你的模型名">
+          <small>文字、图像、TTS、语音转文字可以独立配置；至少填一种能力。</small>
         </label>
 
         <details class="api-advanced api-field-wide">
@@ -305,9 +309,8 @@
 
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="../shared/profile.js?v=1"></script>
-  <script src="runtime-config.js?v=1"></script>
-  <script src="api-client.js?v=2"></script>
-  <script src="app.js?v=20260916-v061"></script>
+    <script src="runtime-config.js?v=1"></script>
+  <script src="api-client.js?v=3"></script>
+  <script src="app.js?v=20260917-v07"></script>
 </body>
 </html>

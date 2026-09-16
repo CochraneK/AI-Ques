@@ -108,12 +108,12 @@ Source:
 
 ## V0.5 guided-profile adaptation
 
-The guided condition now includes two P001-derived rapid-profile matrices:
+The guided condition now includes two P005-owned rapid-profile matrices whose content lineage mirrors the same research basis previously used elsewhere in the project:
 
 - 24 positive-quality items, maximum 6 selections;
 - 16 important-value items, maximum 4 selections.
 
-These are **not part of the 2024 Future You intake** and must be reported as a P005/P001 profile-enrichment layer.
+These are **not part of the 2024 Future You intake** and must be reported as a P005 profile-enrichment layer. V0.7 does not read P001 runtime data.
 
 The guided Chinese condition also:
 - asks gender as a direct male/female choice;
@@ -122,3 +122,17 @@ The guided Chinese condition also:
 - removes the previous A/B decision item entirely.
 
 The replication condition remains separate and continues to use the paper-aligned free-text fields.
+
+
+## V0.7 peer-context condition
+
+P004 history is not part of the Future You replication protocol.
+
+If P004 data exists, P005 shows an explicit opt-in control. The receiving P005 session records:
+- whether P004 context was detected;
+- whether the participant allowed its use;
+- counts of imported user-authored turns / continuity memories when allowed.
+
+Raw P004 peer text is used only as model context for Future Memory / Future Me responses. It is not copied into P005 research export or the generic P005 admin snapshot.
+
+Any study enabling this bridge must report it as an additional context condition or covariate; it must not be silently pooled with a no-history replication condition.
