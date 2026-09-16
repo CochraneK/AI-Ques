@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#101311" />
+  <title>P002 Admin · 条件控制</title>
+  <link rel="stylesheet" href="admin.css?v=20260915-r1" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a href="./" class="back">← P002</a>
+      <span class="badge">LOCAL PROTOTYPE</span>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">P002 · ADMIN CONTROL</p>
+      <h1>实验条件</h1>
+      <p>参与者前端不显示条件选择。没有管理员配置时，默认使用故事问卷。</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <span>当前条件</span>
+          <strong id="currentLabel">故事问卷</strong>
+        </div>
+        <small id="updatedAt">默认值</small>
+      </div>
+
+      <div id="conditionCards" class="condition-grid"></div>
+
+      <div class="actions">
+        <button id="saveBtn" class="primary">保存条件</button>
+        <button id="resetBtn" class="secondary">恢复默认故事问卷</button>
+      </div>
+    </section>
+
+    <section class="note">
+      <strong>原型边界</strong>
+      <p>当前配置保存在本浏览器 <code>bjtu.p002.condition.v1</code>。它只控制同一浏览器中的 P002 前端，不是多设备研究后台，也没有管理员身份认证。正式收数需要服务端配置与权限控制。</p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="condition-config.js?v=20260915-r2"></script>
+  <script src="admin.js?v=20260915-r1"></script>
+</body>
+</html>

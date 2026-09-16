@@ -2,7 +2,8 @@ const SCALES = {
   pcl5: {
     id:'pcl5', name:'PCL-5', subtitle:'PTSD Checklist for DSM-5 · 20题', window:'过去一个月', publicDomain:true,
     note:'PCL-5 由美国 VA National Center for PTSD 开发，公开说明为 public domain。这里的中文为原型转述；研究部署应替换为目标语言的合规/验证版本。',
-    choices:['完全没有','有一点','中等程度','相当多','非常严重'],
+    instruction:'请始终以同一段最困扰的压力经历为参照。你不需要在这里描述事件内容。过去一个月，这些问题在多大程度上困扰到你？',
+    choices:['完全没有','有一点','中等程度','相当多','极其严重'],
     chapters:[
       {key:'B',title:'回声',desc:'一些经历会以记忆、梦境或身体反应的方式重新出现。',range:[1,5]},
       {key:'C',title:'绕行',desc:'有时我们会避开与经历有关的想法、感受和外部提醒。',range:[6,7]},
@@ -10,9 +11,9 @@ const SCALES = {
       {key:'E',title:'警戒',desc:'身体和注意系统可能仍处在高警觉、易惊或难以休息的状态。',range:[15,20]},
     ],
     items:[
-      ['B','反复出现、不由自主且令人不适的相关记忆？','Repeated, disturbing, and unwanted memories of the stressful experience?'],
+      ['B','反复出现、不由自主且令人不适的、与那段压力经历有关的记忆？','Repeated, disturbing, and unwanted memories of the stressful experience?'],
       ['B','反复做与那次压力经历有关、令人不安的梦？','Repeated, disturbing dreams of the stressful experience?'],
-      ['B','突然感觉或表现得像那次经历正在再次发生？','Suddenly feeling or acting as if the stressful experience were actually happening again?'],
+      ['B','突然感觉或表现得仿佛那次压力经历正在再次发生（像真的回到当时重新经历）？','Suddenly feeling or acting as if the stressful experience were actually happening again?'],
       ['B','遇到相关提醒时感到非常难受？','Feeling very upset when something reminded you of the stressful experience?'],
       ['B','遇到相关提醒时出现明显身体反应，例如心跳加快、呼吸困难或出汗？','Having strong physical reactions when something reminded you of the stressful experience?'],
       ['C','会避开与那次经历有关的记忆、想法或感受？','Avoiding memories, thoughts, or feelings related to the stressful experience?'],
@@ -35,7 +36,8 @@ const SCALES = {
   cape15: {
     id:'cape15', name:'Current CAPE-P15', subtitle:'近期精神病性样体验 · 15题', window:'过去三个月', publicDomain:false,
     note:'Current CAPE-P15 的公开论文描述为 15 题、三个维度，并可在体验出现后追加困扰度。本仓库不把自译文本冒充正式中文版；以下为基于构念的研究原型转述。',
-    scoreOffset:1, choices:['从未','有时','经常','几乎总是'],
+    instruction:'过去三个月，你是否有过以下体验？请选择最接近实际情况的出现频率。若至少出现过“有时”，会再询问这项体验带来的困扰程度。',
+    scoringScheme:'current-cape-p15-original-0-3', choices:['从未','有时','经常','几乎总是'], distressChoices:['完全不困扰','有一点困扰','比较困扰','非常困扰'],
     chapters:[
       {key:'PI',title:'读空气',desc:'人与人之间的信息有时会显得格外有指向性。',range:[1,5]},
       {key:'BE',title:'边界感',desc:'有些体验涉及思维归属、控制感或现实边界。',range:[6,12]},
@@ -44,164 +46,171 @@ const SCALES = {
     items:[
       ['PI','是否觉得别人像是在暗示你，或说的话带有针对你的双重含义？'],
       ['PI','是否觉得某些人并不像表面看起来的那样？'],
-      ['PI','是否感觉自己正在被针对、迫害或为难？'],
-      ['PI','是否感觉有人在联合起来对付你？'],
+      ['PI','是否感觉自己正在受到迫害？'],
+      ['PI','是否感觉有人正在密谋对付你？'],
       ['PI','是否觉得别人因为你的外表而用异样眼光看你？'],
-      ['BE','是否觉得电子设备可能影响你的思维方式？'],
+      ['BE','是否感觉电脑等电子设备会影响你的思维方式？'],
       ['BE','是否有过思维像被从脑中拿走的感觉？'],
       ['BE','是否有过脑中的想法不像是属于自己的感觉？'],
       ['BE','是否有过想法异常鲜明，以至担心别人也能听见？'],
       ['BE','是否有过自己的想法像回声一样被“听见”的体验？'],
-      ['BE','是否感觉自己受到某种外在力量或力量控制？'],
-      ['BE','是否有过熟悉的人像被“另一个一模一样的人”替代的感觉？'],
-      ['PA','独处时是否听到过似乎来自外界的声音？'],
+      ['BE','是否感觉自己受到某种自身以外的力量控制？'],
+      ['BE','是否感觉家人、朋友或熟人被一个一模一样的人替代了？'],
+      ['PA','独处时是否听到过人声？'],
       ['PA','独处时是否听到过两个或更多声音彼此交谈？'],
       ['PA','是否看到过别人没有同时看到的人、物体或动物？'],
     ].map((x,i)=>({id:i+1,cluster:x[0],text:x[1]}))
   }
 };
 
-const MODES = {
-  original:{name:'直接问卷',desc:'不加故事、不加 Emoji、不做情景改写；直接按当前原型题干作答。用于界面对照，不视为验证版心理测量金标准。',tag:'直接呈现条件'},
-  vassip:{name:'VASSIP 式',desc:'故事化 + 沉浸 + 不计分小游戏；核心题目和评分不改变。',tag:'最适合第一版'},
-  emoji:{name:'Emoji Game 式',desc:'量表保持原样，只加入“找 Emoji”任务，提高完成过程的轻松感。',tag:'成本最低'},
-  rush:{name:'HEXACO-RUSH 式',desc:'把构念改写成连续情景决策；输出实验性行为画像，不冒充标准量表分数。',tag:'创新最高 / 需验证'}
+const CONDITION_CONFIG = globalThis.P002_CONDITION || {
+  read:()=>({condition:'story'}),
+  options:{
+    story:{label:'故事问卷'},
+    direct:{label:'直接问卷'},
+    scenario:{label:'情景选择'}
+  }
 };
-
-const MODE_HANDLERS = {};
-
-function registerMode(id, meta, handlers={}){
-  if(!id || !meta?.name) throw new Error('registerMode requires a mode id and metadata');
-  MODES[id]=meta;
-  MODE_HANDLERS[id]=handlers;
-}
+const ACTIVE_CONDITION = CONDITION_CONFIG.read().condition || 'story';
 
 const RUSH = {
   pcl5:[
-    {title:'夜里 00:47',story:'你准备睡觉时，手机弹出一条内容，意外勾起了一段非常难受的往事。你第一反应更接近：',cluster:'B',options:[['把手机扣下，先感受呼吸和脚踩地面的感觉',0],['快速划走，但脑中仍反复闪回那段画面',2],['停住不动，像重新回到了当时',4]]},
-    {title:'路过那条走廊',story:'第二天去上课，最短路线会经过一个让你想起那段经历的地方。',cluster:'C',options:[['照常走过去，但允许自己慢一点',0],['犹豫后绕远路',2],['无论如何都不会靠近那里',4]]},
-    {title:'朋友的消息',story:'朋友约你参加以前很喜欢的活动。最近你对很多事情都提不起兴趣。',cluster:'D',options:[['愿意先去十分钟看看',0],['想去，但大概率会取消',2],['完全不想参与，也不想见任何人',4]]},
-    {title:'突然的巨响',story:'自习室外突然传来一声巨响。',cluster:'E',options:[['被吓到一下，很快能回到手头的事',0],['明显紧张，过一会儿才能缓过来',2],['立刻进入高度戒备，很久都难以放松',4]]},
-    {title:'期末周',story:'任务很多，你发现注意力一直被拉走，晚上也难以休息。',cluster:'E',options:[['调整节奏后还能继续完成任务',1],['效率明显下降，需要频繁中断',2],['几乎无法集中，也很难睡着',4]]},
-    {title:'一次争执',story:'有人无意中说了一句话，让你很不舒服。',cluster:'D',options:[['先确认对方意思，再决定如何回应',0],['脑中马上出现很强的负面判断',2],['强烈觉得自己/别人/世界都不可信或很糟',4]]},
+    {title:'意外出现的提醒',story:'你正在做别的事情，某个画面或声音突然让你想起那段压力经历。',cluster:'B',options:[['只是短暂想起，很快回到正在做的事',0],['相关画面或念头会反复出现一阵',2],['相关画面或念头强烈反复出现，很难把注意力移开',4]]},
+    {title:'熟悉得过头的一刻',story:'某个场景突然让你产生很强的熟悉感。',cluster:'B',options:[['只是觉得熟悉，仍清楚自己此刻在哪里',0],['有一瞬间像回到当时，但很快恢复',2],['一度强烈感觉那件事正在再次发生',4]]},
+    {title:'经过提醒你的地方',story:'去上课的路线会经过一个容易让你想起那段经历的地方。',cluster:'C',options:[['通常仍按原路线经过',0],['有时会犹豫或绕开',2],['几乎总会想办法避开，必要时会改变安排',4]]},
+    {title:'以前喜欢的活动',story:'朋友邀请你参加以前很喜欢的一项活动。',cluster:'D',options:[['仍然有兴趣参加',0],['兴趣明显变弱，常常拿不定主意',2],['几乎完全提不起兴趣',4]]},
+    {title:'一次普通失误',story:'你在一件日常小事上出了错。',cluster:'D',options:[['主要把它看成这件事本身的问题',0],['会有一阵明显的负面想法',2],['很容易扩展成对自己、别人或世界的强烈负面判断',4]]},
+    {title:'突如其来的巨响',story:'安静环境里突然传来一声很大的撞击声。',cluster:'E',options:[['被吓到一下，很快恢复',0],['明显紧张一阵，需要一点时间恢复',2],['会进入很强的警觉状态，很久都难以放松',4]]},
+    {title:'专注一段时间',story:'你给自己留出一段安静时间完成一项任务。',cluster:'E',options:[['大多数时候能持续专注',0],['注意力会频繁飘走，但还能拉回来',2],['很难维持注意力，任务经常被迫中断',4]]},
+    {title:'准备入睡',story:'一天结束后，你已经躺下准备睡觉。',cluster:'E',options:[['通常可以正常入睡并维持睡眠',0],['有时入睡困难或夜里醒来',2],['经常很难入睡，或睡眠反复中断',4]]},
   ],
   cape15:[
-    {title:'食堂里的低声交谈',story:'你经过一桌同学，他们看到你后声音变小了。你更容易把这个瞬间理解成：',cluster:'PI',options:[['可能只是巧合，先不下结论',0],['有点像在谈我，但我不确定',2],['他们明显是在用暗示针对我',4]]},
-    {title:'群聊里的省略号',story:'群里有人发了一句模糊的话，没有点名。',cluster:'PI',options:[['信息不足，不把它和自己联系起来',0],['会反复想是不是在说自己',2],['基本确定是在暗指自己',4]]},
-    {title:'电脑忽然卡顿',story:'电脑在你打字时突然卡住并自动弹窗。你第一反应更接近：',cluster:'BE',options:[['普通技术故障',0],['短暂觉得它好像和自己的想法有关',2],['明显感觉设备正在影响或读取自己的思维',4]]},
-    {title:'脑中的一句话',story:'独处时，一个念头突然闯入脑中。',cluster:'BE',options:[['把它看作自己的一个念头',0],['觉得有些陌生，但仍能保留不确定',2],['很确定这个念头并不属于自己',4]]},
-    {title:'安静的房间',story:'深夜房间很安静，你似乎听见了有人叫你的名字。',cluster:'PA',options:[['先检查环境，也考虑疲劳或声音错觉',0],['不确定是真的还是听错了',2],['很确定听到了别人并没有听到的声音',4]]},
-    {title:'窗边一闪而过',story:'余光里好像看到一个影子。',cluster:'PA',options:[['回头确认后就不再在意',0],['会怀疑刚才是不是看到了什么',2],['确信看见了别人看不到的人或东西',4]]},
+    {title:'一句没有点名的话',story:'群聊里有人发了一句模糊的话，没有提到任何人的名字。',cluster:'PI',options:[['通常不会把它和自己联系起来',0],['会怀疑这句话可能和自己有关',2],['会很确信这句话是在暗指自己',4]]},
+    {title:'几个人突然安静',story:'你经过几个人身边时，他们刚好停止了交谈。',cluster:'PI',options:[['通常不会特别解释这件事',0],['会怀疑他们刚才是不是在谈自己',2],['会很确信他们在联合起来针对自己',4]]},
+    {title:'设备的异常反应',story:'你刚想到一件事，设备随后出现了一个与你刚才想法相关的内容。',cluster:'BE',options:[['通常会把它看作普通巧合或算法结果',0],['会短暂觉得它可能和自己的想法有特殊联系',2],['会很确信设备能够影响或读取自己的思维',4]]},
+    {title:'突然出现的念头',story:'脑中突然出现一句与你平时想法不太一样的话。',cluster:'BE',options:[['仍会把它看作自己的一个念头',0],['会觉得这个念头有些陌生，不太确定',2],['会很确信这个念头并不属于自己',4]]},
+    {title:'安静环境里的声音',story:'独处时，你似乎听见有人叫你。',cluster:'PA',options:[['不确定是不是周围环境中的声音',0],['觉得像是真的听见了，但仍不能确定',2],['会很确信听到了外界实际并不存在的声音',4]]},
+    {title:'余光里的影子',story:'余光里似乎有一个人影或物体一闪而过。',cluster:'PA',options:[['不确定刚才到底看到了什么',0],['会觉得自己可能真的看到了什么',2],['会很确信看到了别人没有同时看到的人或东西',4]]},
   ]
 };
 
-const state={scale:null,mode:null,index:0,answers:[],emojiFound:0,emojiSeen:0,rushSignals:{},lastReflection:'',chapterSeen:{}};
+const state={scale:null,condition:ACTIVE_CONDITION,index:0,answers:[],distress:[],rushSignals:{},chapterSeen:{}};
 const $=s=>document.querySelector(s);
+const SEARCH=typeof location!=='undefined'?String(location.search||''):'';
+function queryParam(name){
+  const match=SEARCH.match(new RegExp('(?:[?&])'+name+'=([^&]*)'));
+  return match?decodeURIComponent(match[1]):null;
+}
+const SHOW_SOURCE=queryParam('source')==='1';
+const SHOW_RESEARCH=queryParam('research')==='1';
 
 function renderLauncher(){
+  const hint = $('#experienceHint');
+  if(hint){
+    hint.textContent = state.condition==='scenario'
+      ? '根据几个生活情境，选择最接近你的反应。'
+      : state.condition==='direct'
+        ? '选择量表后，直接按题目完成这次体验。'
+        : '沿着一段简单的故事，完成当前量表。';
+  }
   $('#scaleChoices').innerHTML=Object.values(SCALES).map(s=>`<button class="choice ${state.scale===s.id?'active':''}" data-scale="${s.id}" aria-pressed="${state.scale===s.id}">
     <h3>${s.name}</h3>
     <p>${s.subtitle}<br>时间窗口：${s.window}</p>
-    <span class="tag">${s.id==='pcl5'?'保留 0–4 反应格式':'原型转述需验证'}</span>
-  </button>`).join('');
-
-  $('#modeChoices').innerHTML=Object.entries(MODES).map(([id,m])=>`<button class="choice ${state.mode===id?'active':''}" data-mode="${id}" aria-pressed="${state.mode===id}">
-    <h3>${m.name}</h3>
-    <p>${m.desc}</p>
-    <span class="tag">${m.tag}</span>
   </button>`).join('');
 
   document.querySelectorAll('[data-scale]').forEach(b=>b.onclick=()=>{state.scale=b.dataset.scale;renderLauncher();});
-  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;renderLauncher();});
-
-  const ready=state.scale&&state.mode;
-  $('#startBtn').disabled=!ready;
-  const summary=$('#selectedSummary');
-  if(summary){
-    summary.innerHTML=ready
-      ? `<span class="selection-chip">${SCALES[state.scale].name}</span><span class="selection-plus">+</span><span class="selection-chip">${MODES[state.mode].name}</span>`
-      : `<span class="selection-empty">${state.scale?'再选择一种玩法':state.mode?'再选择一个量表':'请选择 1 个量表 + 1 种玩法'}</span>`;
-  }
+  $('#startBtn').disabled=!state.scale;
 }
 
 function resetRun(){
   state.index=0;
   state.answers=[];
-  state.emojiFound=0;
-  state.emojiSeen=0;
+  state.distress=[];
   state.rushSignals={};
-  state.lastReflection='';
   state.chapterSeen={};
-  state.expSignals={};
-  state.psychoMemory=[];
-  state.psychoScore=0;
 }
 function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
 function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
 function progress(done,total){$('#progressBar').style.width=`${Math.min(100,done/total*100)}%`;$('#progressText').textContent=`${done}/${total}`;}
 function currentChapter(scale,item){return scale.chapters.find(c=>c.key===item.cluster)}
+function publicChapter(key){
+  return {
+    B:{title:'第一段',desc:'沿着一条安静的路继续往前。'},
+    C:{title:'第二段',desc:'前方出现几条通往同一目的地的路线。'},
+    D:{title:'第三段',desc:'走廊里出现一些熟悉又陌生的片段。'},
+    E:{title:'第四段',desc:'最后一段路经过明暗交替的窗。'},
+    PI:{title:'第一段',desc:'周围有人来往，也有零散的信息出现。'},
+    BE:{title:'第二段',desc:'你进入一个安静的房间，继续向前。'},
+    PA:{title:'第三段',desc:'天色慢慢暗下来，周围有声音和光影。'}
+  }[key]||{title:'下一段',desc:'继续向前。'};
+}
 
 function renderStep(){
-  const modeHandler=MODE_HANDLERS[state.mode]?.renderStep;
-  if(modeHandler) return modeHandler();
-  if(state.mode==='rush') return renderRush();
+  if(state.condition==='scenario') return renderRush();
   const scale=SCALES[state.scale], item=scale.items[state.index];
   if(!item) return finishStandard();
-  progress(state.index,scale.items.length);
+  progress(state.index+1,scale.items.length);
   const ch=currentChapter(scale,item), chapterStart=state.index===0 || scale.items[state.index-1].cluster!==item.cluster;
-  if(state.mode==='vassip' && chapterStart && !state.chapterSeen[ch.key]) return renderVassipIntro(scale,ch);
-  const emojiActive=state.mode==='emoji' && [1,3,5,7,9,11,13,16,19].includes(state.index);
-  if(emojiActive) state.emojiSeen++;
-  const modeKicker=state.mode==='original'?'直接问卷':state.mode==='vassip'?'故事中的直接问卷题':'Emoji Check-in';
-  const modeTitle=state.mode==='original'?'直接按题干作答':state.mode==='vassip'?ch.title:'找到小表情，也完成一次自我观察';
-  const modeStory=state.mode==='original'?'不添加任何游戏化元素，直接按照当前原型题干与时间窗口作答；该条件用于交互比较，不代表验证版量表基线。':state.mode==='vassip'?storyLine(scale,item):'题目与评分逻辑保持不变；Emoji 只是额外的寻找任务，不影响答案。';
+  if(state.condition==='story' && chapterStart && !state.chapterSeen[ch.key]) return renderStoryIntro(scale,ch);
+  const pub=publicChapter(item.cluster);
+  const firstItem=state.index===0;
   $('#gameBody').innerHTML=`<div class="scene">
-    ${chapterStart && state.mode==='vassip'?`<div class="chapter-card"><span class="scene-kicker">${ch.key} · ${scale.window}</span><h2>${ch.title}</h2><p>${ch.desc}</p></div>`:''}
-    <div class="scene-kicker">${modeKicker} · ${scale.name}</div>
-    <h2>${modeTitle}</h2>
-    <p class="story">${modeStory}</p>
+    ${chapterStart && state.condition==='story'?`<div class="chapter-card"><span class="scene-kicker">${scale.window}</span><h2>${pub.title}</h2><p>${pub.desc}</p></div>`:''}
+    ${firstItem?`<p class="instrument-instruction">${scale.instruction}</p>`:''}
     <div class="question-card">
-      ${emojiActive?`<button class="emoji-clue" id="emojiClue" aria-label="找到隐藏表情">${['🪐','🫧','🦊','🌱','🧩','🐳'][state.index%6]}</button>`:''}
-      <div class="question-id">${scale.name} · ${item.id}/${scale.items.length} · ${item.cluster}</div>
-      <div class="question">${scale.window}，${item.text}</div>
-      ${item.original?`<div class="original">Public-domain source item: ${item.original}</div>`:''}
+      <div class="question-id">${scale.id==='pcl5'?'过去一个月 · 同一压力经历':'过去三个月'}</div>
+      <div class="question">${item.text}</div>
+      ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
       <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
-      ${state.mode==='emoji'?`<div class="emoji-counter">已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分</div>`:''}
     </div>
   </div>`;
-  document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{state.answers.push(Number(b.dataset.score)+(scale.scoreOffset||0));state.index++;renderStep();});
-  const ec=$('#emojiClue'); if(ec) ec.onclick=()=>{ if(!ec.classList.contains('found')){state.emojiFound++;ec.classList.add('found');ec.textContent='✓';$('.emoji-counter').textContent=`已找到 ${state.emojiFound} / ${state.emojiSeen} 个 Emoji · 不参与量表计分`; } };
+  document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{
+    const score=Number(b.dataset.score);
+    if(scale.id==='cape15' && score>=1){
+      renderCapeDistress(scale,item,score);
+      return;
+    }
+    state.answers.push(score);
+    state.distress.push(null);
+    state.index++;
+    renderStep();
+  });
 }
 
-function renderVassipIntro(scale,ch){
+function renderCapeDistress(scale,item,frequencyScore){
+  const host=$('.question-card');
+  if(!host)return;
+  host.querySelectorAll('.answer').forEach(x=>{x.disabled=true;});
+  const block=document.createElement('div');
+  block.className='distress-block';
+  block.innerHTML='<div class="distress-kicker">补充 · 只有体验出现时才追问</div><h3>这项体验让你有多困扰？</h3><div class="distress-options">'+
+    scale.distressChoices.map((label,i)=>'<button class="answer distress-answer" data-distress="'+i+'"><span>'+label+'</span><span class="score">'+i+'</span></button>').join('')+
+    '</div>';
+  host.appendChild(block);
+  block.querySelectorAll('[data-distress]').forEach(btn=>btn.onclick=()=>{
+    state.answers.push(frequencyScore);
+    state.distress.push(Number(btn.dataset.distress));
+    state.index++;
+    renderStep();
+  });
+}
+
+function renderStoryIntro(scale,ch){
   progress(state.index,scale.items.length);
-  const choices={
-    B:['沿着有光的墙面走','戴上耳机再往前','先看一眼出口在哪里'],
-    C:['走最短的路','绕一小段再过去','先站在原地观察一下'],
-    D:['翻开桌上的记录本','看向窗外','先整理散落的卡片'],
-    E:['调暗灯光','坐到靠门的位置','把桌面清空'],
-    PI:['从人多的主路走','选安静的小路','先看看校园地图'],
-    BE:['触碰控制台','先读说明书','观察屏幕变化'],
-    PA:['戴上耳机','打开一盏小灯','先确认周围环境']
-  }[ch.key] || ['继续向前','先观察一下','换一条路'];
-  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">VASSIP 式 · 不计分互动</span><h2>${ch.title}</h2><p>${ch.desc}</p></div><p class="story">进入这一章节前，选一个你此刻更想做的小动作。它只改变故事氛围，<strong>不会进入任何量表计分</strong>。</p><div class="rush-options">${choices.map((c,i)=>`<button class="rush-option" data-vassip-choice="${i}">${c}</button>`).join('')}</div></div>`;
-  document.querySelectorAll('[data-vassip-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=Number(b.dataset.vassipChoice);renderStep();});
-}
-
-function storyLine(scale,item){
-  const lines={B:'你走进一条由记忆构成的长廊。这里没有正确答案，只需要如实描述最近的体验。',C:'前方出现几条不同的路。我们不要求你面对任何不想面对的内容，只记录你通常如何应对。',D:'墙上的文字慢慢变成关于自己、他人和世界的感受。继续按最近真实情况作答。',E:'最后一段关注身体、注意力与警觉。',PI:'校园里的信息很多，有些清晰，有些模糊。只描述过去三个月你真实经历的频率。',BE:'这一章节关注思维边界与控制感。原型不对任何单项体验做诊断解释。',PA:'最后几题关注听觉或视觉体验。请选择最接近实际频率的选项。'};
-  return lines[item.cluster]||'';
+  const choices=['从左边继续','从中间继续','从右边继续'];
+  const pub=publicChapter(ch.key);
+  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一条路继续。</p><div class="rush-options">${choices.map((label,i)=>`<button class="rush-option" data-story-choice="${i}">${label}</button>`).join('')}</div></div>`;
+  document.querySelectorAll('[data-story-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=true;renderStep();});
 }
 
 function renderRush(){
   const scenarios=RUSH[state.scale], sc=scenarios[state.index];
   if(!sc) return finishRush();
   progress(state.index,scenarios.length);
-  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">实验性 SJT · ${SCALES[state.scale].name} 构念启发</div><h2>${sc.title}</h2><p class="story">${sc.story}</p><div class="rush-options">${sc.options.map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.lastReflection?`<div class="reflection">${state.lastReflection}</div>`:''}<div class="safe-note"><strong>重要：</strong>这一模式模仿 HEXACO-RUSH 的“情景判断”形式，但尚未经过效度验证。选择不会被换算成 PCL-5/CAPE-P15 的正式分数。</div></div>`;
+  $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">情境 ${state.index+1} / ${scenarios.length}</div><h2>${sc.title}</h2><p class="story">${sc.story}</p><div class="rush-options">${sc.options.map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.index===0?'<p class="mode-note">请选择最接近你的反应。这里没有对错。</p>':''}</div>`;
   document.querySelectorAll('.rush-option').forEach(b=>b.onclick=()=>{
     const opt=sc.options[Number(b.dataset.i)];
     state.rushSignals[sc.cluster]=(state.rushSignals[sc.cluster]||0)+opt[1];
-    state.lastReflection=opt[1]>=4?'这个选择在原型里被标记为“高信号”，但它本身不能说明存在任何诊断。':opt[1]>=2?'这个选择在原型里被标记为“中等信号”，后续研究需要与标准量表对照验证。':'这个选择在原型里被标记为“低信号”；仍不能单凭一次情境决定心理状态。';
     state.index++;renderRush();
   });
 }
@@ -210,22 +219,32 @@ function finishStandard(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const s=SCALES[state.scale], total=state.answers.reduce((a,b)=>a+b,0), clusters={};
   s.items.forEach((it,i)=>{clusters[it.cluster]=(clusters[it.cluster]||0)+(state.answers[i]||0)});
-  const max=s.id==='pcl5'?80:60;
-  const interpretation=s.id==='pcl5' ? pclInterpret(total,state.answers) : capeInterpret(total,clusters);
-  $('#result').innerHTML=`<p class="eyebrow">完成 · ${MODES[state.mode].name}</p><h2>${s.name} 原型结果</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原始频率/严重度总分（本原型） / ${max}</p><p>${interpretation}</p>${state.mode==='emoji'?`<p>Emoji：找到 <strong>${state.emojiFound}</strong> / ${state.emojiSeen}</p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=cnt*4,minc=s.id==='pcl5'?0:cnt,pct=s.id==='pcl5'?v/maxc*100:(v-minc)/(maxc-minc)*100;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>不是诊断结果。</strong> ${s.note}</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
-  window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
+  const max=s.id==='pcl5'?80:45;
+  const endorsedDistress=state.distress.filter((v,i)=>state.answers[i]>=1 && v!=null);
+  const distressMean=endorsedDistress.length?endorsedDistress.reduce((a,b)=>a+b,0)/endorsedDistress.length:null;
+  if(!SHOW_RESEARCH){
+    $('#result').innerHTML=participantCompletion();
+    return;
+  }
+  const interpretation=s.id==='pcl5' ? pclInterpret(total,state.answers) : capeInterpret(total,clusters,distressMean);
+  $('#result').innerHTML=`<p class="eyebrow">Research view · ${CONDITION_CONFIG.options?.[state.condition]?.label || state.condition}</p><h2>${s.name} 原型数据</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原型内部总分 / ${max}</p><p>${interpretation}</p>${s.id==='cape15'?`<p>困扰均值：<strong>${distressMean==null?'—':distressMean.toFixed(2)}</strong></p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=s.id==='pcl5'?cnt*4:cnt*3,pct=maxc?v/maxc*100:0;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>研究检查视图。</strong> ${s.note}</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
+}
+function participantCompletion(){
+  return '<div class="completion"><p class="eyebrow">完成</p><h2>这次体验已完成。</h2><p>这里不提供诊断、风险等级或临床解释。</p><button class="primary" onclick="backHome()">返回</button></div>';
 }
 function pclInterpret(total,a){
   const B=a.slice(0,5).filter(x=>x>=2).length,C=a.slice(5,7).filter(x=>x>=2).length,D=a.slice(7,14).filter(x=>x>=2).length,E=a.slice(14,20).filter(x=>x>=2).length;
   return `原始 PCL-5 官方版本可计算 0–80 严重度总分，并可按 ≥2 查看 B/C/D/E 症状条目。本页中文题干属于原型转述，因此这里的数值只用于交互研究内部比较，不应直接继承验证版的临床解释。本次聚类计数：B=${B}、C=${C}、D=${D}、E=${E}。`;
 }
-function capeInterpret(){return 'Current CAPE-P15 在文献中通常按三个维度观察近期精神病性样体验频率（本原型按 1–4 编码，总分 15–60），并可对出现的体验追加困扰度。本原型第一版暂只演示频率层，不设置临床阈值或“高风险”标签。';}
+function capeInterpret(total,clusters,distressMean){return `Current CAPE-P15 原始 Current CAPE-15 论文使用 0–3 频率编码；本原型按 0–3 保存，总分范围 0–45，并在频率至少为“有时”时追加 0–3 困扰度。频率与困扰分开保留；不设置临床阈值或“高风险”标签。当前困扰均值：${distressMean==null?'—':distressMean.toFixed(2)}。`;}
 function finishRush(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
+  if(!SHOW_RESEARCH){
+    $('#result').innerHTML=participantCompletion();
+    return;
+  }
   const entries=Object.entries(state.rushSignals); const max=Math.max(...entries.map(x=>x[1]),1);
-  $('#result').innerHTML=`<p class="eyebrow">完成 · HEXACO-RUSH 式原型</p><h2>情景决策信号图</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>实验性结果，不是 ${SCALES[state.scale].name} 分数。</strong> 这一模式故意把量表构念改造成 SJT 式选择，因此必须通过“同一批参与者完成标准量表 + 情景版”的研究重新建立信度、效度、因子结构与阈值。在完成验证前，不应给出 PTSD、精神病风险或任何诊断性反馈。</div>${sourceBlock()}<p><button class="primary" onclick="backHome()">换一种玩法</button></p>`;
-  window.scrollTo({top:$('#result').offsetTop-20,behavior:'smooth'});
+  $('#result').innerHTML=`<p class="eyebrow">Research view · 情境选择</p><h2>情境决策信号</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>研究检查视图。</strong> 这些是实验性构念信号，不是 ${SCALES[state.scale].name} 得分。</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
 }
-function sourceBlock(){return `<div class="source-list"><h3>研究依据</h3><p>直接问卷：作为 baseline-like 交互条件，但当前中文题干仍是原型转述，不是验证版心理测量金标准。VASSIP：保留当前问卷题干与反应格式，加入故事化、沉浸与不计分游戏动态。Emoji Game：在 EMA 中加入寻找 emoji 的简单任务以提升依从性。HEXACO-RUSH：用奇幻叙事中的连续情景判断来测量人格构念。详见本模块 p002/README.md 的主要来源。</p></div>`}
 
 $('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();
