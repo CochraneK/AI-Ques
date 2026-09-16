@@ -67,9 +67,10 @@ Architectural consequences:
 - P004 must not require P001, P002 or P003 to function.
 - P005 must not require P001, P002 or P003 to function.
 - Current monorepo reuse of P001 content/assets is an optional compatibility convenience only; P005 must always provide its own fallback intake.
-- P004 and P005 may reuse each other's already-created user data when both are present.
+- P004 and P005 may reuse each other's already-created user data when both are present, but cross-module reuse must be explicitly user-enabled in the consuming module.
 - The direction is order-dependent: if P004 was completed first, P005 may use safe P004 user-authored context; if P005 was completed first, P004 may use safe P005 user-authored context.
 - P004 clinical/admin-only observer signals are not part of the bilateral public bridge.
+- In P005, opted-in P004 text may be used as transient model context, but raw P004 context must not be copied into P005 export files or P005 admin snapshots.
 - Future extraction should preserve stable module-scoped storage/API contracts so either module can be moved without rewriting its core flow.
 
 This is a standing architecture constraint, not a temporary UI preference.
