@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.10.0-prototype",
+  "study_version": "0.11.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "manifest_date": "2026-09-17",
@@ -9,7 +9,8 @@
   "language": {
     "ui": "zh-CN",
     "instrument_wording_status": "prototype_paraphrase",
-    "validated_target_language_baseline": false
+    "validated_target_language_baseline": false,
+    "instrument_evidence_notes": "p002/RESEARCH_NOTES.md"
   },
   "scales": {
     "pcl5": {
@@ -18,16 +19,34 @@
       "response_encoding": "0-4",
       "source_status": "public-domain source instrument; Chinese wording in this repo is prototype paraphrase",
       "response_instruction": "keep one worst/stressful experience in mind; rate how much each problem bothered the participant in the past month",
-      "formal_baseline": false
+      "formal_baseline": false,
+      "chinese_evidence": {
+        "published_validation_exists": true,
+        "doi": "10.1080/26408066.2019.1676858",
+        "repository_wording_is_validated_version": false
+      }
     },
     "cape15": {
       "label": "Current CAPE-P15",
       "items": 15,
-      "response_encoding": "0-3 frequency + conditional 0-3 distress",
-      "scoring_scheme": "current-cape-p15-original-0-3",
-      "distress_layer": "implemented for questionnaire conditions when frequency >= 1",
-      "source_status": "construct-based prototype paraphrase; not a validated Chinese version",
-      "formal_baseline": false
+      "response_encoding": "1-4 frequency + conditional 1-4 distress",
+      "scoring_scheme": "published-response-codes-1-4",
+      "distress_layer": "implemented for questionnaire conditions when frequency > 1 (never = 1)",
+      "source_status": "published Chinese psychometric validation exists; wording in this repo remains a construct-based prototype paraphrase and is not asserted to be the validated Chinese instrument",
+      "formal_baseline": false,
+      "current_form_source": {
+        "doi": "10.1111/eip.12245",
+        "target_window": "past 3 months"
+      },
+      "chinese_evidence": {
+        "published_validation_exists": true,
+        "doi": "10.1016/j.schres.2020.06.003",
+        "validation_frames": [
+          "lifetime",
+          "past month"
+        ],
+        "repository_wording_is_validated_version": false
+      }
     }
   },
   "presentation_control": {
@@ -129,6 +148,13 @@
     "admin_export": [
       "JSON",
       "CSV"
-    ]
+    ],
+    "response_code_policy": "store questionnaire responses using the published response codes; downstream zero-basing must be explicit and derived"
+  },
+  "instrument_assets": {
+    "formal_target_language_wording_frozen": false,
+    "source_permissions_frozen": false,
+    "version_hash_frozen": false,
+    "evidence_notes": "p002/RESEARCH_NOTES.md"
   }
 }

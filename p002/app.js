@@ -37,7 +37,7 @@ const SCALES = {
     id:'cape15', name:'Current CAPE-P15', subtitle:'近期精神病性样体验 · 15题', window:'过去三个月', publicDomain:false,
     note:'Current CAPE-P15 的公开论文描述为 15 题、三个维度，并可在体验出现后追加困扰度。本仓库不把自译文本冒充正式中文版；以下为基于构念的研究原型转述。',
     instruction:'过去三个月，你是否有过以下体验？请选择最接近实际情况的出现频率。若至少出现过“有时”，会再询问这项体验带来的困扰程度。',
-    scoringScheme:'current-cape-p15-original-0-3', choices:['从未','有时','经常','几乎总是'], distressChoices:['完全不困扰','有一点困扰','比较困扰','非常困扰'],
+    scoringScheme:'cape-p15-published-1-4', choices:['从未','有时','经常','几乎总是'], choiceValues:[1,2,3,4], distressChoices:['完全不困扰','有一点困扰','比较困扰','非常困扰'], distressValues:[1,2,3,4],
     chapters:[
       {key:'PI',title:'读空气',desc:'人与人之间的信息有时会显得格外有指向性。',range:[1,5]},
       {key:'BE',title:'边界感',desc:'有些体验涉及思维归属、控制感或现实边界。',range:[6,12]},
@@ -74,7 +74,7 @@ const CONDITION_CONFIG = globalThis.P002_CONDITION || {
 const ACTIVE_CONDITION = CONDITION_CONFIG.read().condition || 'story';
 const RESEARCH = globalThis.P00_RESEARCH || null;
 const PROJECT_ID = 'P002';
-const STUDY_VERSION = '0.10.0-prototype';
+const STUDY_VERSION = '0.11.0-prototype';
 
 const RUSH = {
   pcl5:[
@@ -211,13 +211,13 @@ function renderStep(){
       <div class="question-id">${scale.id==='pcl5'?'过去一个月 · 同一压力经历':'过去三个月'}</div>
       <div class="question">${item.text}</div>
       ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
-      <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
+      <div class="answers">${scale.choices.map((c,i)=>{const value=scale.choiceValues?.[i] ?? i;return `<button class="answer" data-score="${value}"><span>${c}</span><span class="score">${value}</span></button>`}).join('')}</div>
     </div>
   </div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{
     const score=Number(b.dataset.score);
     const responseMs=Math.max(0,Date.now()-(state.itemStartedAt||Date.now()));
-    if(scale.id==='cape15' && score>=1){
+    if(scale.id==='cape15' && score>1){
       renderCapeDistress(scale,item,score,responseMs);
       return;
     }
@@ -242,7 +242,7 @@ function renderCapeDistress(scale,item,frequencyScore,frequencyResponseMs){
   const block=document.createElement('div');
   block.className='distress-block';
   block.innerHTML='<div class="distress-kicker">补充 · 只有体验出现时才追问</div><h3>这项体验让你有多困扰？</h3><div class="distress-options">'+
-    scale.distressChoices.map((label,i)=>'<button class="answer distress-answer" data-distress="'+i+'"><span>'+label+'</span><span class="score">'+i+'</span></button>').join('')+
+    scale.distressChoices.map((label,i)=>{const value=scale.distressValues?.[i] ?? i;return '<button class="answer distress-answer" data-distress="'+value+'"><span>'+label+'</span><span class="score">'+value+'</span></button>'}).join('')+
     '</div>';
   host.appendChild(block);
   block.querySelectorAll('[data-distress]').forEach(btn=>btn.onclick=()=>{
@@ -306,12 +306,14 @@ function finishStandard(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   const s=SCALES[state.scale], total=state.answers.reduce((a,b)=>a+b,0), clusters={};
   s.items.forEach((it,i)=>{clusters[it.cluster]=(clusters[it.cluster]||0)+(state.answers[i]||0)});
-  const max=s.id==='pcl5'?80:45;
-  const endorsedDistress=state.distress.filter((v,i)=>state.answers[i]>=1 && v!=null);
+  const max=s.id==='pcl5'?80:60;
+  const endorsedDistress=state.distress.filter((v,i)=>state.answers[i]>1 && v!=null);
   const distressMean=endorsedDistress.length?endorsedDistress.reduce((a,b)=>a+b,0)/endorsedDistress.length:null;
+  const weightedMean=s.id==='cape15' && state.answers.length ? total/state.answers.length : null;
   finishSession('completed',{
     answered_items:state.answers.length,
     total_score_internal:total,
+    weighted_mean_internal:weightedMean,
     distress_mean:distressMean
   });
   if(!SHOW_RESEARCH){
@@ -319,7 +321,7 @@ function finishStandard(){
     return;
   }
   const interpretation=s.id==='pcl5' ? pclInterpret(total,state.answers) : capeInterpret(total,clusters,distressMean);
-  $('#result').innerHTML=`<p class="eyebrow">Research view · ${CONDITION_CONFIG.options?.[state.condition]?.label || state.condition}</p><h2>${s.name} 原型数据</h2><div class="result-grid"><div class="result-card"><div class="score-big">${total}</div><p>原型内部总分 / ${max}</p><p>${interpretation}</p>${s.id==='cape15'?`<p>困扰均值：<strong>${distressMean==null?'—':distressMean.toFixed(2)}</strong></p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=s.id==='pcl5'?cnt*4:cnt*3,pct=maxc?v/maxc*100:0;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>研究检查视图。</strong> ${s.note}</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
+  $('#result').innerHTML=`<p class="eyebrow">Research view · ${CONDITION_CONFIG.options?.[state.condition]?.label || state.condition}</p><h2>${s.name} 原型数据</h2><div class="result-grid"><div class="result-card"><div class="score-big">${s.id==='cape15'&&weightedMean!=null?weightedMean.toFixed(2):total}</div><p>${s.id==='cape15'?'1–4 频率加权均值':'原型内部总分 / '+max}</p><p>${interpretation}</p>${s.id==='cape15'?`<p>频率原始总和：<strong>${total} / 60</strong> · 困扰均值：<strong>${distressMean==null?'—':distressMean.toFixed(2)}</strong></p>`:''}</div><div class="result-card"><h3>维度概览</h3><div class="bars">${Object.entries(clusters).map(([k,v])=>{const cnt=s.items.filter(i=>i.cluster===k).length,maxc=s.id==='pcl5'?cnt*4:cnt*4,pct=s.id==='pcl5'?(maxc?v/maxc*100:0):cnt?Math.max(0,Math.min(100,((v/cnt)-1)/3*100)):0;return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><strong>${v}</strong></div>`}).join('')}</div></div></div><div class="safe-note"><strong>研究检查视图。</strong> ${s.note}</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
 }
 function participantCompletion(){
   return '<div class="completion"><p class="eyebrow">完成</p><h2>这次体验已完成。</h2><p>这里不提供诊断、风险等级或临床解释。</p><button class="primary" onclick="backHome()">返回</button></div>';
@@ -328,7 +330,7 @@ function pclInterpret(total,a){
   const B=a.slice(0,5).filter(x=>x>=2).length,C=a.slice(5,7).filter(x=>x>=2).length,D=a.slice(7,14).filter(x=>x>=2).length,E=a.slice(14,20).filter(x=>x>=2).length;
   return `原始 PCL-5 官方版本可计算 0–80 严重度总分，并可按 ≥2 查看 B/C/D/E 症状条目。本页中文题干属于原型转述，因此这里的数值只用于交互研究内部比较，不应直接继承验证版的临床解释。本次聚类计数：B=${B}、C=${C}、D=${D}、E=${E}。`;
 }
-function capeInterpret(total,clusters,distressMean){return `Current CAPE-P15 原始 Current CAPE-15 论文使用 0–3 频率编码；本原型按 0–3 保存，总分范围 0–45，并在频率至少为“有时”时追加 0–3 困扰度。频率与困扰分开保留；不设置临床阈值或“高风险”标签。当前困扰均值：${distressMean==null?'—':distressMean.toFixed(2)}。`;}
+function capeInterpret(total,clusters,distressMean){const mean=state.answers.length?total/state.answers.length:null;return `已发表的中文 CAPE-P15 研究采用 1=从未 至 4=几乎总是的频率编码，并以 1–4 记录困扰度；本原型按该响应编码原样保存。当前仓库中文题干仍是研究原型转述，并非已冻结的验证版中文文本，因此这里不套用临床阈值或风险标签。当前频率加权均值：${mean==null?'—':mean.toFixed(2)}；困扰均值：${distressMean==null?'—':distressMean.toFixed(2)}。`;}
 function finishRush(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
   finishSession('completed',{

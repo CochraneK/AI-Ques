@@ -45,16 +45,19 @@ P002 已接入共享研究 runtime：
 - 过去一个月
 - 全程围绕同一段最困扰的压力经历
 - 回答这些问题在多大程度上“困扰到你”
-- 当前中文题干仍是 prototype paraphrase，不声明为正式验证中文版
+- 已有中文语境下的 PCL-5 验证研究（Fung et al., 2019）
+- **当前仓库中文题干仍是 prototype paraphrase，不等同于已验证中文文本**
 
 ### Current CAPE-P15
 
 - 15 项
-- 过去 3 个月
+- P002 的 Current 条件使用过去 3 个月窗口
 - PI / BE / PA 三个维度
-- 原始 Current CAPE-15 方案：0–3 频率
-- 频率至少为“有时”时追加独立 0–3 distress
-- 当前中文题干仍是 prototype paraphrase，不声明为正式验证中文版
+- 已发表中文 CAPE-P15 研究使用 **1=从未、2=有时、3=经常、4=几乎总是** 的频率编码
+- 体验出现时，困扰度同样按 **1–4** 独立保存
+- 仓库保留原始响应代码；如果分析阶段需要 0-based 值，必须显式派生，不能把它描述为源量表的原始编码
+- Sun et al. (2020) 已验证中文 CAPE-P15，但其验证包含 lifetime / past-month frame；Current CAPE-15 的 3-month framing 来自 Capra et al. (2017)
+- **当前仓库中文题干仍是 construct-based prototype paraphrase，不等同于已验证中文文本**
 
 ## 呈现原则
 
@@ -74,6 +77,8 @@ P002 已接入共享研究 runtime：
 
 - VA National Center for PTSD, PCL-5: https://www.ptsd.va.gov/professional/assessment/adult-sr/ptsd-checklist.asp
 - Capra et al. (2017), Current CAPE-15: https://doi.org/10.1111/eip.12245
+- Sun et al. (2020), Chinese CAPE-P15 psychometrics: https://doi.org/10.1016/j.schres.2020.06.003
+- Fung et al. (2019), Chinese-context PCL-5 pilot validation: https://doi.org/10.1080/26408066.2019.1676858
 - Ramos-Villagrasa et al. (2024), VASSIP: https://doi.org/10.1371/journal.pone.0302429
 - Nikolaou & Katsadoraki (2025), HEXACO-RUSH: https://doi.org/10.1016/j.chb.2024.108467
 
@@ -81,4 +86,5 @@ P002 已接入共享研究 runtime：
 
 - `status = prototype_only`
 - `formal_data_collection_authorized = false`
-- 正式收数前需要冻结目标语言题干、条件逻辑、session schema、伦理/同意/退出流程和数据治理
+- 正式收数前需要冻结目标语言题干、来源/权限、响应编码、条件逻辑、session schema、伦理/同意/退出流程和数据治理
+- 当前证据与版本边界详见 `p002/RESEARCH_NOTES.md`
