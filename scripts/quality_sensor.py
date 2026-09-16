@@ -32,6 +32,7 @@ def scan_repo() -> list[dict]:
     p002_app = read("p002/app.js")
     p002_readme = read("p002/README.md")
     p004_app = read("p004/app.js")
+    p004_core = read("p004/core.js")
     p004_index = read("p004/index.html")
     p005_app = read("p005/app.js")
     p005_index = read("p005/index.html")
@@ -45,6 +46,7 @@ def scan_repo() -> list[dict]:
         "p002/experiments.js",
         "p002/study-manifest.json",
         "p004/index.html",
+        "p004/core.js",
         "p004/app.js",
         "p004/module-manifest.json",
         "p004/NVWA_CONTRACT.md",
@@ -165,7 +167,7 @@ def scan_repo() -> list[dict]:
             "P004 still uses the old mixed public/private profile namespace.",
             "Use shared/profile.js only for reusable public Persona fields and keep observer evidence in a P004-only namespace or protected backend.",
         ))
-    if "bjtu.p004.observer.v2" not in p004_app or "BJTU_PROFILE.update" in p004_app:
+    if "bjtu.p004.observer.v2" not in p004_core or "BJTU_PROFILE.update" in p004_app:
         findings.append(finding(
             "p004-private-storage-boundary", "P0", "p004/app.js",
             "P004 longitudinal observer evidence is not isolated from the shared public profile.",
@@ -188,6 +190,25 @@ def scan_repo() -> list[dict]:
             "p004-user-safety-boundary", "P0", "p004/app.js",
             "P004 chat runtime is missing the user-facing clinical-label guardrail or safety override.",
             "Keep clinical inference admin-only and make immediate safety override character roleplay.",
+        ))
+
+    if "p005Observer:false" not in p004_core or "CORE.canImportP005(consentState())" not in p004_app:
+        findings.append(finding(
+            "p004-cross-module-consent", "P0", "p004/",
+            "P004 P005/Future You observer import is not explicitly opt-in by default.",
+            "Default P005 observer import to off and gate import on explicit consent.",
+        ))
+    if "clearP004LocalData" not in p004_app or "clearP004DataBtn" not in p004_index:
+        findings.append(finding(
+            "p004-local-data-clearing", "P0", "p004/",
+            "P004 lacks a visible all-local-data clearing path.",
+            "Expose a control that clears P004 localStorage, Skill Vault and current-tab BYOK key without deleting other modules.",
+        ))
+    if "xmg2024/nvwa-skill@main" in p004_app or "xmg2024/nvwa-skill@main" in read("p004/NVWA_CONTRACT.md"):
+        findings.append(finding(
+            "p004-mutable-nvwa-protocol", "P1", "p004/",
+            "P004 references the mutable NVWA main branch as its protocol version.",
+            "Pin the NVWA protocol to an exact reviewed commit or release.",
         ))
 
     if "bjtu.p005.state.v1" not in p005_app:

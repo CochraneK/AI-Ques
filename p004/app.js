@@ -1,8 +1,10 @@
 (() => {
 'use strict';
 
-const VERSION='2.2.0';
-const K={chars:'bjtu.p004.characters.v2',threads:'bjtu.p004.threads.v2',memory:'bjtu.p004.memory.v2',observer:'bjtu.p004.observer.v2',active:'bjtu.p004.active.v2',p005:'bjtu.p005.state.v1'};
+const VERSION='2.3.0';
+const CORE=window.P004_CORE;
+if(!CORE)throw new Error('P004 core.js must load before app.js');
+const K=CORE.KEYS;
 const adminMode=new URLSearchParams(location.search).get('admin')==='1';
 const $=id=>document.getElementById(id);
 const parse=(v,f)=>{try{return JSON.parse(v)}catch(_){return f}};
@@ -88,9 +90,9 @@ function sharedProfile(){return window.BJTU_PROFILE&&typeof window.BJTU_PROFILE.
 function persist(){save(K.chars,chars);save(K.threads,threads);save(K.memory,memories);save(K.observer,observer);localStorage.setItem(K.active,activeId)}
 function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(window.__p004toast);window.__p004toast=setTimeout(()=>e.classList.remove('show'),1700)}
 
-function openVault(){return new Promise((resolve,reject)=>{const q=indexedDB.open('bjtu-p004-skill-vault',1);q.onupgradeneeded=()=>{const db=q.result;if(!db.objectStoreNames.contains('skills'))db.createObjectStore('skills',{keyPath:'id'})};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
-async function vaultPut(record){const db=await openVault();return new Promise((resolve,reject)=>{const tx=db.transaction('skills','readwrite');tx.objectStore('skills').put(record);tx.oncomplete=()=>{skillCache.set(record.id,record);resolve(record)};tx.onerror=()=>reject(tx.error)})}
-async function vaultGet(id){if(!id)return null;if(skillCache.has(id))return skillCache.get(id);try{const db=await openVault();const r=await new Promise((resolve,reject)=>{const tx=db.transaction('skills','readonly');const q=tx.objectStore('skills').get(id);q.onsuccess=()=>resolve(q.result||null);q.onerror=()=>reject(q.error)});if(r)skillCache.set(id,r);return r}catch(_){return null}}
+function openVault(){return new Promise((resolve,reject)=>{const q=indexedDB.open(K.skillDb,1);q.onupgradeneeded=()=>{const db=q.result;if(!db.objectStoreNames.contains('skills'))db.createObjectStore('skills',{keyPath:'id'})};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
+async function vaultPut(record){const db=await openVault();return new Promise((resolve,reject)=>{const tx=db.transaction('skills','readwrite');tx.objectStore('skills').put(record);tx.oncomplete=()=>{skillCache.set(record.id,record);db.close();resolve(record)};tx.onerror=()=>{db.close();reject(tx.error)}})}
+async function vaultGet(id){if(!id)return null;if(skillCache.has(id))return skillCache.get(id);try{const db=await openVault();const r=await new Promise((resolve,reject)=>{const tx=db.transaction('skills','readonly');const q=tx.objectStore('skills').get(id);q.onsuccess=()=>{const value=q.result||null;db.close();resolve(value)};q.onerror=()=>{db.close();reject(q.error)}});if(r)skillCache.set(id,r);return r}catch(_){return null}}
 async function requestPersistentStorage(){try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(_){}}
 
 function renderPersona(){const p=sharedProfile();$('personaName').textContent=p.name||'你的 Persona';$('personaAvatar').textContent=(p.name||'我').slice(0,1)}
@@ -105,7 +107,7 @@ async function switchCharacter(id){activeId=id;persist();renderCharacters();awai
 function openModal(name){$(name+'Modal').classList.remove('hidden');document.body.style.overflow='hidden'}
 function closeModal(name){$(name+'Modal').classList.add('hidden');document.body.style.overflow=''}
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>closeModal(x.dataset.close)));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['character','distill','api','admin'].forEach(closeModal)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['character','distill','api','data','admin'].forEach(closeModal)});
 
 function matchingStrengths(value){const source=String(value||'');return STRENGTH_GROUPS.flatMap(g=>g.items).filter(x=>source.includes(x))}
 function matchingFeel(value){
@@ -254,9 +256,8 @@ function openEditor(id){
 }
 
 function creatorNext(){
-  if(creatorStep===0&&!creatorDraft.relationship)return toast('先选一种你们之间的关系');
-  if(creatorStep===1&&!creatorDraft.traits.length)return toast('至少给 TA 一个核心品质');
-  if(creatorStep===2&&!creatorDraft.feel)return toast('选一种你希望 TA 带给你的感觉');
+  const problem=CORE.validateCreatorStep(creatorStep,creatorDraft);
+  if(problem)return toast(problem);
   if(creatorStep<3)setCreatorStep(creatorStep+1);
 }
 
@@ -300,24 +301,43 @@ function openDistill(){const c=active();$('distillEnabled').checked=Boolean(c.di
 function localSkillDraft(c,subject,focus){const name=slug(subject||c.name)+'-perspective';return[
 '---','name: '+name,'description: |','  P004 本地 Character Skill 草稿。未执行 NVWA 六路调研、三重验证或外部事实核查。','  仅用于在没有后端时保持角色设定的一致性。','---','','# '+(subject||c.name)+' · Character Skill Draft','','> 注意：这是本地草稿，不是完整 NVWA 蒸馏产物。','','## 身份','- 名称：'+c.name,'- 身份：'+(c.identity||'未设置'),'- 场景：'+(c.scenario||'未设置'),'','## 人格与边界',c.personality||'未设置','','## 表达 DNA（来自 Character Card）',c.style||'未设置','','## 聚焦方向',focus||'全面保持角色一致性','','## 运行规则','- 直接以角色身份交流。','- 不把 Character Card 当成用户心理测量。','- 记忆用于维持关系连续性，不应无条件重复全部历史。','- 面对事实性问题时承认信息不足，不编造来源。','- 即时安全风险高于角色扮演。','','## 诚实边界','- 未执行 NVWA 的六类来源研究。','- 未执行跨域复现 / 生成力 / 排他性三重验证。','- 不能声称代表真实人物本人。'
 ].join(String.fromCharCode(10))}
-async function runDistill(){const c=active();if(!$('distillEnabled').checked){c.distill={enabled:false,status:'off'};persist();closeModal('distill');renderActive();toast('继续使用 Character Card');return}const subject=text($('distillSubject').value)||c.name,focus=text($('distillFocus').value),materials=await readMaterials();$('distillProgress').classList.remove('hidden');$('runDistillBtn').disabled=true;let result=null;try{if(window.P004_API&&window.P004_API.enabled){result=await window.P004_API.distill({protocol:'nvwa-skill',protocolVersion:'xmg2024/nvwa-skill@main',character:publicCharacter(c),request:{subject,focus,mode:materials.length?'local-material-first':'web-research',materials},requirements:{researchStreams:6,tripleVerification:true,mentalModels:[3,7],decisionHeuristics:[5,10],includeExpressionDNA:true,includeAntiPatterns:true,includeHonestLimits:true,qualityValidation:true}})}}catch(e){console.warn('NVWA distill API failed',e)}let source='nvwa-api',skillMarkdown,meta;if(result&&typeof result.skillMarkdown==='string'&&result.skillMarkdown.trim()){skillMarkdown=result.skillMarkdown;meta=Object.assign({mentalModels:null,heuristics:null,validated:true},result.meta||{})}else{source='local-draft';skillMarkdown=localSkillDraft(c,subject,focus);meta={mentalModels:0,heuristics:0,validated:false,reason:'No NVWA backend configured or no valid skill returned'}}const record={id:uid('skill'),characterId:c.id,subject,focus,source,createdAt:new Date().toISOString(),skillMarkdown,meta,research:result?.research||null};await requestPersistentStorage();await vaultPut(record);c.distill={enabled:true,status:'ready',skillId:record.id,subject,focus,source};persist();$('distillProgress').classList.add('hidden');$('runDistillBtn').disabled=false;$('distillResult').classList.remove('hidden');$('distillResult').textContent=source==='nvwa-api'?'NVWA Skill 已完成并写入本地 Skill Vault。后续对话会加载该 SKILL.md。':'当前没有可用的 NVWA 后端，因此只生成了明确标注的本地 Character Skill 草稿；没有伪装成完整蒸馏。';renderActive();toast(source==='nvwa-api'?'NVWA Skill 已就绪':'已生成本地 Skill 草稿')}
+async function runDistill(){const c=active();if(!$('distillEnabled').checked){c.distill={enabled:false,status:'off'};persist();closeModal('distill');renderActive();toast('继续使用 Character Card');return}const subject=text($('distillSubject').value)||c.name,focus=text($('distillFocus').value),materials=await readMaterials();$('distillProgress').classList.remove('hidden');$('runDistillBtn').disabled=true;let result=null;try{if(window.P004_API&&window.P004_API.enabled){result=await window.P004_API.distill({protocol:'nvwa-skill',protocolVersion:'xmg2024/nvwa-skill@fdb181f0e057e837e15942707b1ea35845850979',character:publicCharacter(c),request:{subject,focus,mode:materials.length?'local-material-first':'web-research',materials},requirements:{researchStreams:6,tripleVerification:true,mentalModels:[3,7],decisionHeuristics:[5,10],includeExpressionDNA:true,includeAntiPatterns:true,includeHonestLimits:true,qualityValidation:true}})}}catch(e){console.warn('NVWA distill API failed',e)}let source='nvwa-api',skillMarkdown,meta;if(result&&typeof result.skillMarkdown==='string'&&result.skillMarkdown.trim()){skillMarkdown=result.skillMarkdown;meta=Object.assign({mentalModels:null,heuristics:null,validated:true},result.meta||{})}else{source='local-draft';skillMarkdown=localSkillDraft(c,subject,focus);meta={mentalModels:0,heuristics:0,validated:false,reason:'No NVWA backend configured or no valid skill returned'}}const record={id:uid('skill'),characterId:c.id,subject,focus,source,createdAt:new Date().toISOString(),skillMarkdown,meta,research:result?.research||null};await requestPersistentStorage();await vaultPut(record);c.distill={enabled:true,status:'ready',skillId:record.id,subject,focus,source};persist();$('distillProgress').classList.add('hidden');$('runDistillBtn').disabled=false;$('distillResult').classList.remove('hidden');$('distillResult').textContent=source==='nvwa-api'?'NVWA Skill 已完成并写入本地 Skill Vault。后续对话会加载该 SKILL.md。':'当前没有可用的 NVWA 后端，因此只生成了明确标注的本地 Character Skill 草稿；没有伪装成完整蒸馏。';renderActive();toast(source==='nvwa-api'?'NVWA Skill 已就绪':'已生成本地 Skill 草稿')}
 async function relevantSkill(c){return c&&c.distill&&c.distill.enabled&&c.distill.status==='ready'?vaultGet(c.distill.skillId):null}
 
-const SAFETY_TERMS=['想死','不想活','结束生命','自杀','伤害自己','割腕','跳楼','活不下去','杀了自己'];
-function urgentSafety(v){const t=String(v||'').toLowerCase();return SAFETY_TERMS.some(w=>t.includes(w))}
+const urgentSafety=CORE.urgentSafety;
 function safetyReply(){return '你刚才提到的内容让我更关心你此刻是否安全。先暂停角色聊天：如果你正在准备伤害自己、已经有具体计划，或觉得自己可能无法保证安全，请立刻联系当地急救服务、危机热线，或去到一个可信任的人身边。你也可以只告诉我：你现在是安全的，还是有立即危险？'}
 function localReply(input,c){const t=input.toLowerCase(),style=(c.style||'')+' '+(c.personality||'');if(/反问|辩论|漏洞/.test(style))return '先别急着回答。你现在默认成立、但其实还没有验证的前提是什么？';if(/故事|隐喻|画面/.test(style))return '我把它换成一个画面：你站在两扇门前，一扇写着“熟悉但可控”，另一扇写着“未知但可能长大”。真正让你停住的，是哪一种失去？';if(/温和|陪伴|理解/.test(style)&&/难过|焦虑|压力|累|烦|失眠/.test(t))return '我先不急着解释它。最近一次这种感觉最明显，是发生在什么具体场景里？';const mem=memory();const hook=mem.length?'我还记得你之前提过“'+short(mem[mem.length-1].text,42)+'”。':' ';return hook+'你这句话里，我更在意的不是结论，而是它为什么在现在变得重要。愿意再往前说一点吗？'}
 function showTyping(){const log=$('chatLog'),row=document.createElement('article');row.id='typingRow';row.className='message assistant';const av=document.createElement('div');av.className='message-avatar';av.textContent=active().avatar||active().name.slice(0,1);const body=document.createElement('div');body.className='message-body';const n=document.createElement('span');n.className='message-name';n.textContent=active().name;const bubble=document.createElement('div');bubble.className='bubble';const dots=document.createElement('div');dots.className='typing';dots.innerHTML='<i></i><i></i><i></i>';bubble.append(dots);body.append(n,bubble);row.append(av,body);log.append(row);log.scrollTop=log.scrollHeight}
 function removeTyping(){const x=$('typingRow');if(x)x.remove()}
 function memoryContext(){return memory().slice(-8).map(x=>x.text)}
-async function maybeRemember(input,source){if(input.length<20)return;const list=memory(),candidate=short(input.replace(/\s+/g,' '),190);if(list.some(x=>x.text===candidate))return;let value=candidate;try{if(window.P004_API&&window.P004_API.enabled&&thread().filter(m=>m.role==='user').length%4===0){const r=await window.P004_API.remember({character:publicCharacter(active()),recentMessages:thread().slice(-12),existing:list.slice(-24)});if(r&&typeof r.memory==='string')value=short(r.memory,240)}}catch(_){}list.push({id:uid('mem'),text:value,source,createdAt:Date.now()});if(list.length>60)list.splice(0,list.length-60);persist();renderMemory()}
+async function maybeRemember(input,source){if(input.length<20)return;const list=memory(),candidate=CORE.normalizeMemoryCandidate(input,190);if(list.some(x=>x.text===candidate))return;let value=candidate;try{if(window.P004_API&&window.P004_API.enabled&&thread().filter(m=>m.role==='user').length%4===0){const r=await window.P004_API.remember({character:publicCharacter(active()),recentMessages:thread().slice(-12),existing:list.slice(-24)});if(r&&typeof r.memory==='string')value=short(r.memory,240)}}catch(_){}list.push({id:uid('mem'),text:value,source,createdAt:Date.now()});if(list.length>60)list.splice(0,list.length-60);persist();renderMemory()}
 
 const WORDS={openness:['好奇','新鲜','探索','创意','艺术','旅行','想象','可能性','学习','故事'],conscientiousness:['计划','安排','完成','目标','清单','坚持','规律','效率','准备'],extraversion:['朋友','聚会','聊天','认识人','一起','团队','社交','分享','见面'],agreeableness:['理解','照顾','体谅','帮助','倾听','关系','支持','合作','在意别人'],sensitivity:['担心','焦虑','紧张','难过','压力','敏感','害怕','反复想','睡不着','内耗']};
 const CLIN={phqLike:['低落','没兴趣','睡不好','失眠','疲惫','自责','没用','无法专注'],gadLike:['焦虑','紧张','担心','放松不了','烦躁','最坏','出事'],pclLike:['闪回','噩梦','避开','不想提','高度警觉','容易受惊','麻木'],capeLike:['被监视','针对我','思想被控制','别人能听到我的想法','听到声音','看到别人看不到']};
 function hits(t,arr){return arr.reduce((n,w)=>n+(t.includes(w)?1:0),0)}
 function analyzeEvidence(input,source,context,quiet){const t=input.toLowerCase();Object.entries(WORDS).forEach(([k,arr])=>{const h=hits(t,arr);if(h){observer.big[k]=clamp(observer.big[k]+Math.min(4,h*1.4));observer.evidence.push({id:uid('ev'),source,context,dimension:k,quote:short(input),at:Date.now(),strength:Math.min(1,.35+h*.12)})}});Object.entries(CLIN).forEach(([k,arr])=>{const h=hits(t,arr);if(h){observer.clinical[k]=clamp(observer.clinical[k]+Math.min(6,h*2));observer.evidence.push({id:uid('ev'),source,context,dimension:k,quote:short(input),at:Date.now(),strength:Math.min(1,.3+h*.14)})}});observer.updatedAt=new Date().toISOString();if(observer.evidence.length>500)observer.evidence.splice(0,observer.evidence.length-500);if(!quiet){persist();renderSourceCounts()}}
-function importP005(){const raw=read(K.p005,null);if(!raw)return;const signature=hash(JSON.stringify({profile:raw.profile,messages:raw.messages}));if(observer.imports.P005===signature)return;observer.evidence=observer.evidence.filter(e=>e.source!=='P005');const p=raw.profile||{};['currentWork','people','proud','lowPoint','turningPoint','futureWork','dailyLife','values','decision'].forEach(k=>{if(p[k])analyzeEvidence(String(p[k]),'P005','Future You open response',true)});(raw.messages||[]).filter(m=>m.role==='user'&&m.text).forEach(m=>analyzeEvidence(m.text,'P005','Future You chat',true));observer.imports.P005=signature;persist();renderSourceCounts()}
-function collectP005(){const raw=read(K.p005,null);if(!raw)return[];const out=[];Object.values(raw.profile||{}).forEach(v=>{if(typeof v==='string'&&v.trim())out.push(v)});(raw.messages||[]).filter(m=>m.role==='user'&&m.text).forEach(m=>out.push(m.text));return out.slice(-120)}
+function consentState(){return read(K.consent,CORE.defaultConsent())}
+function renderConsent(){
+  const allowed=CORE.canImportP005(consentState());
+  if($('p005ConsentToggle'))$('p005ConsentToggle').checked=allowed;
+  if($('p005ConsentState'))$('p005ConsentState').textContent=allowed?'已允许 · 可随时撤回':'默认关闭 · Future You 不会被读取';
+}
+function rebuildObserverFromP004(){
+  observer=freshObserver();
+  Object.values(threads).flat().filter(m=>m&&m.role==='user'&&m.text).forEach(m=>{
+    analyzeEvidence(String(m.text),'P004','character chat',true);
+    if(urgentSafety(m.text))observer.safety.push({at:m.at||Date.now(),source:'P004',kind:'explicit-self-harm-language',quote:short(m.text,160)});
+  });
+  persist();
+}
+function setP005Consent(enabled){
+  save(K.consent,{p005Observer:Boolean(enabled),updatedAt:new Date().toISOString()});
+  if(!enabled)rebuildObserverFromP004();
+  else importP005();
+  renderConsent();renderSourceCounts();
+}
+function importP005(){if(!CORE.canImportP005(consentState()))return;const raw=read(K.p005,null);if(!raw)return;const signature=hash(JSON.stringify({profile:raw.profile,messages:raw.messages}));if(observer.imports.P005===signature)return;observer.evidence=observer.evidence.filter(e=>e.source!=='P005');const p=raw.profile||{};['currentWork','people','proud','lowPoint','turningPoint','futureWork','dailyLife','values','decision'].forEach(k=>{if(p[k])analyzeEvidence(String(p[k]),'P005','Future You open response',true)});(raw.messages||[]).filter(m=>m.role==='user'&&m.text).forEach(m=>analyzeEvidence(m.text,'P005','Future You chat',true));observer.imports.P005=signature;persist();renderSourceCounts()}
+function collectP005(){if(!CORE.canImportP005(consentState()))return[];const raw=read(K.p005,null);if(!raw)return[];const out=[];Object.values(raw.profile||{}).forEach(v=>{if(typeof v==='string'&&v.trim())out.push(v)});(raw.messages||[]).filter(m=>m.role==='user'&&m.text).forEach(m=>out.push(m.text));return out.slice(-120)}
 function mergeObserver(p){if(p.big)Object.keys(observer.big).forEach(k=>{if(Number.isFinite(Number(p.big[k])))observer.big[k]=clamp(Number(p.big[k]))});if(p.clinical)Object.keys(observer.clinical).forEach(k=>{if(Number.isFinite(Number(p.clinical[k])))observer.clinical[k]=clamp(Number(p.clinical[k]))});if(Array.isArray(p.evidence))p.evidence.slice(-120).forEach(e=>observer.evidence.push({id:uid('ev'),source:e.source||'API',context:e.context||'observer',dimension:e.dimension||'unknown',quote:short(e.quote||''),at:e.at||Date.now(),strength:e.strength||.5}));observer.updatedAt=new Date().toISOString()}
 async function backgroundObserve(){importP005();if(!(window.P004_API&&window.P004_API.enabled))return;try{const r=await window.P004_API.observe({sources:{P004:Object.values(threads).flat().filter(m=>m.role==='user').map(m=>m.text).slice(-120),P005:collectP005()},existing:observer});if(r&&r.profile){mergeObserver(r.profile);persist();renderSourceCounts()}}catch(e){console.warn('P004 observer API failed',e)}}
 
@@ -325,6 +345,31 @@ async function send(input){input=text(input);if(!input)return;const c=active(),l
 
 function renderAdmin(){importP005();const names={openness:'Openness',conscientiousness:'Conscientiousness',extraversion:'Extraversion',agreeableness:'Agreeableness',sensitivity:'Emotional sensitivity'};const bg=$('bigFiveGrid');bg.replaceChildren();Object.entries(observer.big).forEach(([k,v])=>{const row=document.createElement('div');row.className='metric-row';const n=document.createElement('strong');n.textContent=names[k];const bar=document.createElement('span');bar.className='metric-bar';const fill=document.createElement('i');fill.style.width=Math.round(v)+'%';bar.append(fill);const num=document.createElement('em');num.textContent=Math.round(v);row.append(n,bar,num);bg.append(row)});const conf=Math.min(95,Math.round(30+observer.evidence.length*1.1));$('observerConfidence').textContent='confidence '+conf+'% · evidence '+observer.evidence.length;const cn={phqLike:'PHQ-related',gadLike:'GAD-related',pclLike:'PCL-related',capeLike:'CAPE-related'},cg=$('clinicalGrid');cg.replaceChildren();Object.entries(observer.clinical).forEach(([k,v])=>{const d=document.createElement('div');d.className='clinical-tile';const s=document.createElement('strong');s.textContent=cn[k];const b=document.createElement('b');b.textContent=Math.round(v);const p=document.createElement('p');p.textContent='开放式对话线索强度；不能当作正式量表分数、阈值或诊断。';d.append(s,b,p);cg.append(d)});const ev=$('evidenceList');ev.replaceChildren();observer.evidence.slice().reverse().slice(0,120).forEach(e=>{const row=document.createElement('div');row.className='evidence-row';const src=document.createElement('strong');src.textContent=e.source;const dim=document.createElement('span');dim.textContent=e.dimension;const q=document.createElement('p');q.textContent=e.quote;const tm=document.createElement('em');tm.textContent=new Date(e.at).toLocaleDateString('zh-CN');row.append(src,dim,q,tm);ev.append(row)});const counts={};observer.evidence.forEach(e=>counts[e.source]=(counts[e.source]||0)+1);$('evidenceSummary').textContent=Object.entries(counts).map(([k,v])=>k+' '+v).join(' · ')||'暂无证据'}
 async function exportSkill(){const c=active(),s=await relevantSkill(c);if(!s){toast('这个角色还没有本地 Skill');return}const suggested=slug(c.name)+'-SKILL.md';if(window.showSaveFilePicker){try{const h=await window.showSaveFilePicker({suggestedName:suggested,types:[{description:'Markdown Skill',accept:{'text/markdown':['.md']}}]});const w=await h.createWritable();await w.write(s.skillMarkdown);await w.close();toast('SKILL.md 已保存到本地文件');return}catch(e){if(e&&e.name==='AbortError')return}}const blob=new Blob([s.skillMarkdown],{type:'text/markdown;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=suggested;a.click();setTimeout(()=>URL.revokeObjectURL(url),500);toast('已导出 SKILL.md')}
+
+function deleteSkillVault(){
+  return new Promise(resolve=>{
+    try{
+      const request=indexedDB.deleteDatabase(K.skillDb);
+      request.onsuccess=()=>resolve(true);
+      request.onerror=()=>resolve(false);
+      request.onblocked=()=>resolve(false);
+    }catch(_){resolve(false)}
+  });
+}
+async function clearP004LocalData(){
+  const btn=$('clearP004DataBtn');
+  if(btn&&btn.dataset.confirm!=='yes'){
+    btn.dataset.confirm='yes';btn.textContent='再点一次，确认清除全部 P004 数据';
+    setTimeout(()=>{if(btn&&btn.dataset.confirm==='yes'){btn.dataset.confirm='';btn.textContent='清除全部 P004 本地数据'}},4500);
+    return;
+  }
+  CORE.p004LocalStorageKeys().forEach(key=>localStorage.removeItem(key));
+  if(window.P004_API&&window.P004_API.clearDirect)window.P004_API.clearDirect();
+  skillCache.clear();
+  await deleteSkillVault();
+  location.reload();
+}
+function openDataSettings(){renderConsent();const btn=$('clearP004DataBtn');if(btn){btn.dataset.confirm='';btn.textContent='清除全部 P004 本地数据'}openModal('data')}
 
 function renderRuntime(){
   const api=window.P004_API,mode=api&&api.mode;
@@ -411,6 +456,9 @@ $('deleteCharacterBtn').addEventListener('click',deleteCharacter);
 ['charName','charAvatar','charExtra'].forEach(id=>$(id).addEventListener('input',()=>{creatorDraft.extra=text($('charExtra').value);renderCreatorPreview()}));
 ['charIdentity','charScenario','charFirst'].forEach(id=>$(id).addEventListener('input',e=>{e.target.dataset.manual='1';renderCreatorPreview()}));
 $('apiBtn').addEventListener('click',openApiSettings);
+$('dataBtn').addEventListener('click',openDataSettings);
+$('p005ConsentToggle').addEventListener('change',e=>setP005Consent(e.target.checked));
+$('clearP004DataBtn').addEventListener('click',clearP004LocalData);
 $('toggleApiKeyBtn').addEventListener('click',()=>{const input=$('apiKeyInput'),show=input.type==='password';input.type=show?'text':'password';$('toggleApiKeyBtn').textContent=show?'隐藏':'显示'});
 document.querySelectorAll('.api-presets .preset').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-presets .preset').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(btn.dataset.apiBase)$('apiBaseUrl').value=btn.dataset.apiBase;if(btn.dataset.apiModel)$('apiModel').value=btn.dataset.apiModel}));
 $('testApiBtn').addEventListener('click',testApi);
@@ -425,6 +473,6 @@ $('exportSkillBtn').addEventListener('click',exportSkill);
 $('refreshObserverBtn').addEventListener('click',async()=>{await backgroundObserve();renderAdmin();toast('人物画像已刷新')});
 $('adminBtn').addEventListener('click',()=>{renderAdmin();openModal('admin')});
 
-async function boot(){if(!chars.length)chars=DEFAULTS;if(!active())activeId=chars[0].id;if(adminMode)$('adminBtn').classList.remove('hidden');renderRuntime();renderPersona();importP005();renderSourceCounts();renderCharacters();await renderActive();persist();backgroundObserve()}
+async function boot(){if(!chars.length)chars=DEFAULTS;if(!active())activeId=chars[0].id;if(adminMode)$('adminBtn').classList.remove('hidden');const consent=consentState();if(!CORE.canImportP005(consent)){const hadP005=(observer.evidence||[]).some(e=>e&&e.source==='P005')||Boolean(observer.imports&&observer.imports.P005);if(hadP005)rebuildObserverFromP004();if(!localStorage.getItem(K.consent))save(K.consent,CORE.defaultConsent())}renderRuntime();renderPersona();renderConsent();if(CORE.canImportP005(consentState()))importP005();renderSourceCounts();renderCharacters();await renderActive();persist();backgroundObserve()}
 boot();
 })();

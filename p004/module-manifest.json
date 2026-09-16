@@ -1,6 +1,6 @@
 {
   "module": "P004",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "name": "角色世界 / Character Conversations",
   "status": "prototype_only",
   "purpose": "NPC/character text conversations with optional NVWA distillation, local skill artifacts, long-term memory and administrator-only longitudinal personality inference.",
@@ -28,7 +28,9 @@
     "memory": "localStorage",
     "skills": "IndexedDB",
     "production_recommendation": "server-side encrypted storage + authenticated access controls",
-    "byok_api_key": "sessionStorage only; current browser tab"
+    "byok_api_key": "sessionStorage only; current browser tab",
+    "p005_observer_consent": "localStorage; default false; explicit opt-in and withdrawal",
+    "clear_all_p004_control": true
   },
   "api_contract": [
     "chat",
@@ -42,14 +44,30 @@
   "nvwa_reference": "https://github.com/xmg2024/nvwa-skill",
   "safety": {
     "roleplay_yields_to_immediate_safety": true,
-    "admin_only_clinical_signals": true
+    "admin_only_clinical_signals": true,
+    "client_fallback": "best-effort keyword heuristic; not a production safety classifier"
   },
   "interoperability": {
     "standalone_future": true,
     "required_predecessors": [],
     "bilateral_peer": "P005",
-    "may_import_user_authored_p005_data": true,
+    "may_import_user_authored_p005_data": "explicit opt-in only",
     "p004_admin_clinical_signals_never_exported_to_p005": true,
     "order_independent": true
+  },
+  "nvwa_reference_commit": "fdb181f0e057e837e15942707b1ea35845850979",
+  "testing": {
+    "structure_invariants": "tests/structure.mjs",
+    "runtime_behavior": "tests/p004-runtime.mjs",
+    "runtime_behavior_scope": [
+      "consent",
+      "creator-step-validation",
+      "memory-normalization",
+      "safety-fallback",
+      "BYOK-success",
+      "BYOK-http-error",
+      "BYOK-network-error",
+      "session-key-lifecycle"
+    ]
   }
 }

@@ -22,10 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Build minimal static artifact
         run: |
@@ -39,17 +39,17 @@ jobs:
           cp p001/styles-*.css _site/p001/
 
           cp p002/index.html p002/app.js p002/experiments.js p002/styles.css _site/p002/
-          cp p004/index.html p004/app.js p004/api-client.js p004/styles.css _site/p004/
+          cp p004/index.html p004/core.js p004/app.js p004/api-client.js p004/styles.css _site/p004/
           cp p005/index.html p005/app.js p005/api-client.js p005/styles.css p005/runtime-config.js p005/admin.html p005/admin.js p005/admin.css _site/p005/
           cp future-me/index.html _site/future-me/
 
           touch _site/.nojekyll
 
       - name: Upload static site
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

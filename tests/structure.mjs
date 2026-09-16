@@ -23,9 +23,9 @@ for (const file of [
   "shared/profile.js",
   "p001/index.html", "p001/report.js", "p001/static-api.js", "p001/study-manifest.json", "p001/app-loader.js",
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
-  "p004/index.html", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
+  "p004/index.html", "p004/core.js", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/api-client.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
-  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md"
+  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
 }
@@ -51,10 +51,12 @@ assert.match(shared, /name.*age.*origin.*location.*currentWork/s);
 assert.ok(!/clinicalInference|evidenceQuotes|safetyState/.test(shared), "shared adapter must not whitelist admin/clinical fields");
 
 const p004 = read("p004/app.js");
-assert.match(p004, /bjtu\.p004\.characters\.v2/);
-assert.match(p004, /bjtu\.p004\.memory\.v2/);
-assert.match(p004, /bjtu\.p005\.state\.v1/);
-assert.match(p004, /indexedDB\.open\('bjtu-p004-skill-vault'/);
+const p004Core = read("p004/core.js");
+assert.match(p004Core, /bjtu\.p004\.characters\.v2/);
+assert.match(p004Core, /bjtu\.p004\.memory\.v2/);
+assert.match(p004Core, /bjtu\.p005\.state\.v1/);
+assert.match(p004Core, /bjtu-p004-skill-vault/);
+assert.match(p004, /indexedDB\.open\(K\.skillDb/);
 assert.match(p004, /roleplayMustYieldToSafety:true/);
 assert.match(p004, /doNotExposeClinicalLabels:true/);
 assert.doesNotMatch(p004, /aiques\.global\.profile\.v1/);
@@ -66,7 +68,7 @@ assert.match(p004Index, /NVWA/);
 assert.doesNotMatch(p004Index, /清除本次画像/);
 
 const p004Manifest = JSON.parse(read("p004/module-manifest.json"));
-assert.equal(p004Manifest.version, "2.2.0");
+assert.equal(p004Manifest.version, "2.3.0");
 assert.equal(p004Manifest.user_experience.clinical_labels_visible, false);
 assert.equal(p004Manifest.user_experience.nvwa_distillation_optional, true);
 assert.equal(p004Manifest.user_experience.openai_compatible_byok, true);
@@ -99,9 +101,29 @@ assert.match(p004Api, /kind:'http'/);
 assert.match(p004Api, /kind:'network'/);
 assert.match(p004Api, /kind:'timeout'/);
 assert.match(p004Index, /选好后由你点击“下一步”/);
+assert.match(p004Index, /你决定哪些内容留下/);
+assert.match(p004Index, /p005ConsentToggle/);
+assert.match(p004Index, /clearP004DataBtn/);
+assert.match(p004Index, /core\.js/);
+assert.match(p004Core, /p005Observer:false/);
+assert.match(p004Core, /removeEvidenceSource/);
+assert.match(p004Core, /p004LocalStorageKeys/);
+assert.match(p004, /CORE\.canImportP005\(consentState\(\)\)/);
+assert.match(p004, /clearP004LocalData/);
+assert.match(p004, /rebuildObserverFromP004/);
+assert.match(p004, /nvwa-skill@fdb181f0e057e837e15942707b1ea35845850979/);
+assert.match(read("p004/NVWA_CONTRACT.md"), /fdb181f0e057e837e15942707b1ea35845850979/);
+
 const p004Styles = read("p004/styles.css");
 assert.match(p004Styles, /100dvh/);
 assert.match(p004Styles, /creator-modal[^}]*overflow:hidden/);
+const workflowText = read(".github/workflows/quality-gate.yml") + "\n" + read(".github/workflows/pages.yml");
+assert.doesNotMatch(workflowText, /uses:\s*[^\s#]+@v\d+/);
+assert.match(workflowText, /actions\/checkout@d23441a48e516b6c34aea4fa41551a30e30af803/);
+assert.match(workflowText, /actions\/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b/);
+assert.match(workflowText, /actions\/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b/);
+assert.match(workflowText, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
+
 
 const p005 = read("p005/app.js");
 assert.match(p005, /bjtu\.p005\.state\.v1/);
