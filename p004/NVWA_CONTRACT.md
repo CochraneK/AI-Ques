@@ -10,7 +10,7 @@ P004 is a character-conversation shell. NVWA is an optional distillation pipelin
 
 ## NVWA methodology to preserve
 
-Reference implementation: [xmg2024/nvwa-skill](https://github.com/xmg2024/nvwa-skill).
+Reference implementation: [xmg2024/nvwa-skill](https://github.com/xmg2024/nvwa-skill), pinned by P004 to commit `fdb181f0e057e837e15942707b1ea35845850979` for reproducible protocol semantics.
 
 A complete server-side distillation should preserve these invariants:
 
@@ -33,7 +33,7 @@ Request:
 ```json
 {
   "protocol": "nvwa-skill",
-  "protocolVersion": "xmg2024/nvwa-skill@main",
+  "protocolVersion": "xmg2024/nvwa-skill@fdb181f0e057e837e15942707b1ea35845850979",
   "character": {
     "id": "...",
     "name": "...",
