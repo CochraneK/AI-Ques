@@ -221,8 +221,6 @@ for (const forbidden of [
   assert.ok(!exists(forbidden), `obsolete repository residue still exists: ${forbidden}`);
 }
 
-console.log("Repository structure checks passed: P00 hub + P002/P004/P005 boundaries + shared/private storage.");
-
 const p005Index = read("p005/index.html");
 assert.doesNotMatch(p005Index, /P001 共用画像|不重复 P001 的玩法/);
 assert.doesNotMatch(p005, /source:'p001-reuse'/);
@@ -230,3 +228,6 @@ assert.ok(
   !/key:'p001Qualities'|key:'p001Values'/.test(p005),
   "legacy P001 answer keys may only appear in migration references, never active question definitions"
 );
+assert.match(p005, /if\(!allowed\)return \{allowed:false\};/);
+
+console.log("Repository structure checks passed: standalone P004/P005 + explicit bilateral consent + private admin boundaries.");
