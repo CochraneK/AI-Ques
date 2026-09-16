@@ -602,7 +602,7 @@ function p004SafeContext(){
 }
 function peerContextMeta(){
   const allowed=Boolean(state.settings.useP004Context);
-  if(!allowed)return {detected:hasP004PeerData(),allowed:false};
+  if(!allowed)return {allowed:false};
   const ctx=p004SafeContext();
   return {
     detected:true,
