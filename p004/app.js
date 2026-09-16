@@ -91,8 +91,8 @@ function persist(){save(K.chars,chars);save(K.threads,threads);save(K.memory,mem
 function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(window.__p004toast);window.__p004toast=setTimeout(()=>e.classList.remove('show'),1700)}
 
 function openVault(){return new Promise((resolve,reject)=>{const q=indexedDB.open(K.skillDb,1);q.onupgradeneeded=()=>{const db=q.result;if(!db.objectStoreNames.contains('skills'))db.createObjectStore('skills',{keyPath:'id'})};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
-async function vaultPut(record){const db=await openVault();return new Promise((resolve,reject)=>{const tx=db.transaction('skills','readwrite');tx.objectStore('skills').put(record);tx.oncomplete=()=>{skillCache.set(record.id,record);resolve(record)};tx.onerror=()=>reject(tx.error)})}
-async function vaultGet(id){if(!id)return null;if(skillCache.has(id))return skillCache.get(id);try{const db=await openVault();const r=await new Promise((resolve,reject)=>{const tx=db.transaction('skills','readonly');const q=tx.objectStore('skills').get(id);q.onsuccess=()=>resolve(q.result||null);q.onerror=()=>reject(q.error)});if(r)skillCache.set(id,r);return r}catch(_){return null}}
+async function vaultPut(record){const db=await openVault();return new Promise((resolve,reject)=>{const tx=db.transaction('skills','readwrite');tx.objectStore('skills').put(record);tx.oncomplete=()=>{skillCache.set(record.id,record);db.close();resolve(record)};tx.onerror=()=>{db.close();reject(tx.error)}})}
+async function vaultGet(id){if(!id)return null;if(skillCache.has(id))return skillCache.get(id);try{const db=await openVault();const r=await new Promise((resolve,reject)=>{const tx=db.transaction('skills','readonly');const q=tx.objectStore('skills').get(id);q.onsuccess=()=>{const value=q.result||null;db.close();resolve(value)};q.onerror=()=>{db.close();reject(q.error)}});if(r)skillCache.set(id,r);return r}catch(_){return null}}
 async function requestPersistentStorage(){try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(_){}}
 
 function renderPersona(){const p=sharedProfile();$('personaName').textContent=p.name||'你的 Persona';$('personaAvatar').textContent=(p.name||'我').slice(0,1)}
@@ -322,14 +322,18 @@ function renderConsent(){
   if($('p005ConsentToggle'))$('p005ConsentToggle').checked=allowed;
   if($('p005ConsentState'))$('p005ConsentState').textContent=allowed?'已允许 · 可随时撤回':'默认关闭 · Future You 不会被读取';
 }
+function rebuildObserverFromP004(){
+  observer=freshObserver();
+  Object.values(threads).flat().filter(m=>m&&m.role==='user'&&m.text).forEach(m=>{
+    analyzeEvidence(String(m.text),'P004','character chat',true);
+    if(urgentSafety(m.text))observer.safety.push({at:m.at||Date.now(),source:'P004',kind:'explicit-self-harm-language',quote:short(m.text,160)});
+  });
+  persist();
+}
 function setP005Consent(enabled){
   save(K.consent,{p005Observer:Boolean(enabled),updatedAt:new Date().toISOString()});
-  if(!enabled){
-    observer=CORE.removeEvidenceSource(observer,'P005');
-    persist();
-  }else{
-    importP005();
-  }
+  if(!enabled)rebuildObserverFromP004();
+  else importP005();
   renderConsent();renderSourceCounts();
 }
 function importP005(){if(!CORE.canImportP005(consentState()))return;const raw=read(K.p005,null);if(!raw)return;const signature=hash(JSON.stringify({profile:raw.profile,messages:raw.messages}));if(observer.imports.P005===signature)return;observer.evidence=observer.evidence.filter(e=>e.source!=='P005');const p=raw.profile||{};['currentWork','people','proud','lowPoint','turningPoint','futureWork','dailyLife','values','decision'].forEach(k=>{if(p[k])analyzeEvidence(String(p[k]),'P005','Future You open response',true)});(raw.messages||[]).filter(m=>m.role==='user'&&m.text).forEach(m=>analyzeEvidence(m.text,'P005','Future You chat',true));observer.imports.P005=signature;persist();renderSourceCounts()}
@@ -361,6 +365,7 @@ async function clearP004LocalData(){
   }
   CORE.p004LocalStorageKeys().forEach(key=>localStorage.removeItem(key));
   if(window.P004_API&&window.P004_API.clearDirect)window.P004_API.clearDirect();
+  skillCache.clear();
   await deleteSkillVault();
   location.reload();
 }
