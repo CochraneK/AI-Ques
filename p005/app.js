@@ -4,7 +4,7 @@
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.7.0';
+const MODULE_VERSION = '1.0.0-pilot.1';
 const ADMIN_SETTINGS_KEY = 'bjtu.p005.admin.v1';
 const HORIZON_OPTIONS = ['1y','2y','3y','4y','10y','age60'];
 
@@ -83,9 +83,10 @@ function firstArray(source,keys){
 }
 
 
-const SCREENS = ['welcome', 'survey', 'portrait', 'generate', 'ready', 'chat', 'share', 'capsule'];
+const SCREENS = ['welcome', 'consent', 'survey', 'portrait', 'generate', 'ready', 'chat', 'share', 'capsule'];
 const STEP_NAMES = {
   welcome: '开始',
+  consent: '同意',
   survey: '人生故事',
   portrait: '现在的你',
   generate: '生成',
@@ -145,6 +146,14 @@ const state = {
   surveyIndex:0,
   profile:{},
   structuredAnswers:{},
+  consent:{
+    futureNotPrediction:false,
+    researchData:false,
+    privacy:false,
+    media:false,
+    voice:false,
+    p004Context:false
+  },
   memory:null,
   messages:[],
   currentPortrait:'',
@@ -307,6 +316,7 @@ function snapshot(includeMedia=false){
     version:MODULE_VERSION,
     profile:state.profile,
     structuredAnswers:state.structuredAnswers,
+    consent:state.consent,
     personaBrief:buildPersonaBrief(false),
     syntheticMemory:state.memory,
     messages:state.messages,
@@ -318,6 +328,12 @@ function snapshot(includeMedia=false){
     screen:state.screen,
     surveyIndex:state.surveyIndex,
     media:{hasCurrentPortrait:Boolean(state.currentPortrait),hasFuturePortrait:Boolean(state.futurePortrait)},
+    research:{
+      configured:Boolean(window.P005_RESEARCH&&window.P005_RESEARCH.configured),
+      sessionId:window.P005_RESEARCH&&window.P005_RESEARCH.session?window.P005_RESEARCH.session.sessionId||'':'',
+      participantId:window.P005_RESEARCH&&window.P005_RESEARCH.session?window.P005_RESEARCH.session.participantId||'':'',
+      protocolVersion:runtimeConfig().protocolVersion||''
+    },
     exportedAt:new Date().toISOString()
   };
   if(includeMedia){
@@ -352,6 +368,7 @@ function save(){
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       profile:state.profile,
       structuredAnswers:state.structuredAnswers,
+      consent:state.consent,
       memory:state.memory,
       messages:state.messages,
       currentPortrait:state.currentPortrait,
@@ -372,6 +389,7 @@ function migrateLegacy(){
     const migrated={
       profile:legacy.profile||{},
       structuredAnswers:legacy.structuredAnswers||{},
+      consent:Object.assign({},state.consent,legacy.consent||{}),
       memory:legacy.memory||null,
       messages:legacy.messages||[],
       currentPortrait:legacy.currentPortrait||'',
@@ -392,6 +410,7 @@ function load(){
   if(saved){
     state.profile=saved.profile||{};
     state.structuredAnswers=saved.structuredAnswers||{};
+    state.consent=Object.assign({},state.consent,saved.consent||{});
     state.memory=saved.memory||null;
     state.messages=saved.messages||[];
     state.currentPortrait=saved.currentPortrait||'';
