@@ -178,6 +178,16 @@ app.get('/api/v1/sessions/:id', async (req,res,next) => {
   }catch(error){next(error)}
 });
 
+app.post('/api/v1/sessions/:id/consent', async (req,res,next) => {
+  try{
+    const checked=validateConsent(req.body||{});
+    if(!checked.ok)return res.status(400).json({error:'consent_required',missing:checked.missing});
+    const session=await store.updateConsent(req.params.id,bearer(req),req.body||{});
+    if(!session)return res.status(401).json({error:'invalid_session'});
+    res.json({session});
+  }catch(error){next(error)}
+});
+
 app.post('/api/v1/sessions/:id/events', async (req,res,next) => {
   try{
     const event=await store.recordEvent(req.params.id,bearer(req),{
