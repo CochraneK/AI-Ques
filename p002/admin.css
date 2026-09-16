@@ -18,3 +18,16 @@ button,a{font:inherit}.shell{width:min(900px,calc(100% - 32px));margin:0 auto;pa
 .note{margin-top:14px;padding:16px 18px;border:1px solid var(--line);border-radius:16px;color:var(--muted);font-size:10px}.note strong{color:var(--text)}.note p{margin:5px 0 0}.note code{color:#c8d1ca}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;padding:10px 14px;border-radius:999px;background:#f5f4ef;color:#171b18;font-size:10px;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:600px){.hero{padding-top:44px}.panel-head{align-items:flex-start;gap:12px;flex-direction:column}.actions{flex-direction:column}.primary,.secondary{width:100%}}
+
+.data-panel{margin-top:14px}
+.metrics{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.metrics>div{min-width:0;padding:18px 20px;background:var(--surface)}
+.metrics span,.metrics strong{display:block}.metrics span{color:var(--muted);font-size:9px;letter-spacing:.05em;text-transform:uppercase}
+.metrics strong{margin-top:5px;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.data-actions{padding-top:20px}
+.session-wrap{padding:0 24px 24px}.session-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:17px 0 10px;border-top:1px solid var(--line)}
+.session-head span{font-weight:750}.session-head small{color:var(--muted);font-size:9px;text-align:right}
+.session-list{display:grid;gap:8px}.session-row{display:grid;grid-template-columns:1.4fr .7fr .8fr .8fr;gap:10px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.session-row code{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d9dfda;font-size:9px}.session-row span{color:var(--muted);font-size:9px}.session-row .status{color:var(--text)}
+.empty{padding:20px 0;color:var(--muted);font-size:10px}
+@media(max-width:720px){.metrics{grid-template-columns:1fr 1fr}.session-row{grid-template-columns:1fr 1fr}.session-head{align-items:flex-start;flex-direction:column}.session-head small{text-align:left}}

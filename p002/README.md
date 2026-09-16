@@ -21,6 +21,21 @@ P002 研究 PCL-5 与 Current CAPE-P15 在不同呈现/测量条件下的完成�
 
 当前静态原型把管理员配置保存在同一浏览器的 `bjtu.p002.condition.v1`。默认值是 `story`。这不是正式的多设备研究后台，也没有服务器端管理员鉴权。
 
+## 统一研究数据契约
+
+P002 已接入共享研究 runtime：
+
+- 稳定 `participant_id`：`bjtu.p00.participant.v1`
+- 每次开始新建 `session_id`，历史 session 不覆盖
+- session 列表：`bjtu.p00.sessions.v1`
+- item/event 流：`bjtu.p00.events.v1`
+- 待同步队列：`bjtu.p00.pending-sync.v1`
+- 事件至少包含 `participant_id / session_id / study_version / scale_id / condition_id / event_type / item_id / cluster / response / distress / response_ms / timestamp`
+- 管理员页可查看本浏览器 P002 会话，并导出 JSON / CSV
+- `shared/config.js` 中 `apiBase` 为空时只保存在本地；配置后按 `POST /v1/events` 尝试发送 pending events
+
+因此当前版本已经具备**可追溯的本地研究事件流与同步队列**，但仍不把 GitHub Pages/localStorage 冒充正式研究后台。正式跨设备收数仍需服务端、管理员鉴权、数据保留/删除策略与伦理流程。
+
 ## 量表边界
 
 ### PCL-5
