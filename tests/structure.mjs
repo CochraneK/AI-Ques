@@ -14,6 +14,9 @@ assert.equal(registry.shared_profile.adapter, "shared/profile.js");
 
 const byId = Object.fromEntries(registry.modules.map((m) => [m.id, m]));
 assert.equal(byId.P002.path, "p002/");
+assert.equal(byId.P002.admin_path, "p002/admin.html");
+assert.equal(byId.P002.default_presentation, "story");
+assert.equal(byId.P002.participant_condition_picker, false);
 assert.equal(byId.P004.path, "p004/");
 assert.equal(byId.P005.path, "p005/");
 assert.equal(byId.P001.path, "p001/");
@@ -22,13 +25,19 @@ assert.equal(byId.P003.path, null);
 for (const file of [
   "shared/profile.js",
   "p001/index.html", "p001/report.js", "p001/static-api.js", "p001/study-manifest.json", "p001/app-loader.js",
-  "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
+  "p002/index.html", "p002/app.js", "p002/condition-config.js", "p002/admin.html", "p002/admin.js", "p002/admin.css", "p002/study-manifest.json",
   "p004/index.html", "p004/core.js", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/api-client.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
   "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs", "tests/p005-runtime.mjs"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
 }
+
+const p002Config = read("p002/condition-config.js");
+assert.match(p002Config, /bjtu\.p002\.condition\.v1/);
+assert.match(p002Config, /condition:'story'/);
+assert.match(read("p002/admin.html"), /P002 · ADMIN CONTROL/);
+assert.doesNotMatch(read("p002/index.html"), /modeChoices|data-mode/);
 
 const rootIndex = read("index.html");
 assert.match(rootIndex, /href="p002\/"/);
