@@ -72,6 +72,9 @@ const CONDITION_CONFIG = globalThis.P002_CONDITION || {
   }
 };
 const ACTIVE_CONDITION = CONDITION_CONFIG.read().condition || 'story';
+const RESEARCH = globalThis.P00_RESEARCH || null;
+const PROJECT_ID = 'P002';
+const STUDY_VERSION = '0.10.0-prototype';
 
 const RUSH = {
   pcl5:[
@@ -94,7 +97,7 @@ const RUSH = {
   ]
 };
 
-const state={scale:null,condition:ACTIVE_CONDITION,index:0,answers:[],distress:[],rushSignals:{},chapterSeen:{}};
+const state={scale:null,condition:ACTIVE_CONDITION,index:0,answers:[],distress:[],rushSignals:{},chapterSeen:{},sessionId:null,runStatus:'idle',itemStartedAt:null};
 const $=s=>document.querySelector(s);
 const SEARCH=typeof location!=='undefined'?String(location.search||''):'';
 function queryParam(name){
@@ -128,9 +131,55 @@ function resetRun(){
   state.distress=[];
   state.rushSignals={};
   state.chapterSeen={};
+  state.sessionId=null;
+  state.runStatus='idle';
+  state.itemStartedAt=null;
 }
-function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
-function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
+function recordEvent(eventType,payload={}){
+  if(!RESEARCH || !state.sessionId) return null;
+  return RESEARCH.appendEvent(Object.assign({
+    session_id:state.sessionId,
+    project_id:PROJECT_ID,
+    study_version:STUDY_VERSION,
+    scale_id:state.scale,
+    condition_id:state.condition,
+    event_type:eventType
+  },payload));
+}
+function finishSession(status,payload={}){
+  if(state.runStatus!=='active' || !state.sessionId) return;
+  recordEvent(status==='completed'?'session_completed':'session_interrupted',payload);
+  RESEARCH?.completeSession?.(state.sessionId,status);
+  RESEARCH?.flushPending?.();
+  state.runStatus=status;
+}
+function start(){
+  resetRun();
+  state.condition=CONDITION_CONFIG.read().condition || 'story';
+  if(RESEARCH){
+    const session=RESEARCH.createSession({
+      project_id:PROJECT_ID,
+      study_version:STUDY_VERSION,
+      scale_id:state.scale,
+      condition_id:state.condition
+    });
+    state.sessionId=session.session_id;
+  }
+  state.runStatus='active';
+  recordEvent('session_started');
+  $('#launcher').classList.add('hidden');
+  $('#result').classList.add('hidden');
+  $('#game').classList.remove('hidden');
+  renderStep();
+  window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});
+}
+function backHome(){
+  if(state.runStatus==='active') finishSession('interrupted',{answered_items:state.answers.length,scenario_steps:state.index});
+  $('#game').classList.add('hidden');
+  $('#result').classList.add('hidden');
+  $('#launcher').classList.remove('hidden');
+  renderLauncher();
+}
 function progress(done,total){$('#progressBar').style.width=`${Math.min(100,done/total*100)}%`;$('#progressText').textContent=`${done}/${total}`;}
 function currentChapter(scale,item){return scale.chapters.find(c=>c.key===item.cluster)}
 function publicChapter(key){
@@ -154,6 +203,7 @@ function renderStep(){
   if(state.condition==='story' && chapterStart && !state.chapterSeen[ch.key]) return renderStoryIntro(scale,ch);
   const pub=publicChapter(item.cluster);
   const firstItem=state.index===0;
+  state.itemStartedAt=Date.now();
   $('#gameBody').innerHTML=`<div class="scene">
     ${chapterStart && state.condition==='story'?`<div class="chapter-card"><span class="scene-kicker">${scale.window}</span><h2>${pub.title}</h2><p>${pub.desc}</p></div>`:''}
     ${firstItem?`<p class="instrument-instruction">${scale.instruction}</p>`:''}
@@ -166,10 +216,18 @@ function renderStep(){
   </div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{
     const score=Number(b.dataset.score);
+    const responseMs=Math.max(0,Date.now()-(state.itemStartedAt||Date.now()));
     if(scale.id==='cape15' && score>=1){
-      renderCapeDistress(scale,item,score);
+      renderCapeDistress(scale,item,score,responseMs);
       return;
     }
+    recordEvent('item_response',{
+      item_id:item.id,
+      cluster:item.cluster,
+      response:score,
+      distress:null,
+      response_ms:responseMs
+    });
     state.answers.push(score);
     state.distress.push(null);
     state.index++;
@@ -177,7 +235,7 @@ function renderStep(){
   });
 }
 
-function renderCapeDistress(scale,item,frequencyScore){
+function renderCapeDistress(scale,item,frequencyScore,frequencyResponseMs){
   const host=$('.question-card');
   if(!host)return;
   host.querySelectorAll('.answer').forEach(x=>{x.disabled=true;});
@@ -188,8 +246,17 @@ function renderCapeDistress(scale,item,frequencyScore){
     '</div>';
   host.appendChild(block);
   block.querySelectorAll('[data-distress]').forEach(btn=>btn.onclick=()=>{
+    const distress=Number(btn.dataset.distress);
+    recordEvent('item_response',{
+      item_id:item.id,
+      cluster:item.cluster,
+      response:frequencyScore,
+      distress,
+      response_ms:Math.max(0,Date.now()-(state.itemStartedAt||Date.now())),
+      frequency_response_ms:frequencyResponseMs
+    });
     state.answers.push(frequencyScore);
-    state.distress.push(Number(btn.dataset.distress));
+    state.distress.push(distress);
     state.index++;
     renderStep();
   });
@@ -199,19 +266,39 @@ function renderStoryIntro(scale,ch){
   progress(state.index,scale.items.length);
   const choices=['从左边继续','从中间继续','从右边继续'];
   const pub=publicChapter(ch.key);
+  state.itemStartedAt=Date.now();
   $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一条路继续。</p><div class="rush-options">${choices.map((label,i)=>`<button class="rush-option" data-story-choice="${i}">${label}</button>`).join('')}</div></div>`;
-  document.querySelectorAll('[data-story-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=true;renderStep();});
+  document.querySelectorAll('[data-story-choice]').forEach(b=>b.onclick=()=>{
+    recordEvent('story_transition',{
+      item_id:'chapter_'+ch.key,
+      cluster:ch.key,
+      response:Number(b.dataset.storyChoice),
+      response_ms:Math.max(0,Date.now()-(state.itemStartedAt||Date.now()))
+    });
+    state.chapterSeen[ch.key]=true;
+    renderStep();
+  });
 }
 
 function renderRush(){
   const scenarios=RUSH[state.scale], sc=scenarios[state.index];
   if(!sc) return finishRush();
   progress(state.index,scenarios.length);
+  state.itemStartedAt=Date.now();
   $('#gameBody').innerHTML=`<div class="scene"><div class="scene-kicker">情境 ${state.index+1} / ${scenarios.length}</div><h2>${sc.title}</h2><p class="story">${sc.story}</p><div class="rush-options">${sc.options.map((o,i)=>`<button class="rush-option" data-i="${i}">${o[0]}</button>`).join('')}</div>${state.index===0?'<p class="mode-note">请选择最接近你的反应。这里没有对错。</p>':''}</div>`;
   document.querySelectorAll('.rush-option').forEach(b=>b.onclick=()=>{
-    const opt=sc.options[Number(b.dataset.i)];
+    const optionIndex=Number(b.dataset.i);
+    const opt=sc.options[optionIndex];
+    recordEvent('scenario_response',{
+      item_id:'scenario_'+(state.index+1),
+      cluster:sc.cluster,
+      response:optionIndex,
+      signal:opt[1],
+      response_ms:Math.max(0,Date.now()-(state.itemStartedAt||Date.now()))
+    });
     state.rushSignals[sc.cluster]=(state.rushSignals[sc.cluster]||0)+opt[1];
-    state.index++;renderRush();
+    state.index++;
+    renderRush();
   });
 }
 
@@ -222,6 +309,11 @@ function finishStandard(){
   const max=s.id==='pcl5'?80:45;
   const endorsedDistress=state.distress.filter((v,i)=>state.answers[i]>=1 && v!=null);
   const distressMean=endorsedDistress.length?endorsedDistress.reduce((a,b)=>a+b,0)/endorsedDistress.length:null;
+  finishSession('completed',{
+    answered_items:state.answers.length,
+    total_score_internal:total,
+    distress_mean:distressMean
+  });
   if(!SHOW_RESEARCH){
     $('#result').innerHTML=participantCompletion();
     return;
@@ -239,6 +331,10 @@ function pclInterpret(total,a){
 function capeInterpret(total,clusters,distressMean){return `Current CAPE-P15 原始 Current CAPE-15 论文使用 0–3 频率编码；本原型按 0–3 保存，总分范围 0–45，并在频率至少为“有时”时追加 0–3 困扰度。频率与困扰分开保留；不设置临床阈值或“高风险”标签。当前困扰均值：${distressMean==null?'—':distressMean.toFixed(2)}。`;}
 function finishRush(){
   $('#game').classList.add('hidden');$('#result').classList.remove('hidden');
+  finishSession('completed',{
+    scenario_steps:state.index,
+    scenario_signals:Object.assign({},state.rushSignals)
+  });
   if(!SHOW_RESEARCH){
     $('#result').innerHTML=participantCompletion();
     return;
