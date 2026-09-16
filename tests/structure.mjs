@@ -23,9 +23,9 @@ for (const file of [
   "shared/profile.js",
   "p001/index.html", "p001/report.js", "p001/static-api.js", "p001/study-manifest.json", "p001/app-loader.js",
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
-  "p004/index.html", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
+  "p004/index.html", "p004/core.js", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/api-client.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
-  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md"
+  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
 }
@@ -66,7 +66,7 @@ assert.match(p004Index, /NVWA/);
 assert.doesNotMatch(p004Index, /清除本次画像/);
 
 const p004Manifest = JSON.parse(read("p004/module-manifest.json"));
-assert.equal(p004Manifest.version, "2.2.0");
+assert.equal(p004Manifest.version, "2.3.0");
 assert.equal(p004Manifest.user_experience.clinical_labels_visible, false);
 assert.equal(p004Manifest.user_experience.nvwa_distillation_optional, true);
 assert.equal(p004Manifest.user_experience.openai_compatible_byok, true);
@@ -99,6 +99,20 @@ assert.match(p004Api, /kind:'http'/);
 assert.match(p004Api, /kind:'network'/);
 assert.match(p004Api, /kind:'timeout'/);
 assert.match(p004Index, /选好后由你点击“下一步”/);
+assert.match(p004Index, /你决定哪些内容留下/);
+assert.match(p004Index, /p005ConsentToggle/);
+assert.match(p004Index, /clearP004DataBtn/);
+assert.match(p004Index, /core\.js/);
+const p004Core = read("p004/core.js");
+assert.match(p004Core, /p005Observer:false/);
+assert.match(p004Core, /removeEvidenceSource/);
+assert.match(p004Core, /p004LocalStorageKeys/);
+assert.match(p004, /CORE\.canImportP005\(consentState\(\)\)/);
+assert.match(p004, /clearP004LocalData/);
+assert.match(p004, /rebuildObserverFromP004/);
+assert.match(p004, /nvwa-skill@fdb181f0e057e837e15942707b1ea35845850979/);
+assert.match(read("p004/NVWA_CONTRACT.md"), /fdb181f0e057e837e15942707b1ea35845850979/);
+
 const p004Styles = read("p004/styles.css");
 assert.match(p004Styles, /100dvh/);
 assert.match(p004Styles, /creator-modal[^}]*overflow:hidden/);
