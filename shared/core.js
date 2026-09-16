@@ -126,6 +126,25 @@
     return projectId ? rows.filter(x => x && x.project_id === projectId).length : rows.length;
   }
 
+  function clearProjectData(projectId) {
+    if (!projectId) throw new Error('projectId is required');
+    const sessions = readList(KEYS.sessions);
+    const events = readList(KEYS.events);
+    const pending = readList(KEYS.pending);
+    const nextSessions = sessions.filter(x => !x || x.project_id !== projectId);
+    const nextEvents = events.filter(x => !x || x.project_id !== projectId);
+    const nextPending = pending.filter(x => !x || x.project_id !== projectId);
+    writeList(KEYS.sessions, nextSessions);
+    writeList(KEYS.events, nextEvents);
+    writeList(KEYS.pending, nextPending);
+    return {
+      project_id: projectId,
+      removed_sessions: sessions.length - nextSessions.length,
+      removed_events: events.length - nextEvents.length,
+      removed_pending: pending.length - nextPending.length
+    };
+  }
+
   async function flushPending() {
     const config = globalThis.P00_RUNTIME_CONFIG?.read?.() || { apiBase: '' };
     const apiBase = String(config.apiBase || '').replace(/\/+$/, '');
@@ -163,6 +182,7 @@
     listSessions,
     listEvents,
     pendingCount,
+    clearProjectData,
     flushPending
   });
 })();
