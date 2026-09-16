@@ -51,7 +51,7 @@ const context = vm.createContext({
   clearTimeout,
 });
 
-for (const file of ["../p002/condition-config.js", "../p002/app.js"]) {
+for (const file of ["../shared/config.js", "../shared/core.js", "../p002/condition-config.js", "../p002/app.js"]) {
   const source = fs.readFileSync(new URL(file, import.meta.url), "utf8");
   vm.runInContext(source, context, { filename: file });
 }
@@ -82,6 +82,18 @@ assert.deepEqual(
 );
 assert.equal(evaluate("P002_CONDITION.read().condition"), "story", "story must be the no-config default");
 assert.equal(evaluate("state.condition"), "story", "participant runtime should start in story mode by default");
+
+assert.match(evaluate("P00_RESEARCH.ensureParticipant().participant_id"), /^pt_/);
+const stableParticipantId = evaluate("P00_RESEARCH.participantId()");
+assert.equal(evaluate("P00_RESEARCH.participantId()"), stableParticipantId, "participant_id must stay stable");
+const testSessionId = evaluate(`P00_RESEARCH.createSession({project_id:"P002",study_version:"test",scale_id:"pcl5",condition_id:"story"}).session_id`);
+assert.match(testSessionId, /^ss_/);
+evaluate(`P00_RESEARCH.appendEvent({project_id:"P002",session_id:"${testSessionId}",study_version:"test",scale_id:"pcl5",condition_id:"story",event_type:"item_response",item_id:1,cluster:"B",response:2,distress:null,response_ms:123})`);
+assert.equal(evaluate("P00_RESEARCH.listSessions('P002').length"), 1);
+assert.equal(evaluate("P00_RESEARCH.listEvents('P002').length"), 1);
+assert.equal(evaluate("P00_RESEARCH.pendingCount('P002')"), 1);
+
+
 
 const manifest = JSON.parse(
   fs.readFileSync(new URL("../p002/study-manifest.json", import.meta.url), "utf8")
@@ -136,6 +148,12 @@ assert.ok(!htmlSource.includes("modeChoices"), "participant UI must not expose a
 assert.ok(!htmlSource.includes("data-mode"), "participant UI must not expose condition buttons");
 assert.match(htmlSource,/condition-config\.js/, "participant runtime should read the shared admin config");
 assert.match(adminSource,/cfg\.write\(selected\)/, "admin page should control the shared condition config");
+assert.match(adminSource,/exportJsonBtn/);
+assert.match(adminSource,/exportCsvBtn/);
+assert.match(adminSource,/flushPending/);
+assert.match(appSource,/RESEARCH\.createSession/);
+assert.match(appSource,/recordEvent\('item_response'/);
+assert.match(appSource,/condition_id:state\.condition/);
 assert.match(appSource,/state\.condition==='story'/, "story questionnaire should remain the default presentation path");
 assert.match(appSource,/state\.condition==='scenario'/, "scenario condition should remain administrator-selectable");
 assert.match(appSource,/SHOW_RESEARCH/, "raw research details should remain gated");
