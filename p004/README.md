@@ -146,3 +146,51 @@ DASHBOARD_ORIGINS=https://cochranek.github.io
 然后重启 FreeLLMAPI。Origin 只包含 scheme + host + port，不包含 `/AI-Ques/p004/` 路径。
 
 P004 的“测试连接”在 localhost:3001 出现 network error 时会显示上述 CORS 提示，并继续区分 HTTP、timeout、provider response 与一般网络错误。若 CORS 已放行但浏览器仍阻止访问 localhost，还应检查浏览器的本地网络访问权限。
+
+
+## Privacy controls · v2.3
+
+P004 对跨模块数据采用 **opt-in**：
+
+- P004 自己的对话可以进入本模块的本地 Observer；
+- P005 / Future You 的开放式回答与本人发言 **默认不会被 P004 读取**；
+- 只有用户在 P004 的「数据」面板主动开启后，P005 才进入 P004 evidence pool；
+- 用户关闭该开关时，P004 会撤回 P005 evidence，并从 P004 自身对话重新构建本地 Observer，避免 P005 对已有画像数值留下残余影响。
+
+「数据」面板还提供 **清除全部 P004 本地数据**，覆盖：
+
+- Character Cards
+- P004 chat threads
+- relationship memory
+- Observer / safety evidence
+- IndexedDB Skill Vault
+- 当前标签页 BYOK API Key
+
+它不会清除 P001 / P002 / P005 或全局 Persona。
+
+## Safety boundary
+
+静态 Pages 版本的即时风险识别只是一个 **best-effort keyword fallback**，用于在明显关键词出现时让角色扮演让位于安全支持。它不是经过验证的安全分类器，也不能作为生产级 Safety Agent。正式部署需要独立安全策略/分类层及覆盖率测试。
+
+## Runtime tests
+
+除静态结构检查外，P004 现在有 `tests/p004-runtime.mjs`，实际执行：
+
+- P005 consent default-off / opt-in semantics；
+- consent withdrawal evidence stripping core；
+- creator step validation；
+- local memory normalization；
+- keyword safety fallback；
+- OpenAI-compatible BYOK success；
+- HTTP 401 error path；
+- network/CORS failure path；
+- temporary connection-test key restoration；
+- session key clearing。
+
+## Pinned NVWA protocol
+
+P004 的 NVWA integration contract 固定到：
+
+`xmg2024/nvwa-skill@fdb181f0e057e837e15942707b1ea35845850979`
+
+而不是跟随可漂移的 `@main`。
