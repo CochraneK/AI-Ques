@@ -82,8 +82,16 @@
   async function directChat(payload,override){
     const s=Object.assign({},readDirect(),override||{});
     if(!s.baseUrl||!s.apiKey||!s.chatModel)return null;
+    const futureContext={
+      target:payload.target||null,
+      intakeProtocol:payload.intakeProtocol||null,
+      profile:payload.profile||{},
+      structuredAnswers:payload.structuredAnswers||{},
+      personaBrief:payload.personaBrief||{},
+      syntheticMemory:payload.syntheticMemory||null
+    };
     const messages=[
-      {role:'system',content:String(payload.instruction||'')+'\n\n用户画像（只作为自然对话上下文，不要机械复述）：\n'+JSON.stringify(payload.personaBrief||payload.profile||{})},
+      {role:'system',content:String(payload.instruction||'')+'\n\n【Future Me context】\n'+JSON.stringify(futureContext)+'\n\nUse this context naturally; do not dump or mechanically repeat it.'},
       ...(payload.messages||[]).map((m)=>({role:m.role==='future'?'assistant':m.role==='assistant'?'assistant':'user',content:String(m.text||m.content||'')}))
     ];
     if(payload.userMessage&&!messages.some((m,i)=>i===messages.length-1&&m.role==='user'&&m.content===payload.userMessage)){
