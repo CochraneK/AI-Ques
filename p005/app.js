@@ -725,7 +725,7 @@ async function requestFuturePortrait(){
     image:state.currentPortrait,currentAge:Number(state.profile.age)||null,targetAge:targetAge(),
     instruction:'Preserve identity. Create a respectful photorealistic portrait at the configured future age. Apply only natural age progression appropriate to the age difference; do not alter race, gender presentation, or core facial identity.'
   };
-  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  const directCaps=directCapabilities();
   if(directCaps.image){
     try{
       const result=await window.P005_API.image(payload);
@@ -972,7 +972,7 @@ $('#chatForm').addEventListener('submit',async(event)=>{
   emitSessionEvent('chat_turn',{userMessage:text,replyLength:reply.length});syncAdmin('chat_turn');
   if(state.settings.voiceMode)speakText(reply);
 });
-$$$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
+$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
   $('#chatInput').value=button.textContent;$('#chatForm').requestSubmit();
 }));
 function effectiveMessageCount(){return state.messages.filter((m)=>m.text!=='…').length}
@@ -996,7 +996,7 @@ async function speakText(text){
     language:'zh-CN',
     profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
   };
-  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  const directCaps=directCapabilities();
   if(directCaps.tts){
     try{
       const result=await window.P005_API.speak(voicePayload);
@@ -1142,12 +1142,12 @@ function apiCandidate(){
   };
 }
 function renderApiRuntime(){
-  const configured=Boolean(window.P005_API&&window.P005_API.configured);
+  const caps=directCapabilities();
+  const count=Object.values(caps).filter(Boolean).length;
   const button=$('#apiBtn');
-  if(button)button.classList.toggle('connected',configured);
-  if($('#apiBtnText'))$('#apiBtnText').textContent=configured?'API 已接':'模型';
+  if(button)button.classList.toggle('connected',count>0);
+  if($('#apiBtnText'))$('#apiBtnText').textContent=count?('API '+count+'/4'):'模型';
   updateChatModeNote();
-  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
   if($('#agePortraitBtn'))$('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(caps.image||apiConfig('imageApi'))));
 }
 function openApiSettings(){
@@ -1397,6 +1397,11 @@ updateProgress();
 renderApiRuntime();
 updateChatModeNote();
 emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
-syncAdmin('session_started',{targetHorizon:horizonMode(),intakeProtocol:protocolMode(),voiceId:runtimeConfig().voiceId||'marin'.reusedFromP001||(state.structuredAnswers.p001Values||{}).reusedFromP001)});
+syncAdmin('session_started',{
+  targetHorizon:horizonMode(),
+  intakeProtocol:protocolMode(),
+  voiceId:runtimeConfig().voiceId||'marin',
+  peerContext:peerContextMeta()
+});
 
 })();
