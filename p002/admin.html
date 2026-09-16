@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#101311" />
-  <title>P002 Admin · 条件控制</title>
-  <link rel="stylesheet" href="admin.css?v=20260915-r1" />
+  <title>P002 Admin · 条件与研究数据</title>
+  <link rel="stylesheet" href="admin.css?v=20260917-r1" />
 </head>
 <body>
   <main class="shell">
@@ -16,8 +16,8 @@
 
     <section class="hero">
       <p class="eyebrow">P002 · ADMIN CONTROL</p>
-      <h1>实验条件</h1>
-      <p>参与者前端不显示条件选择。没有管理员配置时，默认使用故事问卷。</p>
+      <h1>条件与数据</h1>
+      <p>参与者前端不显示实验条件。这里控制 P002 呈现条件，并查看当前浏览器保存的研究会话与事件。</p>
     </section>
 
     <section class="panel">
@@ -37,15 +37,45 @@
       </div>
     </section>
 
+    <section class="panel data-panel" aria-labelledby="dataTitle">
+      <div class="panel-head">
+        <div>
+          <span>研究数据</span>
+          <strong id="dataTitle">P002 本地事件流</strong>
+        </div>
+        <small id="syncState">未配置服务端 API</small>
+      </div>
+
+      <div class="metrics">
+        <div><span>participant_id</span><strong id="participantId">—</strong></div>
+        <div><span>sessions</span><strong id="sessionCount">0</strong></div>
+        <div><span>events</span><strong id="eventCount">0</strong></div>
+        <div><span>pending sync</span><strong id="pendingCount">0</strong></div>
+      </div>
+
+      <div class="actions data-actions">
+        <button id="syncBtn" class="primary">同步待发送事件</button>
+        <button id="exportJsonBtn" class="secondary">导出 JSON</button>
+        <button id="exportCsvBtn" class="secondary">导出 CSV</button>
+      </div>
+
+      <div class="session-wrap">
+        <div class="session-head"><span>最近会话</span><small>每次开始都会生成新的 session_id，不覆盖历史</small></div>
+        <div id="sessionList" class="session-list"></div>
+      </div>
+    </section>
+
     <section class="note">
       <strong>原型边界</strong>
-      <p>当前配置保存在本浏览器 <code>bjtu.p002.condition.v1</code>。它只控制同一浏览器中的 P002 前端，不是多设备研究后台，也没有管理员身份认证。正式收数需要服务端配置与权限控制。</p>
+      <p>条件配置和研究事件目前都保存在本浏览器。事件使用稳定 <code>participant_id</code>、每次进入新建 <code>session_id</code>，并进入 pending-sync queue。未配置 <code>apiBase</code> 时不会跨设备同步，也没有管理员身份认证。正式收数仍需服务端、权限控制、同意/退出与数据治理。</p>
     </section>
   </main>
 
   <div id="toast" class="toast" role="status"></div>
 
+  <script src="../shared/config.js?v=1"></script>
+  <script src="../shared/core.js?v=1"></script>
   <script src="condition-config.js?v=20260915-r2"></script>
-  <script src="admin.js?v=20260915-r1"></script>
+  <script src="admin.js?v=20260917-r1"></script>
 </body>
 </html>
