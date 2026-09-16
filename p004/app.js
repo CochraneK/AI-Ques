@@ -473,6 +473,6 @@ $('exportSkillBtn').addEventListener('click',exportSkill);
 $('refreshObserverBtn').addEventListener('click',async()=>{await backgroundObserve();renderAdmin();toast('人物画像已刷新')});
 $('adminBtn').addEventListener('click',()=>{renderAdmin();openModal('admin')});
 
-async function boot(){if(!chars.length)chars=DEFAULTS;if(!active())activeId=chars[0].id;if(adminMode)$('adminBtn').classList.remove('hidden');renderRuntime();renderPersona();renderConsent();if(CORE.canImportP005(consentState()))importP005();renderSourceCounts();renderCharacters();await renderActive();persist();backgroundObserve()}
+async function boot(){if(!chars.length)chars=DEFAULTS;if(!active())activeId=chars[0].id;if(adminMode)$('adminBtn').classList.remove('hidden');const consent=consentState();if(!CORE.canImportP005(consent)){const hadP005=(observer.evidence||[]).some(e=>e&&e.source==='P005')||Boolean(observer.imports&&observer.imports.P005);if(hadP005)rebuildObserverFromP004();if(!localStorage.getItem(K.consent))save(K.consent,CORE.defaultConsent())}renderRuntime();renderPersona();renderConsent();if(CORE.canImportP005(consentState()))importP005();renderSourceCounts();renderCharacters();await renderActive();persist();backgroundObserve()}
 boot();
 })();
