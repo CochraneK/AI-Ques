@@ -4,24 +4,24 @@
 const STORAGE_KEY = 'bjtu.p005.state.v1';
 const LEGACY_KEYS = ['bjtu_p005_future_me_v2', 'aiques_future_me_v1'];
 const MODULE_ID = 'P005';
-const MODULE_VERSION = '0.6.0';
+const MODULE_VERSION = '0.7.0';
 const ADMIN_SETTINGS_KEY = 'bjtu.p005.admin.v1';
 const HORIZON_OPTIONS = ['1y','2y','3y','4y','10y','age60'];
 
-const P001_PROFILE_ASSETS_FALLBACK = {
-  // Temporary mirror until the authoritative P001 24+16 word list is exposed to the shared runtime.
-  // P001 research basis in the project map: IPIP public-domain trait content + Miller Personal Values Card Sort.
+const P001_PROFILE_ASSET_MIRROR = {
+  // Canonical content mirror from P001 v5.6-pages.
+  // 24 = E/O/A/C ideal-self facets (N excluded); 16 = P001 personal values.
   qualities:[
-    '好奇','创造','勤奋','自律','可靠','负责',
-    '勇敢','坚持','真诚','善良','同理','合作',
-    '公平','谦逊','宽容','乐观','幽默','热情',
-    '独立','开放','审慎','果断','领导力','适应力'
+    '容易亲近别人','喜欢和大家待在一起','敢表达自己的想法','行动节奏快','喜欢新鲜和刺激','容易感到愉快',
+    '有想象力','对美和艺术敏感','能感到细腻的情绪','愿意尝试不同的事','喜欢把问题想明白','愿意重新看待旧观点',
+    '愿意信任别人','真诚守原则','乐于帮助别人','愿意合作','不太需要把自己放在中心','容易体会别人的感受',
+    '相信自己能把事做成','喜欢有条理','有责任心','愿意为目标投入','能让自己坚持下去','做决定前会多想一步'
   ],
   values:[
-    '家人','亲密关系','友谊','健康',
-    '成长','学习','事业','成就',
-    '创造','自由','稳定','财富',
-    '影响力','帮助他人','体验','内心平静'
+    '有所成长','保持好奇','创造新的东西','面对困难的勇气',
+    '自主选择','有意义和方向','承担责任','做可靠的人',
+    '有亲近的朋友','有归属感','关心别人','彼此合作',
+    '内心平和','接纳自己','保持希望','有休息和享受的时间'
   ]
 };
 
@@ -64,10 +64,10 @@ function p001Assets(){
   ext=ext||{};
   const qualities=Array.isArray(ext.positiveQualities)&&ext.positiveQualities.length===24
     ? ext.positiveQualities
-    : P001_PROFILE_ASSETS_FALLBACK.qualities;
+    : P001_PROFILE_ASSET_MIRROR.qualities;
   const values=Array.isArray(ext.values)&&ext.values.length===16
     ? ext.values
-    : P001_PROFILE_ASSETS_FALLBACK.values;
+    : P001_PROFILE_ASSET_MIRROR.values;
   return {qualities:[...qualities],values:[...values]};
 }
 function firstArray(source,keys){
@@ -151,7 +151,7 @@ const state = {
   futurePortrait:'',
   capsules:[],
   generated:false,
-  settings:{ voiceMode:false, unlockMonths:12, shareCardStyle:'minimal' }
+  settings:{ voiceMode:false, unlockMonths:12, shareCardStyle:'minimal', useP004Context:false }
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -199,6 +199,10 @@ function apiConfig(name){
     adminApi:window.P00_ADMIN_API
   };
   return direct[name]||config[name]||'';
+}
+function apiCapabilities(){
+  if(!window.P005_API||typeof window.P005_API.capabilities!=='function')return {chat:false,image:false,tts:false,stt:false};
+  return window.P005_API.capabilities();
 }
 function horizonMode(){
   const raw=String(runtimeConfig().targetHorizon||'4y');
@@ -663,15 +667,27 @@ function safeExternalPersona(){
   const allowed=['traits','strengths','values','interests','roles','priorities','selfDescription'];
   return Object.fromEntries(allowed.filter((k)=>candidate[k]).map((k)=>[k,candidate[k]]));
 }
-function p004SafeContext(){
+function p004RawContext(){
   const threads=parseJson(localStorage.getItem('bjtu.p004.threads.v2')||'')||{};
   const memories=parseJson(localStorage.getItem('bjtu.p004.memory.v2')||'')||{};
-  const userTurns=Object.values(threads).flat().filter((m)=>m&&m.role==='user'&&clean(m.text)).map((m)=>clean(m.text)).slice(-40);
-  const continuityMemories=Object.values(memories).flat().filter((m)=>m&&clean(m.text)).map((m)=>clean(m.text)).slice(-24);
+  const trim=(value,max=260)=>{const s=clean(value);return s.length>max?s.slice(0,max-1)+'…':s};
+  const unique=(items,limit)=>[...new Set(items.map((x)=>trim(x)).filter(Boolean))].slice(-limit);
+  const userTurns=unique(Object.values(threads).flat().filter((m)=>m&&m.role==='user').map((m)=>m.text),12);
+  const continuityMemories=unique(Object.values(memories).flat().map((m)=>m&&m.text),8);
+  return {userTurns,continuityMemories};
+}
+function p004ContextAvailable(){
+  const raw=p004RawContext();
+  return Boolean(raw.userTurns.length||raw.continuityMemories.length);
+}
+function p004SafeContext(){
+  if(!state.settings.useP004Context)return {available:false,consented:false,recentUserTurns:[],continuityMemories:[]};
+  const raw=p004RawContext();
   return {
-    available:Boolean(userTurns.length||continuityMemories.length),
-    recentUserTurns:userTurns,
-    continuityMemories
+    available:Boolean(raw.userTurns.length||raw.continuityMemories.length),
+    consented:true,
+    recentUserTurns:raw.userTurns,
+    continuityMemories:raw.continuityMemories
   };
 }
 function buildPersonaBrief(){
@@ -740,7 +756,7 @@ async function generateMemory(){
     target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
     instruction:'Create one plausible future memory at the configured target horizon, not a prediction. Return ONLY valid JSON with summary, futureVignette, memories (3 strings), and timeline. Ground it in the user profile and P004 safe context when available. Include expected and unexpected outcomes, rewarding moments, challenges, and continuity with present values.'
   };
-  if(window.P005_API&&window.P005_API.configured){
+  if(apiCapabilities().chat){
     try{
       const r=await window.P005_API.chat(Object.assign({},payload,{
         messages:[{role:'user',text:'根据提供的画像生成 Future Memory。只返回 JSON。'}],
@@ -985,7 +1001,7 @@ async function getFutureReply(input){
         target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
     instruction:'Act as one plausible future self at the configured target horizon. Ground every response in the supplied personaBrief, life story, structured answers, future memory, and P004 safe context when available. When relevant, naturally reference one or two concrete user-specific details rather than giving generic advice. Never expose P004 clinical/admin inference. Do not mechanically repeat profile fields. Speak autobiographically using continuity cues when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
   };
-  if(window.P005_API&&window.P005_API.configured){
+  if(apiCapabilities().image){
     try{
       const result=await window.P005_API.chat(payload);
       if(result&&result.reply)return String(result.reply);
@@ -1035,7 +1051,7 @@ async function speakText(text){
   if(!text)return;
   const voicePayload={
     text,
-    voice:(window.P005_API&&window.P005_API.configured?window.P005_API.readDirect().voice:runtimeConfig().voiceId)||'marin',
+    voice:(apiCapabilities().tts?window.P005_API.readDirect().voice:runtimeConfig().voiceId)||'marin',
     instructions:runtimeConfig().ttsInstructions||'自然、平静、像熟悉自己的真人，不要播音腔。',
     language:'zh-CN',
     profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
@@ -1214,12 +1230,13 @@ function closeApiSettings(){
 function validateApiCandidate(x){
   if(!x.baseUrl)return'需要 Base URL';
   if(!x.apiKey)return'需要 API Key';
-  if(!x.chatModel)return'至少需要文字对话模型';
+  if(![x.chatModel,x.imageModel,x.ttsModel,x.sttModel].some(Boolean))return'至少填写一种模型';
   return'';
 }
 async function testApiSettings(){
   const candidate=apiCandidate(),problem=validateApiCandidate(candidate),box=$('#apiTestResult');
   if(problem){box.textContent=problem;box.classList.remove('hidden');box.classList.add('error');return}
+  if(!candidate.chatModel){box.textContent='测试对话需要先填写文字对话模型';box.classList.remove('hidden');box.classList.add('error');return}
   $('#testApiBtn').disabled=true;box.classList.remove('hidden','error');box.textContent='正在测试文字对话接口…';
   try{
     const result=await window.P005_API.testDirect(candidate);
@@ -1252,6 +1269,22 @@ $('#saveApiBtn').addEventListener('click',saveApiSettings);
 $('#clearApiBtn').addEventListener('click',clearApiSettings);
 window.addEventListener('p005:api-settings-changed',renderApiRuntime);
 document.addEventListener('keydown',(event)=>{if(event.key==='Escape'&&!$('#apiModal').classList.contains('hidden'))closeApiSettings()});
+
+function renderP004Bridge(){
+  const wrap=$('#p004BridgeNote'),input=$('#useP004Context');
+  if(!wrap||!input)return;
+  const available=p004ContextAvailable();
+  wrap.classList.toggle('hidden',!available);
+  input.checked=Boolean(state.settings.useP004Context&&available);
+}
+if($('#useP004Context')){
+  $('#useP004Context').addEventListener('change',(event)=>{
+    state.settings.useP004Context=Boolean(event.target.checked);
+    save();
+    syncAdmin('context_bridge_changed',{source:'P004',enabled:state.settings.useP004Context});
+    showToast(state.settings.useP004Context?'会参考你在 P004 说过的内容':'不会读取 P004 对话');
+  });
+}
 
 function cardValues(){
   const p=state.profile;
@@ -1432,6 +1465,7 @@ $('#saveCapsuleBtn').addEventListener('click',()=>{
 
 load();
 updateProgress();
+renderP004Bridge();
 renderApiRuntime();
 updateChatModeNote();
 emitSessionEvent('loaded',{hasSavedProfile:Boolean(Object.keys(state.profile).length),targetHorizon:horizonMode()});
