@@ -56,6 +56,7 @@ def scan_repo() -> list[dict]:
         "p002/admin.js",
         "p002/admin.css",
         "p002/study-manifest.json",
+        "p002/RESEARCH_NOTES.md",
         "p004/index.html",
         "p004/core.js",
         "p004/app.js",
@@ -185,11 +186,34 @@ def scan_repo() -> list[dict]:
                 "Keep participant-facing assessment UI low-noise and aligned with the frozen protocol.",
             ))
 
-    if "current-cape-p15-original-0-3" not in p002_app or "0-3 frequency + conditional 0-3 distress" not in p002_manifest:
+    if "cape-p15-published-1-4" not in p002_app or "1-4 frequency + conditional 1-4 distress" not in p002_manifest:
         findings.append(finding(
             "p002-cape-scoring-contract", "P0", "p002/",
-            "P002 CAPE scoring/distress contract is not frozen to the audited 0-3 scheme.",
-            "Keep original 0-3 frequency plus conditional 0-3 distress in app and manifest.",
+            "P002 CAPE response coding is not frozen to the published 1-4 questionnaire format.",
+            "Keep 1-4 frequency plus conditional 1-4 distress in app and manifest; derive zero-based values only downstream.",
+        ))
+
+    for stale in ["current-cape-p15-original-0-3", "0-3 frequency + conditional 0-3 distress", "原始 Current CAPE-15 论文使用 0–3"]:
+        if stale in p002_app or stale in p002_manifest or stale in p002_readme:
+            findings.append(finding(
+                "p002-cape-stale-zero-based-claim", "P0", "p002/",
+                f"P002 still contains a stale zero-based CAPE claim: {stale}",
+                "Use published 1-4 response codes and keep any zero-based transform explicit and derived.",
+            ))
+
+    if "choiceValues:[1,2,3,4]" not in p002_app or "distressValues:[1,2,3,4]" not in p002_app or "score>1" not in p002_app:
+        findings.append(finding(
+            "p002-cape-runtime-codes", "P0", "p002/app.js",
+            "P002 CAPE runtime no longer stores 1-4 response codes or uses the correct endorsement gate.",
+            "Keep frequency/distress values at 1-4 and trigger distress only when frequency > 1.",
+        ))
+
+    p002_notes = read("p002/RESEARCH_NOTES.md")
+    if "10.1016/j.schres.2020.06.003" not in p002_notes or "10.1080/26408066.2019.1676858" not in p002_notes:
+        findings.append(finding(
+            "p002-instrument-evidence-notes", "P0", "p002/RESEARCH_NOTES.md",
+            "P002 instrument evidence notes no longer record the reviewed Chinese CAPE/PCL evidence.",
+            "Keep the reviewed evidence references and the explicit non-equivalence of repository paraphrases.",
         ))
 
     if "同一段最困扰的压力经历" not in p002_app or "困扰到你" not in p002_app:
@@ -280,7 +304,7 @@ def scan_repo() -> list[dict]:
     try:
         _p002_manifest_data = json.loads(p002_manifest)
         contract = _p002_manifest_data.get("data_contract", {})
-        if _p002_manifest_data.get("study_version") != "0.10.0-prototype" or contract.get("sync", {}).get("cross_device_sync_available") is not False:
+        if _p002_manifest_data.get("study_version") != "0.11.0-prototype" or contract.get("sync", {}).get("cross_device_sync_available") is not False:
             findings.append(finding(
                 "p002-data-contract-manifest", "P0", "p002/study-manifest.json",
                 "P002 data contract version or cross-device boundary is not frozen.",
