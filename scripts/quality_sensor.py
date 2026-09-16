@@ -29,6 +29,8 @@ def scan_repo() -> list[dict]:
 
     root_index = read("index.html")
     shared = read("shared/profile.js")
+    research_config = read("shared/config.js")
+    research_core = read("shared/core.js")
     p002_app = read("p002/app.js")
     p002_readme = read("p002/README.md")
     p002_manifest = read("p002/study-manifest.json")
@@ -45,6 +47,8 @@ def scan_repo() -> list[dict]:
         "module-registry.json",
         "docs/ARCHITECTURE.md",
         "shared/profile.js",
+        "shared/config.js",
+        "shared/core.js",
         "p002/index.html",
         "p002/app.js",
         "p002/condition-config.js",
@@ -224,6 +228,63 @@ def scan_repo() -> list[dict]:
                 "p002-manifest-condition-contract", "P0", "p002/study-manifest.json",
                 "P002 manifest no longer matches the admin-controlled story-default protocol.",
                 "Freeze participant_can_choose_condition=false and default_condition=story.",
+            ))
+    except json.JSONDecodeError:
+        pass
+
+    for needle, code, message in [
+        ("bjtu.p00.runtime.v1", "p00-runtime-config-key", "Shared runtime config key is missing."),
+    ]:
+        if needle not in research_config:
+            findings.append(finding(
+                code, "P0", "shared/config.js", message,
+                "Keep the canonical runtime config namespace stable.",
+            ))
+
+    for needle, code, message in [
+        ("bjtu.p00.participant.v1", "p00-participant-id-store", "Stable participant_id storage is missing."),
+        ("bjtu.p00.sessions.v1", "p00-session-store", "Shared session history storage is missing."),
+        ("bjtu.p00.events.v1", "p00-event-store", "Shared event storage is missing."),
+        ("bjtu.p00.pending-sync.v1", "p00-pending-sync-store", "Pending sync queue is missing."),
+        ("createSession", "p00-session-runtime", "Shared research core cannot create sessions."),
+        ("appendEvent", "p00-event-runtime", "Shared research core cannot append events."),
+        ("'/v1/events'", "p00-event-sync-endpoint", "Shared research core no longer targets POST /v1/events."),
+    ]:
+        if needle not in research_core:
+            findings.append(finding(
+                code, "P0", "shared/core.js", message,
+                "Restore the canonical participant/session/event runtime.",
+            ))
+
+    if "RESEARCH.createSession" not in p002_app or "recordEvent('item_response'" not in p002_app:
+        findings.append(finding(
+            "p002-event-stream", "P0", "p002/app.js",
+            "P002 no longer writes item-level research events under participant/session identifiers.",
+            "Create a new session per run and append item_response events with condition and timing metadata.",
+        ))
+
+    if "session_interrupted" not in p002_app or "session_completed" not in p002_app:
+        findings.append(finding(
+            "p002-session-lifecycle", "P0", "p002/app.js",
+            "P002 session lifecycle completion/interruption events are missing.",
+            "Persist explicit completed/interrupted lifecycle events.",
+        ))
+
+    if "exportJsonBtn" not in p002_admin or "exportCsvBtn" not in p002_admin or "flushPending" not in p002_admin:
+        findings.append(finding(
+            "p002-admin-export-sync", "P0", "p002/admin.js",
+            "P002 admin lacks local JSON/CSV export or pending-sync control.",
+            "Keep administrator review/export and pending-sync controls wired to the shared research runtime.",
+        ))
+
+    try:
+        _p002_manifest_data = json.loads(p002_manifest)
+        contract = _p002_manifest_data.get("data_contract", {})
+        if _p002_manifest_data.get("study_version") != "0.10.0-prototype" or contract.get("sync", {}).get("cross_device_sync_available") is not False:
+            findings.append(finding(
+                "p002-data-contract-manifest", "P0", "p002/study-manifest.json",
+                "P002 data contract version or cross-device boundary is not frozen.",
+                "Keep study_version and explicit cross-device=false boundary aligned with the runtime.",
             ))
     except json.JSONDecodeError:
         pass
