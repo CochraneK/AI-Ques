@@ -167,7 +167,7 @@ def scan_repo() -> list[dict]:
             "P004 still uses the old mixed public/private profile namespace.",
             "Use shared/profile.js only for reusable public Persona fields and keep observer evidence in a P004-only namespace or protected backend.",
         ))
-    if "bjtu.p004.observer.v2" not in p004_app or "BJTU_PROFILE.update" in p004_app:
+    if "bjtu.p004.observer.v2" not in p004_core or "BJTU_PROFILE.update" in p004_app:
         findings.append(finding(
             "p004-private-storage-boundary", "P0", "p004/app.js",
             "P004 longitudinal observer evidence is not isolated from the shared public profile.",
