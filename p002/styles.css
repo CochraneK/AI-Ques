@@ -175,3 +175,8 @@ footer{max-width:860px;margin:0 auto;padding:22px 0 42px;color:var(--faint);font
 .completion .primary{width:auto;min-width:120px}
 .choice:disabled{cursor:default;opacity:1}
 @media(max-width:780px){.intro{gap:14px;padding:32px 0 20px}.completion{padding:18px 4px}.completion .primary{width:100%}}
+
+.storage-notice{margin:14px 0 0;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.38);color:var(--muted);font-size:10px}
+.storage-notice strong{display:block;color:var(--text);font-size:10px}.storage-notice p{margin:4px 0 0}
+.text-action{margin-top:8px;padding:0;border:0;background:transparent;color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:10px}
+.text-action:hover{color:var(--text)}
