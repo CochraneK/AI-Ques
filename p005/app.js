@@ -581,13 +581,6 @@ $('#portraitInput').addEventListener('change',async(event)=>{
   }catch(error){console.error(error);showToast('照片读取失败')}
 });
 
-function safeExternalPersona(){
-  const context=window.P00_CONTEXT||{};
-  const candidate=context.selfProfile||context.persona||context.publicPersona||{};
-  if(!candidate||typeof candidate!=='object')return {};
-  const allowed=['traits','strengths','values','interests','roles','priorities','selfDescription'];
-  return Object.fromEntries(allowed.filter((k)=>candidate[k]).map((k)=>[k,candidate[k]]));
-}
 function hasP004PeerData(){
   try{
     return Boolean(localStorage.getItem('bjtu.p004.threads.v2')||localStorage.getItem('bjtu.p004.memory.v2'));
