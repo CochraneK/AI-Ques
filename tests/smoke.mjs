@@ -94,13 +94,24 @@ evaluate(`P00_RESEARCH.appendEvent({project_id:"P002",session_id:"${testSessionI
 assert.equal(evaluate("P00_RESEARCH.listSessions('P002').length"), 1);
 assert.equal(evaluate("P00_RESEARCH.listEvents('P002').length"), 1);
 assert.equal(evaluate("P00_RESEARCH.pendingCount('P002')"), 1);
+const clearResult = evaluate("P00_RESEARCH.clearProjectData('P002')");
+assert.equal(clearResult.removed_sessions, 1);
+assert.equal(clearResult.removed_events, 1);
+assert.equal(clearResult.removed_pending, 1);
+assert.equal(evaluate("P00_RESEARCH.listSessions('P002').length"), 0);
+assert.equal(evaluate("P00_RESEARCH.listEvents('P002').length"), 0);
+assert.equal(evaluate("P00_RESEARCH.participantId()"), stableParticipantId, "project clear must preserve the shared participant_id");
 
 
 
 const manifest = JSON.parse(
   fs.readFileSync(new URL("../p002/study-manifest.json", import.meta.url), "utf8")
 );
-assert.equal(manifest.study_version, "0.11.0-prototype");
+assert.equal(manifest.study_version, "0.12.0-prototype");
+assert.equal(manifest.formal_collection_gate.ready, false);
+assert.ok(manifest.formal_collection_gate.blockers.length >= 6);
+assert.equal(manifest.data_contract.local_clear.participant_available, true);
+assert.equal(manifest.data_contract.local_clear.admin_available, true);
 assert.equal(manifest.scales.cape15.response_encoding, "1-4 frequency + conditional 1-4 distress");
 assert.equal(manifest.scales.cape15.scoring_scheme, "published-response-codes-1-4");
 assert.equal(manifest.scales.cape15.chinese_evidence.repository_wording_is_validated_version, false);
@@ -158,6 +169,12 @@ assert.match(adminSource,/cfg\.write\(selected\)/, "admin page should control th
 assert.match(adminSource,/exportJsonBtn/);
 assert.match(adminSource,/exportCsvBtn/);
 assert.match(adminSource,/flushPending/);
+assert.match(adminSource,/runtime\.write\(\{apiBase:value\}\)/);
+assert.match(adminSource,/clearProjectData\('P002'\)/);
+assert.match(adminSource,/renderReadiness/);
+assert.match(htmlSource,/clearLocalBtn/);
+assert.match(htmlSource,/本地数据说明/);
+assert.match(appSource,/clearProjectData\(PROJECT_ID\)/);
 assert.match(appSource,/RESEARCH\.createSession/);
 assert.match(appSource,/recordEvent\('item_response'/);
 assert.match(appSource,/condition_id:state\.condition/);
