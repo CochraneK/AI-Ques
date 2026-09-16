@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module": "P001",
-  "version": "5.4-pages",
+  "version": "5.5-pages",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "constructs": {
@@ -51,11 +51,10 @@
     "未来的我"
   ],
   "notes": [
-    "P001 reuses the AI-Ques shared profile without a duplicate identity form.",
-    "Swipe-module progress is always visible, including from the first card.",
-    "STJ uses balanced coverage followed by uncertainty-focused adaptive pairing and regularized Bradley-Terry estimates.",
-    "Student result/share poster shows curated Top conclusions rather than every selected trait.",
-    "Current-self is the movable object in both future distance and overlap tasks.",
-    "PNG export uses native Canvas and does not depend on html2canvas."
+    "STJ interaction is click-to-eliminate: the clicked/arrow-selected card is removed; the other card is the preferred item and stays when scheduling permits.",
+    "STJ inference uses balanced graph coverage, uncertainty-focused adaptive pairing, and regularized Bradley-Terry estimates rather than survivor counts.",
+    "Student report presents Top 3 current traits, Top 3 ideal traits, 3 retained traits, 3 growth directions, and Top 3 values.",
+    "Report interpretation uses selected Big Five facet-source structure, actual-ideal discrepancy, future-self distance/overlap, and values; it is not a normative Big Five score or diagnosis.",
+    "PNG export uses native Canvas."
   ]
 }

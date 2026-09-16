@@ -85,3 +85,16 @@
  .share-poster.curated{padding:22px!important}.share-poster.curated h2{font-size:34px!important}
  .poster-self-grid.compact{grid-template-columns:1fr 28px 1fr}.poster-self-grid.compact .poster-self{min-height:145px}
 }
+
+/* ===== P001 v5.5 interpretation + eliminate semantics ===== */
+.pk-card.persistent{transition:box-shadow .18s ease,transform .18s ease}
+.pk-card.persistent:hover{box-shadow:0 18px 42px rgba(72,48,30,.13);transform:translateY(-2px)}
+.pk-card.persistent .choice-meaning{color:#a35e5e!important}
+.poster-insight,.poster-advice{position:relative;z-index:2;border-radius:20px;padding:15px 17px;background:rgba(255,255,255,.58);backdrop-filter:blur(8px)}
+.magazine .poster-insight,.magazine .poster-advice{background:rgba(255,255,255,.07)}
+.poster-insight{border-left:4px solid #9e8bff}.poster-advice{border-left:4px solid #5ed5a1}
+.poster-insight small,.poster-advice small{display:block;font-size:11px;opacity:.68;margin-bottom:8px}
+.poster-insight p{font-size:12px;line-height:1.7;margin:6px 0}
+.poster-advice ol{margin:4px 0 0;padding-left:20px}.poster-advice li{font-size:12px;line-height:1.65;margin:6px 0}
+.poster-list-section.keep .poster-chip,.poster-list-section.grow .poster-chip{font-weight:700}
+@media(max-width:760px){.poster-insight p,.poster-advice li{font-size:11px}}

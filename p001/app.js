@@ -54,7 +54,7 @@ function triggerSwipe(kind,selected,input){const c=swipeConfig(kind),item=c.deck
 function commitSwipe(kind,selected,rt,item,input){const c=swipeConfig(kind),hist=state[c.history],arr=state[c.selected];hist.push({id:item.id,selected,index:state[c.index]});if(selected&&!arr.includes(item.id))arr.push(item.id);if(!selected&&arr.includes(item.id))arr.splice(arr.indexOf(item.id),1);log(kind+'_swipe',{id:item.id,selected,direction:selected?'right':'left',rt_ms:rt,input,order_index:state[c.index]});const card=$(c.stack+' .swipe-card'),done=()=>{state[c.index]++;renderSwipe(kind)};if(window.gsap)window.gsap.to(card,{x:selected?360:-360,y:300,rotation:selected?22:-22,opacity:0,duration:.34,ease:'power2.in',onComplete:done});else{card.style.transition='all .34s ease';card.style.transform='translate('+(selected?360:-360)+'px,300px) rotate('+(selected?22:-22)+'deg)';card.style.opacity='0';setTimeout(done,350)}}
 function undoSwipe(kind){const c=swipeConfig(kind),hist=state[c.history];if(!hist.length)return;const last=hist.pop(),arr=state[c.selected];if(last.selected&&arr.includes(last.id))arr.splice(arr.indexOf(last.id),1);state[c.index]=last.index;log(kind+'_swipe_undo',{id:last.id,selected_was:last.selected});renderSwipe(kind)}
 $('#undoCurrentSwipe').onclick=()=>undoSwipe('current');$('#undoIdealSwipe').onclick=()=>undoSwipe('ideal');$('#undoValueSwipe').onclick=()=>undoSwipe('value');
-function finishSwipe(kind){const arr=state[swipeConfig(kind).selected];if(kind==='current'){if(arr.length>=2){show('currentRank');runSTJ(arr,'current',$('#currentTournament'),'哪一个更像现在的我？',(rank,stats)=>{state.currentRank=rank;state.currentStats=stats;renderSwipe('ideal');show('idealSwipe')})}else{state.currentRank=[...arr];renderSwipe('ideal');show('idealSwipe')}}else if(kind==='ideal'){if(arr.length>=2){show('idealRank');runSTJ(arr,'ideal',$('#idealTournament'),'哪一个更接近理想的我？',(rank,stats)=>{state.idealRank=rank;state.idealStats=stats;renderSwipe('value');show('valueSwipe')})}else{state.idealRank=[...arr];renderSwipe('value');show('valueSwipe')}}else{if(arr.length>=2){show('valueRank');runSTJ(arr,'value',$('#valueTournament'),'哪一个更值得我先守住？',(rank,stats)=>{state.valueRank=rank;state.valueStats=stats;show('futureDistance');requestAnimationFrame(initDistance)})}else{state.valueRank=[...arr];show('futureDistance');requestAnimationFrame(initDistance)}}}
+function finishSwipe(kind){const arr=state[swipeConfig(kind).selected];if(kind==='current'){if(arr.length>=2){show('currentRank');runSTJ(arr,'current',$('#currentTournament'),'请划掉相对没那么像现在的我的一个',(rank,stats)=>{state.currentRank=rank;state.currentStats=stats;renderSwipe('ideal');show('idealSwipe')})}else{state.currentRank=[...arr];renderSwipe('ideal');show('idealSwipe')}}else if(kind==='ideal'){if(arr.length>=2){show('idealRank');runSTJ(arr,'ideal',$('#idealTournament'),'请划掉相对没那么接近理想的我的一个',(rank,stats)=>{state.idealRank=rank;state.idealStats=stats;renderSwipe('value');show('valueSwipe')})}else{state.idealRank=[...arr];renderSwipe('value');show('valueSwipe')}}else{if(arr.length>=2){show('valueRank');runSTJ(arr,'value',$('#valueTournament'),'请划掉相对没那么值得我先守住的一个',(rank,stats)=>{state.valueRank=rank;state.valueStats=stats;show('futureDistance');requestAnimationFrame(initDistance)})}else{state.valueRank=[...arr];show('futureDistance');requestAnimationFrame(initDistance)}}}
 
 function runSTJ(items,kind,mount,question,done){
  if(items.length<=1){done([...items],{});return}
@@ -75,7 +75,7 @@ function runSTJ(items,kind,mount,question,done){
  function obj(id){return kind==='value'?valueMap[id]:facetMap[id]}
  function colorOf(o){return kind==='value'?VALUE_CATEGORIES[o.category].color:o.color}
  function tagOf(o){return kind==='value'?VALUE_CATEGORIES[o.category].label:(o.domain+' · '+o.domain_label)}
- function meaning(){return kind==='current'?'更像现在的我':kind==='ideal'?'更接近理想的我':'对我更重要'}
+ function meaning(){return kind==='current'?'划掉：相对没那么像现在的我':kind==='ideal'?'划掉：相对没那么接近理想的我':'划掉：相对没那么重要'}
  function card(id,side){const o=obj(id),c=colorOf(o);return '<article class="pk-card persistent '+side+'" data-side="'+side+'" data-id="'+id+'" style="--facet-color:'+c+'"><span class="domain-tag"><i class="domain-dot" style="background:'+c+'"></i>'+tagOf(o)+'</span><h3>'+o.label+'</h3><p>'+(o.desc||'')+'</p><div class="choice-meaning">'+(side==='left'?'← ':'→ ')+meaning()+'</div></article>'}
  function wireCard(el){el.onclick=()=>pick(el.dataset.side,'click')}
  function rebuildCounts(){
@@ -140,7 +140,7 @@ function runSTJ(items,kind,mount,question,done){
    if(undo)undo.disabled=!answers.length
  }
  function render(){
-   mount.innerHTML='<div class="stj-shell"><div class="stj-top"><span class="round-badge">先保证每个候选都被看见，再重点比较难分的</span><span class="stj-counter">'+(answers.length+1)+' / '+budget+'</span></div><div class="stj-bar"><i style="width:'+(answers.length/budget*100)+'%"></i></div><div class="stj-question">'+question+'</div><div class="stj-sub">← 左边 · → 右边 · ↑ 返回上一场</div><div class="pk-row persistent-row">'+card(left,'left')+'<div class="vs">VS</div>'+card(right,'right')+'</div><div class="stj-undo-row"><button class="tool-btn undoSTJ" '+(answers.length?'':'disabled')+'><kbd>↑</kbd> 返回上一场</button></div></div>';
+   mount.innerHTML='<div class="stj-shell"><div class="stj-top"><span class="round-badge">点哪张，哪张被划掉；另一张留下</span><span class="stj-counter">'+(answers.length+1)+' / '+budget+'</span></div><div class="stj-bar"><i style="width:'+(answers.length/budget*100)+'%"></i></div><div class="stj-question">'+question+'</div><div class="stj-sub">← 划掉左边 · → 划掉右边 · ↑ 返回上一场</div><div class="pk-row persistent-row">'+card(left,'left')+'<div class="vs">VS</div>'+card(right,'right')+'</div><div class="stj-undo-row"><button class="tool-btn undoSTJ" '+(answers.length?'':'disabled')+'><kbd>↑</kbd> 返回上一场</button></div></div>';
    mount.querySelectorAll('.pk-card').forEach(wireCard);mount.querySelector('.undoSTJ').onclick=undo;icons();started=performance.now()
  }
  function transitionTo(nextPair,winner,loserSide){
@@ -165,11 +165,11 @@ function runSTJ(items,kind,mount,question,done){
  }
  function pick(side,input){
    if(busy||answers.length>=budget)return;busy=true;
-   const winner=side==='left'?left:right,loser=side==='left'?right:left,loserSide=side==='left'?'right':'left',rt=Math.round(performance.now()-started);
+   const loser=side==='left'?left:right,winner=side==='left'?right:left,loserSide=side,rt=Math.round(performance.now()-started);
    undoStack.push({left,right,answers:clone(answers),coverage:clone(coverage)});
-   const ans={left_id:left,right_id:right,preferred_id:winner,rt_ms:rt,input};
+   const ans={left_id:left,right_id:right,preferred_id:winner,eliminated_id:loser,rt_ms:rt,input};
    answers.push(ans);rebuildCounts();
-   log(kind+'_pairwise',{...ans,comparison_index:answers.length,budget,model:'regularized_bradley_terry',scheduler:coverage.length?'coverage_then_adaptive':'adaptive_uncertainty'});
+   log(kind+'_pairwise',{...ans,comparison_index:answers.length,budget,interaction:'click_to_eliminate',model:'regularized_bradley_terry',scheduler:coverage.length?'coverage_then_adaptive':'adaptive_uncertainty'});
    const loserEl=mount.querySelector('.pk-card.'+loserSide),outX=loserSide==='right'?340:-340;
    const next=()=>{const pair=chooseNext(winner);transitionTo(pair,winner,loserSide)};
    if(window.gsap)window.gsap.to(loserEl,{x:outX,y:260,opacity:0,rotation:loserSide==='right'?18:-18,duration:.32,ease:'power2.in',onComplete:next});
@@ -196,7 +196,7 @@ function runSTJ(items,kind,mount,question,done){
      wins:winCounts[id]||0,
      mean_rt_ms:matchCounts[id]?Math.round(rtTotals[id]/matchCounts[id]):null
    };
-   log(kind+'_ranking_complete',{ranking,comparisons:answers.length,budget,stats:clean,model:'regularized_bradley_terry',scheduler:'balanced_coverage_then_adaptive_uncertainty'});
+   log(kind+'_ranking_complete',{ranking,comparisons:answers.length,budget,stats:clean,model:'regularized_bradley_terry',scheduler:'balanced_coverage_then_adaptive_uncertainty',interaction:'click_to_eliminate'});
    stjController=null;done(ranking,clean)
  }
  const first=chooseNext(null);left=first[0];right=first[1];
