@@ -57,6 +57,13 @@ export class MemoryStore {
     const session = await this.requireSession(id, token);
     return session ? this.publicSession(session) : null;
   }
+  async updateConsent(id, token, consent) {
+    const session = await this.requireSession(id, token);
+    if (!session) return null;
+    session.consent = clone(consent);
+    session.updatedAt = now();
+    return this.publicSession(session);
+  }
   async recordEvent(id, token, { type, payload = {}, snapshot = null, occurredAt = now() }) {
     const session = await this.requireSession(id, token);
     if (!session) return null;
@@ -238,6 +245,15 @@ export class PostgresStore {
   async getSession(id, token) {
     const row = await this.requireSession(id, token);
     return row ? this.mapSession(row) : null;
+  }
+  async updateConsent(id, token, consent) {
+    const row = await this.requireSession(id, token);
+    if (!row) return null;
+    const updated = await this.pool.query(
+      'UPDATE p005_sessions SET consent_json=$2, updated_at=NOW() WHERE id=$1 RETURNING *',
+      [id, consent || {}]
+    );
+    return this.mapSession(updated.rows[0]);
   }
   async recordEvent(id, token, { type, payload = {}, snapshot = null, occurredAt = now() }) {
     const row = await this.requireSession(id, token);
