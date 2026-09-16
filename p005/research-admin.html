@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>P005 · Research Console</title>
+  <link rel="stylesheet" href="research-admin.css?v=1">
+</head>
+<body>
+  <main class="console">
+    <header>
+      <div>
+        <p class="kicker">P005 · RESEARCH CONSOLE</p>
+        <h1>研究记录</h1>
+      </div>
+      <a href="./">返回 P005</a>
+    </header>
+
+    <section class="connect" id="connectPanel">
+      <label>
+        <span>Research API</span>
+        <input id="researchApiInput" type="url" placeholder="https://your-p005-api.example.com">
+      </label>
+      <label>
+        <span>Admin token</span>
+        <input id="adminTokenInput" type="password" autocomplete="off" placeholder="只保存在当前标签页">
+      </label>
+      <button id="connectBtn" type="button">连接</button>
+      <p id="connectStatus"></p>
+    </section>
+
+    <section id="dataPanel" class="hidden">
+      <div class="toolbar">
+        <div>
+          <b id="sessionCount">0</b>
+          <span>sessions</span>
+        </div>
+        <div>
+          <button id="refreshBtn" type="button">刷新</button>
+          <button id="exportCsvBtn" type="button">导出 CSV</button>
+        </div>
+      </div>
+
+      <div class="session-list" id="sessionList"></div>
+      <article class="detail hidden" id="sessionDetail"></article>
+    </section>
+  </main>
+  <script src="runtime-config.js?v=1"></script>
+  <script src="research-admin.js?v=1"></script>
+</body>
+</html>
