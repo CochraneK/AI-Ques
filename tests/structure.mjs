@@ -11,6 +11,10 @@ const exists = (p) => fs.existsSync(path.join(root, p));
 const registry = JSON.parse(read("module-registry.json"));
 assert.equal(registry.shared_profile.key, "bjtu.p00.profile.v1");
 assert.equal(registry.shared_profile.adapter, "shared/profile.js");
+assert.equal(registry.research_runtime.config, "shared/config.js");
+assert.equal(registry.research_runtime.core, "shared/core.js");
+assert.equal(registry.research_runtime.participant_key, "bjtu.p00.participant.v1");
+assert.equal(registry.research_runtime.events_key, "bjtu.p00.events.v1");
 
 const byId = Object.fromEntries(registry.modules.map((m) => [m.id, m]));
 assert.equal(byId.P002.path, "p002/");
@@ -23,7 +27,7 @@ assert.equal(byId.P001.path, "p001/");
 assert.equal(byId.P003.path, null);
 
 for (const file of [
-  "shared/profile.js",
+  "shared/profile.js", "shared/config.js", "shared/core.js",
   "p001/index.html", "p001/report.js", "p001/static-api.js", "p001/study-manifest.json", "p001/app-loader.js",
   "p002/index.html", "p002/app.js", "p002/condition-config.js", "p002/admin.html", "p002/admin.js", "p002/admin.css", "p002/study-manifest.json",
   "p004/index.html", "p004/core.js", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
@@ -32,6 +36,25 @@ for (const file of [
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
 }
+
+const p002RuntimeConfig = read("shared/config.js");
+const p002ResearchCore = read("shared/core.js");
+assert.match(p002RuntimeConfig, /bjtu\.p00\.runtime\.v1/);
+assert.match(p002ResearchCore, /bjtu\.p00\.participant\.v1/);
+assert.match(p002ResearchCore, /bjtu\.p00\.sessions\.v1/);
+assert.match(p002ResearchCore, /bjtu\.p00\.events\.v1/);
+assert.match(p002ResearchCore, /bjtu\.p00\.pending-sync\.v1/);
+assert.match(p002ResearchCore, /createSession/);
+assert.match(p002ResearchCore, /appendEvent/);
+
+const p002Manifest = JSON.parse(read("p002/study-manifest.json"));
+assert.equal(p002Manifest.study_version, "0.10.0-prototype");
+assert.equal(p002Manifest.data_contract.sync.endpoint, "POST /v1/events");
+assert.equal(p002Manifest.data_contract.sync.cross_device_sync_available, false);
+assert.deepEqual(p002Manifest.data_contract.admin_export, ["JSON", "CSV"]);
+assert.match(read("p002/admin.html"), /exportJsonBtn/);
+assert.match(read("p002/admin.html"), /exportCsvBtn/);
+assert.match(read("p002/admin.html"), /pendingCount/);
 
 const p002Config = read("p002/condition-config.js");
 assert.match(p002Config, /bjtu\.p002\.condition\.v1/);
