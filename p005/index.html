@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="P005 Future Me：基于人生故事、未来记忆与未来自我对话的研究原型。" />
   <title>P005 · Future Me</title>
-  <link rel="stylesheet" href="styles.css?v=20260916-v061" />
+  <link rel="stylesheet" href="styles.css?v=20260917-v07" />
 </head>
 <body>
   <header class="topbar">
@@ -38,6 +38,10 @@
           <button class="text-button" id="resumeBtn" type="button">继续上次</button>
         </div>
         <p class="storage-note">此静态原型会把回答、对话和照片保存在当前浏览器，关闭页面后仍会保留。共用设备上请在结束后点“清除”。</p>
+        <label class="bridge-note hidden" id="p004BridgeNote">
+          <input id="useP004Context" type="checkbox">
+          <span>使用我在角色世界里的对话线索，帮助生成和对话</span>
+        </label>
       </div>
 
       <div class="future-pair" aria-hidden="true">
@@ -187,7 +191,7 @@
         </div>
 
         <div class="share-secondary">
-          <button class="text-button" data-prev="share" type="button">返回卡片</button>
+          <button class="text-button" data-prev="chat" type="button">回去继续聊</button>
           <button class="text-button" data-next="capsule" type="button">再留一封信 →</button>
         </div>
       </div>
@@ -218,7 +222,7 @@
         </div>
 
         <div class="capsule-actions">
-          <button class="text-button" data-prev="chat" type="button">回去继续聊</button>
+          <button class="text-button" data-prev="share" type="button">返回卡片</button>
           <button class="primary" id="saveCapsuleBtn" type="button">封存</button>
         </div>
         <div class="saved-capsules" id="savedCapsules"></div>
@@ -256,9 +260,9 @@
         </label>
 
         <label class="api-field api-field-wide api-primary-model">
-          <span>文字对话模型 <b>必填</b></span>
-          <input id="apiChatModel" spellcheck="false" placeholder="例如 auto、gpt-5.6-luna 或你的模型名">
-          <small>只想用文字 Future Me，填到这里就够了。</small>
+          <span>文字对话模型 <b>推荐</b></span>
+          <input id="apiChatModel" spellcheck="false" placeholder="例如 auto 或你的模型名">
+          <small>只想直连文字 Future Me，填到这里就够了；若部署方已提供对话后端，也可以只配置图像或语音。</small>
         </label>
 
         <details class="api-advanced api-field-wide">
@@ -307,7 +311,7 @@
 
   <script src="../shared/profile.js?v=1"></script>
   <script src="runtime-config.js?v=1"></script>
-  <script src="api-client.js?v=2"></script>
-  <script src="app.js?v=20260916-v061"></script>
+  <script src="api-client.js?v=3"></script>
+  <script src="app.js?v=20260917-v07"></script>
 </body>
 </html>

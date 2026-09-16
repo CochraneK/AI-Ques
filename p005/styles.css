@@ -600,3 +600,25 @@ h1,h2{letter-spacing:-.05em}
 @media(max-width:680px){
   .api-advanced-grid{grid-template-columns:1fr}
 }
+
+
+/* V0.7 · explicit cross-module consent */
+.bridge-note{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  width:min(620px,100%);
+  margin-top:14px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.55;
+  cursor:pointer;
+}
+.bridge-note input{
+  width:14px;
+  height:14px;
+  margin:1px 0 0;
+  accent-color:var(--violet);
+  flex:0 0 auto;
+}
+.bridge-note span{max-width:540px}

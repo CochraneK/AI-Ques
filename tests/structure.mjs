@@ -25,7 +25,7 @@ for (const file of [
   "p002/index.html", "p002/app.js", "p002/experiments.js", "p002/study-manifest.json",
   "p004/index.html", "p004/core.js", "p004/app.js", "p004/module-manifest.json", "p004/NVWA_CONTRACT.md",
   "p005/index.html", "p005/app.js", "p005/api-client.js", "p005/module-manifest.json", "p005/runtime-config.js", "p005/admin.html", "p005/admin.js", "p005/admin.css",
-  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs"
+  "docs/ARCHITECTURE.md", "docs/DESIGN_PRINCIPLES.md", "p005/RESEARCH_NOTES.md", "p005/METHODS_MAPPING.md", "tests/p004-runtime.mjs", "tests/p005-runtime.mjs"
 ]) {
   assert.ok(exists(file), `missing canonical file: ${file}`);
 }
@@ -140,7 +140,7 @@ assert.match(p005, /transcribeApi/);
 assert.match(p005, /MediaRecorder/);
 assert.match(p005, /function renderShareCard\(\)/);
 assert.match(p005, /personaBrief:buildPersonaBrief\(\)/);
-assert.match(p005, /P001_PROFILE_ASSETS_FALLBACK/);
+assert.match(p005, /P001_PROFILE_ASSET_MIRROR/);
 assert.match(p005, /p001Qualities/);
 assert.match(p005, /p001Values/);
 assert.match(p005, /max:6/);
@@ -155,9 +155,13 @@ assert.match(p005, /night:\{/);
 assert.match(p005, /mint:\{/);
 assert.doesNotMatch(p005, /(?<!\$)\$\('\[data-matrix-option\]'\)\.forEach/);
 assert.doesNotMatch(p005, /(?<!\$)\$\('\[data-api-close\]'\)\.forEach/);
-assert.doesNotMatch(p005, /(?<!\$)\$\('#promptChips button'\)\.forEach/);
+assert.match(p005, /\$\$\('#promptChips button'\)\.forEach/);
+assert.doesNotMatch(p005, /\$\$\$\('#promptChips button'\)/);
 assert.match(p005, /bjtu\.p004\.threads\.v2/);
 assert.match(p005, /bjtu\.p004\.memory\.v2/);
+assert.match(p005, /useP004Context:false/);
+assert.match(p005, /if\(!state\.settings\.useP004Context\)return/);
+assert.match(p005, /personaBrief:buildPersonaBrief\(false\)/);
 assert.doesNotMatch(p005, /bjtu\.p004\.observer\.v2/);
 const p005Api = read("p005/api-client.js");
 assert.match(p005Api, /chat\/completions/);
@@ -171,9 +175,14 @@ assert.match(p005Api, /ttsModel:''/);
 assert.match(p005Api, /sttModel:''/);
 assert.match(p005Api, /function capabilities\(/);
 assert.match(p005Api, /fetchWithTimeout/);
+assert.match(p005Api, /directChat\([\s\S]*auth\(s\)/);
+assert.doesNotMatch(p005Api, /testDirect[\s\S]*saveDirect\(candidate\)/);
 assert.match(read("p005/index.html"), /MODEL SETTINGS · BYOK/);
-assert.match(read("p005/index.html"), /只想用文字 Future Me，填到这里就够了/);
+assert.match(read("p005/index.html"), /只想直连文字 Future Me/);
 assert.match(read("p005/index.html"), /图像与语音/);
+assert.match(read("p005/index.html"), /useP004Context/);
+assert.match(read("p005/index.html"), /data-prev="chat" type="button">回去继续聊/);
+assert.match(read("p005/index.html"), /data-prev="share" type="button">返回卡片/);
 assert.match(p005, /HORIZON_OPTIONS = \['1y','2y','3y','4y','10y','age60'\]/);
 assert.doesNotMatch(p005, /if\(name==='generate'\).*survey/);
 assert.match(read("p005/runtime-config.js"), /targetHorizon: "4y"/);
@@ -184,6 +193,7 @@ assert.match(read("p005/METHODS_MAPPING.md"), /sequential, one question per scre
 assert.match(read("docs/DESIGN_PRINCIPLES.md"), /Less is more/);
 assert.match(read("docs/ARCHITECTURE.md"), /P004 \/ P005 future standalone decision/);
 assert.equal(JSON.parse(read("p005/module-manifest.json")).interoperability.required_predecessors.length, 0);
+assert.equal(JSON.parse(read("p005/module-manifest.json")).interoperability.p004_requires_explicit_opt_in, true);
 assert.equal(JSON.parse(read("p004/module-manifest.json")).interoperability.bilateral_peer, "P005");
 
 const legacyFuture = fs.readdirSync(path.join(root, "future-me")).sort();

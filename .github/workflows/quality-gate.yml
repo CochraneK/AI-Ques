@@ -31,6 +31,9 @@ jobs:
           node --check p004/api-client.js
           node --check tests/p004-runtime.mjs
           node --check p005/app.js
+          node --check p005/api-client.js
+          node --check p005/admin.js
+          node --check tests/p005-runtime.mjs
           node --check tests/smoke.mjs
           node --check tests/structure.mjs
 
@@ -42,6 +45,9 @@ jobs:
 
       - name: Run P004 runtime behavior checks
         run: node tests/p004-runtime.mjs
+
+      - name: Run P005 runtime behavior checks
+        run: node tests/p005-runtime.mjs
 
       - name: Run repository structure checks
         run: node tests/structure.mjs

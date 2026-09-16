@@ -74,16 +74,24 @@
     }finally{clearTimeout(timer)}
   }
 
-  function auth(){
-    const s=readDirect();
-    return {'Authorization':'Bearer '+s.apiKey};
+  function auth(source){
+    const s=Object.assign({},readDirect(),source||{});
+    return {'Authorization':'Bearer '+clean(s.apiKey)};
   }
 
   async function directChat(payload,override){
     const s=Object.assign({},readDirect(),override||{});
     if(!s.baseUrl||!s.apiKey||!s.chatModel)return null;
+    const futureContext={
+      target:payload.target||null,
+      intakeProtocol:payload.intakeProtocol||null,
+      profile:payload.profile||{},
+      structuredAnswers:payload.structuredAnswers||{},
+      personaBrief:payload.personaBrief||{},
+      syntheticMemory:payload.syntheticMemory||null
+    };
     const messages=[
-      {role:'system',content:String(payload.instruction||'')+'\n\n用户画像（只作为自然对话上下文，不要机械复述）：\n'+JSON.stringify(payload.personaBrief||payload.profile||{})},
+      {role:'system',content:String(payload.instruction||'')+'\n\n【Future Me context】\n'+JSON.stringify(futureContext)+'\n\nUse this context naturally; do not dump or mechanically repeat it.'},
       ...(payload.messages||[]).map((m)=>({role:m.role==='future'?'assistant':m.role==='assistant'?'assistant':'user',content:String(m.text||m.content||'')}))
     ];
     if(payload.userMessage&&!messages.some((m,i)=>i===messages.length-1&&m.role==='user'&&m.content===payload.userMessage)){
@@ -92,7 +100,7 @@
     const url=endpoint('/chat/completions',s.baseUrl);
     const r=await fetchWithTimeout(url,{
       method:'POST',
-      headers:Object.assign({'Content-Type':'application/json'},auth()),
+      headers:Object.assign({'Content-Type':'application/json'},auth(s)),
       body:JSON.stringify({model:s.chatModel,messages,stream:false})
     },30000);
     const raw=await r.text();let data={};try{data=JSON.parse(raw)}catch(_){}
@@ -127,7 +135,7 @@
       'Photorealistic, natural lighting, neutral portrait, preserve the same person and core facial identity.'
     ].join(' '));
     const r=await fetchWithTimeout(endpoint('/images/edits',s.baseUrl),{
-      method:'POST',headers:auth(),body:form
+      method:'POST',headers:auth(s),body:form
     },60000);
     const raw=await r.text();let data={};try{data=JSON.parse(raw)}catch(_){}
     if(!r.ok)throw new Error(data?.error?.message||('Image API '+r.status));
@@ -142,7 +150,7 @@
     if(!s.baseUrl||!s.apiKey||!s.ttsModel)return null;
     const r=await fetchWithTimeout(endpoint('/audio/speech',s.baseUrl),{
       method:'POST',
-      headers:Object.assign({'Content-Type':'application/json'},auth()),
+      headers:Object.assign({'Content-Type':'application/json'},auth(s)),
       body:JSON.stringify({
         model:s.ttsModel,
         input:String(payload.text||'').slice(0,4096),
@@ -167,7 +175,7 @@
     form.append('model',s.sttModel);
     form.append('language','zh');
     const r=await fetchWithTimeout(endpoint('/audio/transcriptions',s.baseUrl),{
-      method:'POST',headers:auth(),body:form
+      method:'POST',headers:auth(s),body:form
     },45000);
     const raw=await r.text();let data={};try{data=JSON.parse(raw)}catch(_){}
     if(!r.ok)throw new Error(data?.error?.message||('STT API '+r.status));
@@ -175,19 +183,13 @@
   }
 
   async function testDirect(candidate){
-    const previous=sessionStorage.getItem(DIRECT_KEY);
-    saveDirect(candidate);
-    try{
-      const result=await directChat({
-        instruction:'这是 API 连接测试，只回复 OK。',
-        messages:[{role:'user',text:'只回复 OK'}],
-        userMessage:'只回复 OK'
-      });
-      return {ok:Boolean(result&&result.reply),reply:result&&result.reply};
-    }finally{
-      if(previous==null)sessionStorage.removeItem(DIRECT_KEY);
-      else sessionStorage.setItem(DIRECT_KEY,previous);
-    }
+    const temp=Object.assign({},defaults(),candidate||{});
+    const result=await directChat({
+      instruction:'这是 API 连接测试，只回复 OK。',
+      messages:[{role:'user',text:'只回复 OK'}],
+      userMessage:'只回复 OK'
+    },temp);
+    return {ok:Boolean(result&&result.reply),reply:result&&result.reply};
   }
 
   window.P005_API=Object.freeze({

@@ -1,6 +1,6 @@
 # P005 · Future Me / 未来的我
 
-> V0.6: in-product multimodal API settings, P004↔P005 continuity bridge, and standalone-ready boundaries.
+> V0.7: canonical P001 mirror, consented P004 context, capability-safe multimodal BYOK, runtime regression tests.
 
 P005 是 BJTU P00 项目的未来自我模块。V0.2 以 MIT **Future You** 的公开研究机制为主线，并把 FutureMe 式时间胶囊降为对话后的可选延伸。
 
@@ -350,7 +350,7 @@ P001 当前项目快照记录的内容依据是：
 - 特质内容：IPIP public-domain content；
 - 价值内容：Miller Personal Values Card Sort。
 
-当前仓库无法直接取得 P001 权威版 24+16 的逐项中文词表，因此 P005 把本地 24+16 定义集中在 `P001_PROFILE_ASSETS_FALLBACK`。一旦 P001 暴露正式 `assets.positiveQualities[24]` 与 `assets.values[16]`，P005 会自动优先使用权威词表，不需要改交互代码。
+P005 V0.7 已直接镜像当前 P001 v5.6-pages 的 canonical 内容：24 项来自理想自我的 E/O/A/C facets（排除 N），16 项来自 P001 personal values。运行环境若显式提供 `P001_PROFILE_ASSETS`，仍可覆盖该镜像；独立部署 P005 时则使用自身携带的 canonical mirror。
 
 ## V0.5 · 中国背景低负担输入
 
@@ -360,7 +360,7 @@ guided 模式进一步收敛：
 - “现在什么占据大部分时间”改为单一主要身份，覆盖本科、硕士、博士、其他学习、备考、全职、兼职、自由职业、创业、求职、照顾家庭、休学或间隔期、暂无固定安排等；
 - 选项文案不使用斜杠拼接多个概念；
 - “最重要的人”允许多选；
-- 不再收集 A/B 决策题。
+- 不再收集额外的二选一决策题。
 
 replication 模式仍保留论文公开字段的 sequential free-text，不受上述 guided 产品化改写影响。
 
@@ -412,3 +412,17 @@ BYOK 使用 `p005/api-client.js`，目前按 OpenAI-compatible 路径调用：
 - 如果先做 P005，P004 已经可以导入 P005 的用户开放回答与对话作为自身 Observer 的证据来源。
 
 也就是说，P004/P005 是双向可互用，但两者都可以独立启动。
+
+
+## V0.7 · Self-audit hardening
+
+本轮自审后新增以下硬约束：
+
+- P004 → P005 必须由用户显式勾选后才能使用。
+- 勾选后只取最近 12 条用户发言与 8 条长期记忆；每条最多 260 字，并去重。
+- P004 原始上下文只用于 Future Memory / Future Me 模型上下文，不进入 P005 导出 JSON 或管理员 snapshot。
+- P005 永远不读取 P004 Observer / clinical-admin 数据。
+- BYOK 的 chat / image / TTS / STT 能力独立判断；只配置图像或语音也能单独工作。
+- “测试连接”不会临时覆盖或污染已保存的 session API 配置。
+- 分享卡与时间胶囊的返回路径已加入结构测试。
+- `tests/p005-runtime.mjs` 会真实执行 API client，验证独立能力与 ephemeral connection test。

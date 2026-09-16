@@ -55,7 +55,7 @@ Purpose: closest defensible implementation to the publicly documented 2024 intak
 - no MECE answer buttons;
 - free-text responses;
 - includes fields marked `paper-core` and `paper-prompt`;
-- excludes P005-only challenge / A-B / values extensions;
+- excludes P005-only challenge and guided-profile enrichment;
 - the configured future horizon may still differ from the original age-60 protocol and must be reported.
 
 This is **paper-aligned**, not a claim of verbatim survey replication because the paper does not publish a complete word-for-word survey instrument.
@@ -79,7 +79,7 @@ Every session should retain:
 - intake protocol;
 - future horizon;
 - exact question key;
-- source classification (`paper-core`, `paper-prompt`, `current-site`, `p005-extension`);
+- source classification (`paper-core`, `paper-prompt`, `p001-reuse`, `p005-extension`);
 - structured selections;
 - optional free-text detail;
 - chat completion/early-exit status;
@@ -119,6 +119,21 @@ The guided Chinese condition also:
 - asks gender as a direct male/female choice;
 - uses one primary current-role category rather than slash-combined labels;
 - allows multiple important-person categories;
-- removes the previous A/B decision item entirely.
+- removes the previous binary decision decision item entirely.
 
 The replication condition remains separate and continues to use the paper-aligned free-text fields.
+
+
+## V0.7 cross-module context rule
+
+P004 context is not part of the original Future You protocol.
+
+When P004 data already exists, P005 may offer an explicit opt-in to use:
+- recent user-authored P004 turns;
+- P004 continuity-memory text.
+
+For research reporting:
+- the opt-in state must be logged;
+- P004 Observer / clinical-admin inference is excluded;
+- raw P004 context is transient model input only and is not copied into the P005 export/admin snapshot;
+- this condition should be reported as a cross-module personalization extension.
