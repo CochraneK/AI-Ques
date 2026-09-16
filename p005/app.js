@@ -213,6 +213,15 @@ function apiCapabilities(){
   if(!window.P005_API||typeof window.P005_API.capabilities!=='function')return {chat:false,image:false,tts:false,stt:false};
   return window.P005_API.capabilities();
 }
+function researchConfigured(){
+  return Boolean(window.P005_RESEARCH&&window.P005_RESEARCH.configured);
+}
+function researchSessionReady(){
+  return Boolean(researchConfigured()&&window.P005_RESEARCH.session&&window.P005_RESEARCH.session.sessionId);
+}
+function requireResearchBackend(){
+  return Boolean(runtimeConfig().requireResearchBackend);
+}
 function horizonMode(){
   const raw=String(runtimeConfig().targetHorizon||'4y');
   return HORIZON_OPTIONS.includes(raw)?raw:'4y';
@@ -265,6 +274,69 @@ function showToast(message){
   clearTimeout(window.__p005ToastTimer);
   window.__p005ToastTimer=setTimeout(()=>toast.classList.remove('show'),1800);
 }
+
+
+function consentComplete(){
+  return Boolean(state.consent.futureNotPrediction&&state.consent.researchData&&state.consent.privacy);
+}
+function renderConsent(){
+  const set=(id,value)=>{const node=$(id);if(node)node.checked=Boolean(value)};
+  set('#consentFuture',state.consent.futureNotPrediction);
+  set('#consentResearch',state.consent.researchData);
+  set('#consentPrivacy',state.consent.privacy);
+  set('#consentMedia',state.consent.media);
+  set('#consentVoice',state.consent.voice);
+  set('#consentP004',state.consent.p004Context||state.settings.useP004Context);
+  const p004Wrap=$('#consentP004Wrap');
+  if(p004Wrap)p004Wrap.classList.toggle('hidden',!p004ContextAvailable());
+  const status=$('#consentStatus');
+  if(status){
+    const s=window.P005_RESEARCH&&window.P005_RESEARCH.session;
+    status.textContent=s&&s.sessionId?'已连接研究 session · '+s.sessionId.slice(0,12)+'…':'';
+  }
+}
+function readConsent(){
+  return {
+    futureNotPrediction:Boolean($('#consentFuture')&&$('#consentFuture').checked),
+    researchData:Boolean($('#consentResearch')&&$('#consentResearch').checked),
+    privacy:Boolean($('#consentPrivacy')&&$('#consentPrivacy').checked),
+    media:Boolean($('#consentMedia')&&$('#consentMedia').checked),
+    voice:Boolean($('#consentVoice')&&$('#consentVoice').checked),
+    p004Context:Boolean($('#consentP004')&&$('#consentP004').checked&&p004ContextAvailable())
+  };
+}
+async function acceptConsent(){
+  const next=readConsent(),status=$('#consentStatus');
+  if(!(next.futureNotPrediction&&next.researchData&&next.privacy)){
+    if(status)status.textContent='请先确认上面三项必需内容。';
+    showToast('需要完成三项必要确认');
+    return;
+  }
+  state.consent=next;
+  state.settings.useP004Context=next.p004Context;
+  save();
+  if(researchConfigured()){
+    if(status)status.textContent='正在创建研究 session…';
+    try{
+      await window.P005_RESEARCH.ensureSession(next,{moduleVersion:MODULE_VERSION});
+      if(status)status.textContent='已连接研究 session';
+      await syncAdmin('consent_accepted',{
+        consentVersion:runtimeConfig().consentVersion||'',
+        media:next.media,voice:next.voice,p004Context:next.p004Context
+      });
+    }catch(error){
+      console.warn('P005 research session unavailable',error);
+      if(status)status.textContent='研究服务器连接失败，请稍后再试。';
+      if(requireResearchBackend()){showToast('无法连接研究服务器');return}
+    }
+  }else if(requireResearchBackend()){
+    if(status)status.textContent='正式研究模式尚未配置服务器。';
+    showToast('研究服务器未配置');
+    return;
+  }
+  show('survey');
+}
+$('#acceptConsentBtn').addEventListener('click',acceptConsent);
 
 function sharedProfile(){
   if(window.BJTU_PROFILE&&typeof window.BJTU_PROFILE.getFlat==='function')return window.BJTU_PROFILE.getFlat();
@@ -348,6 +420,11 @@ function emitSessionEvent(type,payload={}){
   }catch(_){}
 }
 async function syncAdmin(type,payload={}){
+  const snap=snapshot(false);
+  if(window.P005_RESEARCH&&window.P005_RESEARCH.configured){
+    try{await window.P005_RESEARCH.event(type,payload,snap)}
+    catch(error){console.warn('P005 research event sync unavailable',error)}
+  }
   const endpoint=apiConfig('adminApi');
   if(!endpoint)return;
   try{
@@ -358,7 +435,7 @@ async function syncAdmin(type,payload={}){
       occurredAt:new Date().toISOString(),
       target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear()},
       payload,
-      data:snapshot(false)
+      data:snap
     })});
   }catch(error){console.warn('P005 admin sync unavailable',error)}
 }
@@ -449,6 +526,7 @@ function show(name){
   $$('.screen').forEach((node)=>node.classList.remove('active'));
   const target=$('#screen-'+state.screen);
   if(target)target.classList.add('active');
+  if(state.screen==='consent')renderConsent();
   if(state.screen==='survey')renderSurvey();
   if(state.screen==='portrait')restorePortraits();
   if(state.screen==='generate')generateSequence();
