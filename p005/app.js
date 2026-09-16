@@ -1001,7 +1001,7 @@ async function getFutureReply(input){
         target:{mode:horizonMode(),years:horizonYears(),age:targetAge(),year:targetYear(),phrase:targetPhrase()},
     instruction:'Act as one plausible future self at the configured target horizon. Ground every response in the supplied personaBrief, life story, structured answers, future memory, and P004 safe context when available. When relevant, naturally reference one or two concrete user-specific details rather than giving generic advice. Never expose P004 clinical/admin inference. Do not mechanically repeat profile fields. Speak autobiographically using continuity cues when natural. Include expected and unexpected outcomes. Be a reflective mirror rather than a counselor. Ask thoughtful follow-up questions. Never claim certainty, prophecy, diagnosis, therapy, or that this future has actually happened.'
   };
-  if(apiCapabilities().image){
+  if(apiCapabilities().chat){
     try{
       const result=await window.P005_API.chat(payload);
       if(result&&result.reply)return String(result.reply);
@@ -1032,7 +1032,7 @@ $('#chatForm').addEventListener('submit',async(event)=>{
   emitSessionEvent('chat_turn',{userMessage:text,replyLength:reply.length});syncAdmin('chat_turn');
   if(state.settings.voiceMode)speakText(reply);
 });
-$$$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
+$('#promptChips button').forEach((button)=>button.addEventListener('click',()=>{
   $('#chatInput').value=button.textContent;$('#chatForm').requestSubmit();
 }));
 function effectiveMessageCount(){return state.messages.filter((m)=>m.text!=='…').length}
@@ -1056,8 +1056,7 @@ async function speakText(text){
     language:'zh-CN',
     profile:{name:state.profile.name||'',targetAge:targetAge(),targetPhrase:targetPhrase()}
   };
-  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
-  if(directCaps.tts){
+  if(apiCapabilities().tts){
     try{
       const result=await window.P005_API.speak(voicePayload);
       if(result&&result.audioUrl){
@@ -1130,8 +1129,7 @@ function ensureRecognition(){
   return recognition;
 }
 async function transcribeRecordedAudio(blob){
-  const directCaps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
-  if(directCaps.stt){
+  if(apiCapabilities().stt){
     try{
       const result=await window.P005_API.transcribe(blob);
       if(result&&result.text)return String(result.text).trim();
@@ -1170,7 +1168,7 @@ async function startBackendRecording(){
   setListening(true,'再次点击结束录音');
 }
 $('#micBtn').addEventListener('click',async()=>{
-  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  const caps=apiCapabilities();
   if((caps.stt||apiConfig('transcribeApi'))&&navigator.mediaDevices&&window.MediaRecorder){
     if(recorder&&recorder.state==='recording'){recorder.stop();return}
     try{await startBackendRecording()}catch(error){console.warn(error);showToast('无法使用麦克风')}
@@ -1182,7 +1180,7 @@ $('#micBtn').addEventListener('click',async()=>{
 });
 
 function updateChatModeNote(){
-  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
+  const caps=apiCapabilities();
   const bits=[targetPhrase()];
   bits.push(caps.chat?'BYOK':apiConfig('chatApi')?'LLM':'本地原型');
   if(caps.stt||apiConfig('transcribeApi'))bits.push('语音转文字');
@@ -1202,12 +1200,12 @@ function apiCandidate(){
   };
 }
 function renderApiRuntime(){
-  const configured=Boolean(window.P005_API&&window.P005_API.configured);
+  const caps=apiCapabilities();
+  const configured=Object.values(caps).some(Boolean);
   const button=$('#apiBtn');
   if(button)button.classList.toggle('connected',configured);
   if($('#apiBtnText'))$('#apiBtnText').textContent=configured?'API 已接':'模型';
   updateChatModeNote();
-  const caps=window.P005_API&&window.P005_API.capabilities?window.P005_API.capabilities():{};
   if($('#agePortraitBtn'))$('#agePortraitBtn').classList.toggle('hidden',!(state.currentPortrait&&(caps.image||apiConfig('imageApi'))));
 }
 function openApiSettings(){
