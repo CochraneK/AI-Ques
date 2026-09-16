@@ -304,6 +304,8 @@ function load(){
     if(!state.structuredAnswers.importantValues&&state.structuredAnswers.p001Values){
       state.structuredAnswers.importantValues=state.structuredAnswers.p001Values;
     }
+    delete state.structuredAnswers.p001Qualities;
+    delete state.structuredAnswers.p001Values;
     state.memory=saved.memory||null;
     state.messages=saved.messages||[];
     state.currentPortrait=saved.currentPortrait||'';
