@@ -62,9 +62,9 @@ assert.match(p004, /doNotExposeClinicalLabels:true/);
 assert.doesNotMatch(p004, /aiques\.global\.profile\.v1/);
 assert.doesNotMatch(p004, /BJTU_PROFILE|P00_CONTEXT/, "P004 standalone runtime must not read P001-P003 shared profile");
 assert.match(p004, /function peerProfile\(\)/);
-assert.doesNotMatch(p004Index, /\.\.\/shared\/profile\.js/);
 
 const p004Index = read("p004/index.html");
+assert.doesNotMatch(p004Index, /\.\.\/shared\/profile\.js/);
 assert.match(p004Index, /CHARACTER CARD/);
 assert.match(p004Index, /BACKGROUND OBSERVER/);
 assert.match(p004Index, /NVWA/);
