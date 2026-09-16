@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.11.0-prototype",
+  "study_version": "0.12.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "manifest_date": "2026-09-17",
@@ -143,18 +143,76 @@
       "api_config_key": "bjtu.p00.runtime.v1",
       "endpoint": "POST /v1/events",
       "behavior_without_api_base": "retain events in browser-local pending queue",
-      "cross_device_sync_available": false
+      "cross_device_sync_available": false,
+      "backend_contract": "p002/BACKEND_CONTRACT.md"
     },
     "admin_export": [
       "JSON",
       "CSV"
     ],
-    "response_code_policy": "store questionnaire responses using the published response codes; downstream zero-basing must be explicit and derived"
+    "response_code_policy": "store questionnaire responses using the published response codes; downstream zero-basing must be explicit and derived",
+    "local_clear": {
+      "participant_available": true,
+      "admin_available": true,
+      "project_scope": "P002 sessions/events/pending only",
+      "preserves_shared_participant_id": true
+    }
   },
   "instrument_assets": {
     "formal_target_language_wording_frozen": false,
     "source_permissions_frozen": false,
     "version_hash_frozen": false,
     "evidence_notes": "p002/RESEARCH_NOTES.md"
+  },
+  "formal_collection_gate": {
+    "ready": false,
+    "rule": "formal_data_collection_authorized may become true only when every blocker below is resolved and evidence is recorded",
+    "blockers": [
+      {
+        "id": "target_language_wording",
+        "status": "blocked_external",
+        "requirement": "Freeze exact authorized/validated target-language wording for PCL-5 and CAPE-P15.",
+        "evidence": "instrument asset + provenance + version hash"
+      },
+      {
+        "id": "source_permissions",
+        "status": "blocked_external",
+        "requirement": "Record source and permission/licensing status for every formal instrument asset.",
+        "evidence": "permission/source record"
+      },
+      {
+        "id": "ethics_consent_withdrawal",
+        "status": "blocked_external",
+        "requirement": "Approve ethics, consent, withdrawal, risk escalation and participant-facing study information.",
+        "evidence": "approved protocol/version"
+      },
+      {
+        "id": "scenario_validity",
+        "status": "blocked_external",
+        "requirement": "Pilot and validate the transformed scenario condition separately; do not treat it as scale-equivalent.",
+        "evidence": "pilot/validation report"
+      },
+      {
+        "id": "production_backend",
+        "status": "blocked_implementation",
+        "requirement": "Deploy authenticated production storage/admin access satisfying the backend contract.",
+        "evidence": "deployment + security review + audit controls"
+      },
+      {
+        "id": "retention_deletion",
+        "status": "blocked_external",
+        "requirement": "Freeze retention, deletion, backup and incident-response policy.",
+        "evidence": "data management plan"
+      }
+    ],
+    "code_ready": [
+      "admin-controlled condition assignment",
+      "stable participant_id + per-run session_id",
+      "item-level event stream and response timing",
+      "local JSON/CSV export",
+      "pending-sync queue and configurable non-secret apiBase",
+      "participant/admin project-scoped local deletion",
+      "regression tests and quality sensor"
+    ]
   }
 }

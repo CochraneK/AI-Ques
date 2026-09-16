@@ -85,6 +85,7 @@ function renderData(){
   $('#eventCount').textContent = String(data.events.length);
   $('#pendingCount').textContent = String(research.pendingCount('P002'));
   $('#syncState').textContent = apiBase ? 'API: ' + apiBase : '未配置服务端 API';
+  $('#apiBaseInput').value = apiBase;
 
   $('#sessionList').innerHTML = sessions.length
     ? sessions.slice(0,12).map(session => `
@@ -96,6 +97,48 @@ function renderData(){
       </div>
     `).join('')
     : '<div class="empty">当前浏览器还没有 P002 会话。</div>';
+}
+
+$('#saveApiBtn').onclick = () => {
+  if(!runtime?.write) return;
+  const value = $('#apiBaseInput').value.trim();
+  runtime.write({apiBase:value});
+  renderData();
+  toast(value ? 'API Base 已保存' : '已清空 API Base');
+};
+
+$('#clearP002Btn').onclick = () => {
+  if(!research?.clearProjectData) return;
+  const approved = typeof confirm === 'function'
+    ? confirm('清除当前浏览器中的全部 P002 sessions、events 与 pending sync？participant_id 和其他模块数据会保留。')
+    : false;
+  if(!approved) return;
+  const result = research.clearProjectData('P002');
+  renderData();
+  toast(`已清除 ${result.removed_sessions} 个会话、${result.removed_events} 条事件`);
+};
+
+async function renderReadiness(){
+  const host=$('#readinessList');
+  try{
+    const response=await fetch('study-manifest.json',{cache:'no-store'});
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    const manifest=await response.json();
+    const gate=manifest.formal_collection_gate || {};
+    const blockers=Array.isArray(gate.blockers)?gate.blockers:[];
+    $('#readinessTitle').textContent = gate.ready ? '正式收数：READY' : '正式收数：BLOCKED';
+    $('#readinessVersion').textContent = manifest.study_version || 'unknown version';
+    host.innerHTML = blockers.length ? blockers.map(item=>`
+      <div class="readiness-row">
+        <code>${String(item.id||'')}</code>
+        <p>${String(item.requirement||'')}</p>
+        <b>${String(item.status||'blocked').toUpperCase()}</b>
+      </div>
+    `).join('') : '<div class="empty">manifest 未声明 blocker。</div>';
+  }catch(_){
+    $('#readinessVersion').textContent='manifest unavailable';
+    host.innerHTML='<div class="empty">无法读取 study-manifest.json；正式收数状态保持 BLOCKED。</div>';
+  }
 }
 
 $('#saveBtn').onclick = () => {
@@ -144,3 +187,4 @@ $('#exportCsvBtn').onclick = () => {
 
 render();
 renderData();
+renderReadiness();

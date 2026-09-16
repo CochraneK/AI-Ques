@@ -74,7 +74,7 @@ const CONDITION_CONFIG = globalThis.P002_CONDITION || {
 const ACTIVE_CONDITION = CONDITION_CONFIG.read().condition || 'story';
 const RESEARCH = globalThis.P00_RESEARCH || null;
 const PROJECT_ID = 'P002';
-const STUDY_VERSION = '0.11.0-prototype';
+const STUDY_VERSION = '0.12.0-prototype';
 
 const RUSH = {
   pcl5:[
@@ -345,4 +345,14 @@ function finishRush(){
   $('#result').innerHTML=`<p class="eyebrow">Research view · 情境选择</p><h2>情境决策信号</h2><div class="result-card"><div class="bars">${entries.map(([k,v])=>`<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar-fill" style="width:${v/max*100}%"></div></div><strong>${v}</strong></div>`).join('')}</div></div><div class="safe-note"><strong>研究检查视图。</strong> 这些是实验性构念信号，不是 ${SCALES[state.scale].name} 得分。</div><p><button class="primary" onclick="backHome()">返回</button></p>`;
 }
 
-$('#startBtn').onclick=start;$('#backBtn').onclick=backHome;renderLauncher();
+$('#startBtn').onclick=start;
+$('#backBtn').onclick=backHome;
+const clearLocalBtn=$('#clearLocalBtn');
+if(clearLocalBtn) clearLocalBtn.onclick=()=>{
+  if(!RESEARCH?.clearProjectData) return;
+  const approved=typeof confirm==='function' ? confirm('清除当前浏览器中的 P002 会话、答题事件和待同步事件？此操作不会清除其他 P00 模块的数据。') : true;
+  if(!approved) return;
+  RESEARCH.clearProjectData(PROJECT_ID);
+  alert?.('本机 P002 研究数据已清除。');
+};
+renderLauncher();

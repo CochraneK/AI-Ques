@@ -57,6 +57,7 @@ def scan_repo() -> list[dict]:
         "p002/admin.css",
         "p002/study-manifest.json",
         "p002/RESEARCH_NOTES.md",
+        "p002/BACKEND_CONTRACT.md",
         "p004/index.html",
         "p004/core.js",
         "p004/app.js",
@@ -294,6 +295,43 @@ def scan_repo() -> list[dict]:
             "Persist explicit completed/interrupted lifecycle events.",
         ))
 
+    if "本地数据说明" not in p002_index or "clearLocalBtn" not in p002_index or "clearProjectData(PROJECT_ID)" not in p002_app:
+        findings.append(finding(
+            "p002-participant-storage-control", "P0", "p002/",
+            "P002 persists sensitive questionnaire events without the expected participant storage disclosure or P002-scoped deletion control.",
+            "Disclose browser persistence before start and keep participant-accessible P002-scoped local deletion.",
+        ))
+
+    if "clearProjectData" not in research_core:
+        findings.append(finding(
+            "p00-project-data-clear", "P0", "shared/core.js",
+            "Shared research runtime cannot clear one project's sessions/events/pending queue.",
+            "Keep project-scoped deletion without deleting the shared participant_id.",
+        ))
+
+    if "apiBaseInput" not in read("p002/admin.html") or "runtime.write({apiBase:value})" not in p002_admin:
+        findings.append(finding(
+            "p002-admin-api-config", "P0", "p002/",
+            "P002 admin cannot configure the non-secret research API base through the UI.",
+            "Expose apiBase configuration without storing administrator secrets in client code.",
+        ))
+
+    if "readinessList" not in read("p002/admin.html") or "renderReadiness" not in p002_admin:
+        findings.append(finding(
+            "p002-formal-readiness-ui", "P0", "p002/",
+            "P002 admin no longer exposes the formal collection readiness gate.",
+            "Render the machine-readable manifest blockers in the administrator surface.",
+        ))
+
+    backend_contract = read("p002/BACKEND_CONTRACT.md")
+    for needle in ["POST /v1/events", "GET /v1/admin/events", "idempotency", "role-based", "withdrawal"]:
+        if needle not in backend_contract:
+            findings.append(finding(
+                "p002-backend-contract", "P0", "p002/BACKEND_CONTRACT.md",
+                f"P002 production backend contract is missing: {needle}",
+                "Keep ingestion, authenticated admin access, idempotency, withdrawal/deletion and RBAC requirements explicit.",
+            ))
+
     if "exportJsonBtn" not in p002_admin or "exportCsvBtn" not in p002_admin or "flushPending" not in p002_admin:
         findings.append(finding(
             "p002-admin-export-sync", "P0", "p002/admin.js",
@@ -304,11 +342,26 @@ def scan_repo() -> list[dict]:
     try:
         _p002_manifest_data = json.loads(p002_manifest)
         contract = _p002_manifest_data.get("data_contract", {})
-        if _p002_manifest_data.get("study_version") != "0.11.0-prototype" or contract.get("sync", {}).get("cross_device_sync_available") is not False:
+        if _p002_manifest_data.get("study_version") != "0.12.0-prototype" or contract.get("sync", {}).get("cross_device_sync_available") is not False:
             findings.append(finding(
                 "p002-data-contract-manifest", "P0", "p002/study-manifest.json",
                 "P002 data contract version or cross-device boundary is not frozen.",
                 "Keep study_version and explicit cross-device=false boundary aligned with the runtime.",
+            ))
+        gate = _p002_manifest_data.get("formal_collection_gate", {})
+        blockers = gate.get("blockers", [])
+        if gate.get("ready") is not False or len(blockers) < 6:
+            findings.append(finding(
+                "p002-formal-collection-gate", "P0", "p002/study-manifest.json",
+                "P002 formal collection gate is missing or incorrectly reports readiness.",
+                "Keep formal collection blocked until all external/production requirements have recorded evidence.",
+            ))
+        local_clear = contract.get("local_clear", {})
+        if local_clear.get("participant_available") is not True or local_clear.get("admin_available") is not True or local_clear.get("preserves_shared_participant_id") is not True:
+            findings.append(finding(
+                "p002-local-delete-contract", "P0", "p002/study-manifest.json",
+                "P002 local deletion contract is incomplete.",
+                "Keep participant/admin project-scoped deletion while preserving the shared participant_id.",
             ))
     except json.JSONDecodeError:
         pass

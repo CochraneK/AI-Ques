@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#101311" />
   <title>P002 Admin · 条件与研究数据</title>
-  <link rel="stylesheet" href="admin.css?v=20260917-r1" />
+  <link rel="stylesheet" href="admin.css?v=20260917-r2" />
 </head>
 <body>
   <main class="shell">
@@ -53,15 +53,41 @@
         <div><span>pending sync</span><strong id="pendingCount">0</strong></div>
       </div>
 
+      <div class="api-config">
+        <label for="apiBaseInput">Research API Base <small>只保存非秘密 URL；不要在这里填写 token</small></label>
+        <div class="api-row">
+          <input id="apiBaseInput" type="url" inputmode="url" placeholder="https://research-api.example.org" autocomplete="off" />
+          <button id="saveApiBtn" class="secondary" type="button">保存 API Base</button>
+        </div>
+      </div>
+
       <div class="actions data-actions">
         <button id="syncBtn" class="primary">同步待发送事件</button>
         <button id="exportJsonBtn" class="secondary">导出 JSON</button>
         <button id="exportCsvBtn" class="secondary">导出 CSV</button>
+        <button id="clearP002Btn" class="danger" type="button">清除本机 P002 数据</button>
       </div>
 
       <div class="session-wrap">
         <div class="session-head"><span>最近会话</span><small>每次开始都会生成新的 session_id，不覆盖历史</small></div>
         <div id="sessionList" class="session-list"></div>
+      </div>
+    </section>
+
+    <section class="panel readiness-panel" aria-labelledby="readinessTitle">
+      <div class="panel-head">
+        <div>
+          <span>FORMAL COLLECTION GATE</span>
+          <strong id="readinessTitle">正式收数：BLOCKED</strong>
+        </div>
+        <small id="readinessVersion">读取 study manifest…</small>
+      </div>
+      <div id="readinessList" class="readiness-list">
+        <div class="empty">正在读取正式收数门槛。</div>
+      </div>
+      <div class="contract-link">
+        <a href="BACKEND_CONTRACT.md">查看 backend contract ↗</a>
+        <a href="RESEARCH_NOTES.md">查看 instrument evidence ↗</a>
       </div>
     </section>
 
@@ -76,6 +102,6 @@
   <script src="../shared/config.js?v=1"></script>
   <script src="../shared/core.js?v=1"></script>
   <script src="condition-config.js?v=20260915-r2"></script>
-  <script src="admin.js?v=20260917-r1"></script>
+  <script src="admin.js?v=20260917-r2"></script>
 </body>
 </html>
