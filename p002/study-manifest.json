@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
   "study_id": "ai-ques-interaction-prototype",
-  "study_version": "0.8.0-prototype",
+  "study_version": "0.10.0-prototype",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
-  "manifest_date": "2026-09-15",
+  "manifest_date": "2026-09-17",
   "purpose": "Compare administrator-assigned presentation/measurement conditions for PCL-5 and Current CAPE-P15 without participant self-selection.",
   "language": {
     "ui": "zh-CN",
@@ -85,5 +85,50 @@
     "ethics_review_required_before_formal_research": true,
     "consent_and_withdrawal_flow_required": true,
     "risk_escalation_plan_required_for_screening_use": true
+  },
+  "data_contract": {
+    "schema_version": 1,
+    "shared_runtime": {
+      "config": "shared/config.js",
+      "core": "shared/core.js"
+    },
+    "identifiers": {
+      "participant_id": "stable browser-local UUID-like identifier shared across activities",
+      "session_id": "new identifier for every P002 run; prior sessions are never overwritten"
+    },
+    "event_fields": [
+      "participant_id",
+      "session_id",
+      "study_version",
+      "scale_id",
+      "condition_id",
+      "event_type",
+      "item_id",
+      "cluster",
+      "response",
+      "distress",
+      "response_ms",
+      "timestamp"
+    ],
+    "extra_event_fields": [
+      "frequency_response_ms",
+      "signal"
+    ],
+    "local_storage": {
+      "participant": "bjtu.p00.participant.v1",
+      "sessions": "bjtu.p00.sessions.v1",
+      "events": "bjtu.p00.events.v1",
+      "pending_sync": "bjtu.p00.pending-sync.v1"
+    },
+    "sync": {
+      "api_config_key": "bjtu.p00.runtime.v1",
+      "endpoint": "POST /v1/events",
+      "behavior_without_api_base": "retain events in browser-local pending queue",
+      "cross_device_sync_available": false
+    },
+    "admin_export": [
+      "JSON",
+      "CSV"
+    ]
   }
 }
