@@ -380,7 +380,7 @@ function renderMatrixQuestion(q,root){
       if(values.length>=q.max){showToast('最多选择 '+q.max+' 个');return}
       values.push(value);
     }
-    state.structuredAnswers[q.key]={selected:values,detail:'',reusedFromP001:false};
+    state.structuredAnswers[q.key]={selected:values,detail:''};
     button.classList.toggle('selected',values.includes(value));
     const count=$('#matrixCount');if(count)count.textContent=values.length;
   }));
