@@ -4,7 +4,7 @@ const FUTURE_PROMPTS=["别忘了照顾自己","继续保持好奇","不必着急
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const stages=['entry','currentSwipe','currentRank','idealSwipe','idealRank','valueSwipe','valueRank','futureDistance','futureOverlap','futureDay','obstacle','messages','result'];
 const facetMap=Object.fromEntries(FACETS.map(x=>[x.id,x])), valueMap=Object.fromEntries(VALUES.map(x=>[x.id,x]));
-const state={participant_id:null,session_id:null,public_code:null,stage:'entry',settings:{orb_theme:'sunlight',future_horizon_key:'future',future_horizon_label:'未来',stj_budget:24},currentDeck:[],idealDeck:[],valueDeck:[],currentSwipeIndex:0,idealSwipeIndex:0,valueSwipeIndex:0,currentSwipeHistory:[],idealSwipeHistory:[],valueSwipeHistory:[],currentSelected:[],idealSelected:[],valueSelected:[],currentRank:[],idealRank:[],valueRank:[],currentStats:{},idealStats:{},valueStats:{},futureDistance:50,distanceTouched:false,futureOverlap:0,overlapTouched:false,contexts:[],contextOther:'',obstacles:[],obstacleOther:'',actionId:null,actionOther:'',profileSnapshot:{},futureMessage:'',futureReply:'',posterStyle:'diary',started:Date.now()};
+const state={participant_id:null,session_id:null,public_code:null,stage:'entry',settings:{orb_theme:'sunlight',future_horizon_key:'future',future_horizon_label:'未来',stj_mode:'adaptive',stj_budget:24},currentDeck:[],idealDeck:[],valueDeck:[],currentSwipeIndex:0,idealSwipeIndex:0,valueSwipeIndex:0,currentSwipeHistory:[],idealSwipeHistory:[],valueSwipeHistory:[],currentSelected:[],idealSelected:[],valueSelected:[],currentRank:[],idealRank:[],valueRank:[],currentStats:{},idealStats:{},valueStats:{},futureDistance:50,distanceTouched:false,futureOverlap:0,overlapTouched:false,contexts:[],contextOther:'',obstacles:[],obstacleOther:'',actionId:null,actionOther:'',profileSnapshot:{},futureMessage:'',futureReply:'',posterStyle:'diary',started:Date.now()};
 const pending=[];let currentResult=null,recognition=null,stjController=null;
 const stageEls=$$('.stage'),prog=$('#progress');stages.forEach((_,i)=>{const d=document.createElement('i');if(!i)d.className='on';prog.appendChild(d)});const dots=[...prog.children];
 function icons(){try{window.lucide?.createIcons()}catch(e){}}
@@ -63,13 +63,21 @@ function runSTJ(items,kind,mount,question,done){
  const key=(a,b)=>[a,b].sort().join('|');
  const clone=o=>JSON.parse(JSON.stringify(o));
  const n=items.length,uniquePairs=n*(n-1)/2;
+ const mode=state.settings.stj_mode==='full'?'full':'adaptive';
  const requested=Number(state.settings.stj_budget||24);
  const scientificFloor=Math.min(36,Math.ceil(n*1.5));
- const budget=Math.min(uniquePairs,Math.max(requested,scientificFloor));
+ const budget=mode==='full'?uniquePairs:Math.min(uniquePairs,Math.max(requested,scientificFloor));
  const order=seededShuffle(items,state.participant_id+'-'+kind+'-coverage-v2');
  let coverage=[];
  if(n===2)coverage=[[order[0],order[1]]];
  else for(let i=0;i<n;i++)coverage.push([order[i],order[(i+1)%n]]);
+ let fullQueue=[];
+ if(mode==='full'){
+   const allPairs=[];
+   for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)allPairs.push([items[i],items[j]]);
+   fullQueue=seededShuffle(allPairs,state.participant_id+'-'+kind+'-full-v1');
+   coverage=[];
+ }
  let left=null,right=null,started=0,busy=false;
 
  function obj(id){return kind==='value'?valueMap[id]:facetMap[id]}
@@ -130,6 +138,7 @@ function runSTJ(items,kind,mount,question,done){
  }
  function chooseNext(winner){
    if(answers.length>=budget)return null;
+   if(mode==='full')return fullQueue.shift()||null;
    if(coverage.length)return nextCoverage(winner);
    return nextAdaptive(winner);
  }
@@ -140,7 +149,7 @@ function runSTJ(items,kind,mount,question,done){
    if(undo)undo.disabled=!answers.length
  }
  function render(){
-   mount.innerHTML='<div class="stj-shell"><div class="stj-top"><span class="round-badge">点哪张，哪张被划掉；另一张留下</span><span class="stj-counter">'+(answers.length+1)+' / '+budget+'</span></div><div class="stj-bar"><i style="width:'+(answers.length/budget*100)+'%"></i></div><div class="stj-question">'+question+'</div><div class="stj-sub">← 划掉左边 · → 划掉右边 · ↑ 返回上一场</div><div class="pk-row persistent-row">'+card(left,'left')+'<div class="vs">VS</div>'+card(right,'right')+'</div><div class="stj-undo-row"><button class="tool-btn undoSTJ" '+(answers.length?'':'disabled')+'><kbd>↑</kbd> 返回上一场</button></div></div>';
+   mount.innerHTML='<div class="stj-shell"><div class="stj-top"><span class="round-badge">'+(mode==='full'?'全量比对 · 每一对都会出现一次':'取舍比对 · 先覆盖，再重点比较难分的')+'</span><span class="stj-counter">'+(answers.length+1)+' / '+budget+'</span></div><div class="stj-bar"><i style="width:'+(answers.length/budget*100)+'%"></i></div><div class="stj-question">'+question+'</div><div class="stj-sub">← 划掉左边 · → 划掉右边 · ↑ 返回上一场</div><div class="pk-row persistent-row">'+card(left,'left')+'<div class="vs">VS</div>'+card(right,'right')+'</div><div class="stj-undo-row"><button class="tool-btn undoSTJ" '+(answers.length?'':'disabled')+'><kbd>↑</kbd> 返回上一场</button></div></div>';
    mount.querySelectorAll('.pk-card').forEach(wireCard);mount.querySelector('.undoSTJ').onclick=undo;icons();started=performance.now()
  }
  function transitionTo(nextPair,winner,loserSide){
@@ -166,10 +175,10 @@ function runSTJ(items,kind,mount,question,done){
  function pick(side,input){
    if(busy||answers.length>=budget)return;busy=true;
    const loser=side==='left'?left:right,winner=side==='left'?right:left,loserSide=side,rt=Math.round(performance.now()-started);
-   undoStack.push({left,right,answers:clone(answers),coverage:clone(coverage)});
+   undoStack.push({left,right,answers:clone(answers),coverage:clone(coverage),fullQueue:clone(fullQueue)});
    const ans={left_id:left,right_id:right,preferred_id:winner,eliminated_id:loser,rt_ms:rt,input};
    answers.push(ans);rebuildCounts();
-   log(kind+'_pairwise',{...ans,comparison_index:answers.length,budget,interaction:'click_to_eliminate',model:'regularized_bradley_terry',scheduler:coverage.length?'coverage_then_adaptive':'adaptive_uncertainty'});
+   log(kind+'_pairwise',{...ans,comparison_index:answers.length,budget,interaction:'click_to_eliminate',model:'regularized_bradley_terry',scheduler:mode==='full'?'all_unique_pairs':(coverage.length?'coverage_then_adaptive':'adaptive_uncertainty')});
    const loserEl=mount.querySelector('.pk-card.'+loserSide),outX=loserSide==='right'?340:-340;
    const next=()=>{const pair=chooseNext(winner);transitionTo(pair,winner,loserSide)};
    if(window.gsap)window.gsap.to(loserEl,{x:outX,y:260,opacity:0,rotation:loserSide==='right'?18:-18,duration:.32,ease:'power2.in',onComplete:next});
@@ -177,14 +186,14 @@ function runSTJ(items,kind,mount,question,done){
  }
  function undo(){
    if(!undoStack.length||busy)return;
-   const snap=undoStack.pop();left=snap.left;right=snap.right;coverage=snap.coverage;answers.splice(0,answers.length,...snap.answers);rebuildCounts();
+   const snap=undoStack.pop();left=snap.left;right=snap.right;coverage=snap.coverage;fullQueue=snap.fullQueue||[];answers.splice(0,answers.length,...snap.answers);rebuildCounts();
    log(kind+'_pairwise_undo',{left_id:left,right_id:right});render()
  }
  function showComplete(){
    const model=fitBT();
    const sorted=[...items].sort((a,b)=>model.theta[b]-model.theta[a]);
    const uncertain=sorted.slice(0,Math.min(5,sorted.length)).some(id=>model.se[id]>.85);
-   mount.innerHTML='<div class="stj-shell stj-complete"><div class="round-badge">这一轮完成了</div><div class="stj-question">已经做了 '+answers.length+' 次取舍</div><div class="stj-sub">'+(uncertain?'有些候选仍然很接近，结果会按“Top”呈现，不做虚假的精细名次。':'核心优先顺序已经比较清楚。')+' ↑ 仍可返回上一场。</div><div class="stj-undo-row"><button class="tool-btn undoSTJ"><kbd>↑</kbd> 返回上一场</button><button class="btn primary finishSTJ">确认这一轮</button></div></div>';
+   mount.innerHTML='<div class="stj-shell stj-complete"><div class="round-badge">这一轮完成了</div><div class="stj-question">已经做了 '+answers.length+' 次取舍</div><div class="stj-sub">'+(mode==='full'?'所有唯一配对都已完成。':(uncertain?'有些候选仍然很接近，结果会按“Top”呈现，不做虚假的精细名次。':'核心优先顺序已经比较清楚。'))+' ↑ 仍可返回上一场。</div><div class="stj-undo-row"><button class="tool-btn undoSTJ"><kbd>↑</kbd> 返回上一场</button><button class="btn primary finishSTJ">确认这一轮</button></div></div>';
    mount.querySelector('.undoSTJ').onclick=undo;mount.querySelector('.finishSTJ').onclick=finish;icons()
  }
  function finish(){
@@ -196,7 +205,7 @@ function runSTJ(items,kind,mount,question,done){
      wins:winCounts[id]||0,
      mean_rt_ms:matchCounts[id]?Math.round(rtTotals[id]/matchCounts[id]):null
    };
-   log(kind+'_ranking_complete',{ranking,comparisons:answers.length,budget,stats:clean,model:'regularized_bradley_terry',scheduler:'balanced_coverage_then_adaptive_uncertainty',interaction:'click_to_eliminate'});
+   log(kind+'_ranking_complete',{ranking,comparisons:answers.length,budget,stats:clean,model:'regularized_bradley_terry',scheduler:mode==='full'?'all_unique_pairs':'balanced_coverage_then_adaptive_uncertainty',comparison_mode:mode,interaction:'click_to_eliminate'});
    stjController=null;done(ranking,clean)
  }
  const first=chooseNext(null);left=first[0];right=first[1];

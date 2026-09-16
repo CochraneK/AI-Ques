@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module": "P001",
-  "version": "5.5-pages",
+  "version": "5.6-pages",
   "status": "prototype_only",
   "formal_data_collection_authorized": false,
   "constructs": {
@@ -51,10 +51,26 @@
     "未来的我"
   ],
   "notes": [
-    "STJ interaction is click-to-eliminate: the clicked/arrow-selected card is removed; the other card is the preferred item and stays when scheduling permits.",
     "STJ inference uses balanced graph coverage, uncertainty-focused adaptive pairing, and regularized Bradley-Terry estimates rather than survivor counts.",
     "Student report presents Top 3 current traits, Top 3 ideal traits, 3 retained traits, 3 growth directions, and Top 3 values.",
     "Report interpretation uses selected Big Five facet-source structure, actual-ideal discrepancy, future-self distance/overlap, and values; it is not a normative Big Five score or diagnosis.",
-    "PNG export uses native Canvas."
-  ]
+    "PNG export uses native Canvas.",
+    "STJ supports administrator-selected adaptive or full-pairwise research modes.",
+    "Full mode presents every unique pair once after screening; adaptive mode prioritizes connected coverage and uncertain/close pairs.",
+    "Click-to-eliminate semantics are preserved in both modes: clicked item is eliminated; the other is preferred."
+  ],
+  "comparison_modes": {
+    "adaptive": {
+      "label": "取舍比对",
+      "design": "balanced connected coverage + uncertainty-focused adaptive pairing",
+      "model": "regularized Bradley-Terry",
+      "budget_controlled": true
+    },
+    "full": {
+      "label": "全量比对",
+      "design": "all unique unordered pairs once",
+      "model": "regularized Bradley-Terry",
+      "budget_controlled": false
+    }
+  }
 }

@@ -7,7 +7,7 @@
     results: 'bjtu.p001.pages.results.v2',
     settings: 'bjtu.p001.pages.settings.v1'
   };
-  const defaults = {assignment_mode:'playful',orb_theme:'sunlight',future_horizon_key:'future',future_horizon_label:'未来',future_horizon_months:null,stj_budget:24};
+  const defaults = {assignment_mode:'playful',orb_theme:'sunlight',future_horizon_key:'future',future_horizon_label:'未来',future_horizon_months:null,stj_mode:'adaptive',stj_budget:24};
   const read=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
   const uuid=()=>crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`;
