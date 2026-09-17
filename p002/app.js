@@ -94,7 +94,7 @@ const RUSH = {
   ]
 };
 
-const state={scale:null,condition:ACTIVE_CONDITION,index:0,answers:[],distress:[],rushSignals:{},chapterSeen:{}};
+const state={scale:null,condition:ACTIVE_CONDITION,index:0,answers:[],distress:[],rushSignals:{}};
 const $=s=>document.querySelector(s);
 const SEARCH=typeof location!=='undefined'?String(location.search||''):'';
 function queryParam(name){
@@ -127,9 +127,8 @@ function resetRun(){
   state.answers=[];
   state.distress=[];
   state.rushSignals={};
-  state.chapterSeen={};
 }
-function start(){resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
+function start(){state.condition=CONDITION_CONFIG.read().condition || 'story';resetRun();$('#launcher').classList.add('hidden');$('#result').classList.add('hidden');$('#game').classList.remove('hidden');renderStep();window.scrollTo({top:$('#game').offsetTop-20,behavior:'smooth'});}
 function backHome(){ $('#game').classList.add('hidden');$('#result').classList.add('hidden');$('#launcher').classList.remove('hidden');renderLauncher(); }
 function progress(done,total){$('#progressBar').style.width=`${Math.min(100,done/total*100)}%`;$('#progressText').textContent=`${done}/${total}`;}
 function currentChapter(scale,item){return scale.chapters.find(c=>c.key===item.cluster)}
@@ -151,7 +150,6 @@ function renderStep(){
   if(!item) return finishStandard();
   progress(state.index+1,scale.items.length);
   const ch=currentChapter(scale,item), chapterStart=state.index===0 || scale.items[state.index-1].cluster!==item.cluster;
-  if(state.condition==='story' && chapterStart && !state.chapterSeen[ch.key]) return renderStoryIntro(scale,ch);
   const pub=publicChapter(item.cluster);
   const firstItem=state.index===0;
   $('#gameBody').innerHTML=`<div class="scene">
@@ -161,7 +159,7 @@ function renderStep(){
       <div class="question-id">${scale.id==='pcl5'?'过去一个月 · 同一压力经历':'过去三个月'}</div>
       <div class="question">${item.text}</div>
       ${SHOW_SOURCE && item.original?`<div class="original">Source check: ${item.original}</div>`:''}
-      <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span><span class="score">${i}</span></button>`).join('')}</div>
+      <div class="answers">${scale.choices.map((c,i)=>`<button class="answer" data-score="${i}"><span>${c}</span></button>`).join('')}</div>
     </div>
   </div>`;
   document.querySelectorAll('.answer').forEach(b=>b.onclick=()=>{
@@ -180,11 +178,12 @@ function renderStep(){
 function renderCapeDistress(scale,item,frequencyScore){
   const host=$('.question-card');
   if(!host)return;
-  host.querySelectorAll('.answer').forEach(x=>{x.disabled=true;});
+  const answers=host.querySelector('.answers');
+  if(answers) answers.innerHTML='<div class="selected-frequency">刚才选择：'+scale.choices[frequencyScore]+'</div>';
   const block=document.createElement('div');
   block.className='distress-block';
-  block.innerHTML='<div class="distress-kicker">补充 · 只有体验出现时才追问</div><h3>这项体验让你有多困扰？</h3><div class="distress-options">'+
-    scale.distressChoices.map((label,i)=>'<button class="answer distress-answer" data-distress="'+i+'"><span>'+label+'</span><span class="score">'+i+'</span></button>').join('')+
+  block.innerHTML='<div class="distress-kicker">补充</div><h3>这项体验让你有多困扰？</h3><div class="distress-options">'+
+    scale.distressChoices.map((label,i)=>'<button class="answer distress-answer" data-distress="'+i+'"><span>'+label+'</span></button>').join('')+
     '</div>';
   host.appendChild(block);
   block.querySelectorAll('[data-distress]').forEach(btn=>btn.onclick=()=>{
@@ -193,14 +192,6 @@ function renderCapeDistress(scale,item,frequencyScore){
     state.index++;
     renderStep();
   });
-}
-
-function renderStoryIntro(scale,ch){
-  progress(state.index,scale.items.length);
-  const choices=['从左边继续','从中间继续','从右边继续'];
-  const pub=publicChapter(ch.key);
-  $('#gameBody').innerHTML=`<div class="scene"><div class="chapter-card"><span class="scene-kicker">下一段</span><h2>${pub.title}</h2><p>${pub.desc}</p></div><p class="story">选一条路继续。</p><div class="rush-options">${choices.map((label,i)=>`<button class="rush-option" data-story-choice="${i}">${label}</button>`).join('')}</div></div>`;
-  document.querySelectorAll('[data-story-choice]').forEach(b=>b.onclick=()=>{state.chapterSeen[ch.key]=true;renderStep();});
 }
 
 function renderRush(){
