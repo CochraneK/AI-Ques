@@ -11,7 +11,7 @@
   <img alt="Privacy boundary" src="https://img.shields.io/badge/privacy-local%20%2F%20session%20scoped-F2994A">
 </p>
 
-[**在线体验**](https://cochranek.github.io/AI-Ques/) · [**架构说明**](docs/ARCHITECTURE.md) · [**质量检查**](#质量检查) · [**研究边界**](#研究与产品边界)
+[**在线体验**](https://cochranek.github.io/AI-Ques/) · [**架构说明**](docs/ARCHITECTURE.md) · [**Agent handoff**](HANDOFF.md) · [**当前状态**](STATUS.md) · [**质量检查**](#质量检查) · [**研究边界**](#研究与产品边界)
 
 </div>
 
@@ -82,6 +82,21 @@ AI-Ques/
 │   └── quality_sensor.py
 └── tests/
 ```
+
+## Agent / 跨对话连续性
+
+新的 Agent、账号、电脑或对话优先读取：
+
+```text
+AGENTS.md
+→ HANDOFF.md
+→ STATUS.md
+→ DECISIONS.md
+→ docs/ARCHITECTURE.md
+→ 目标模块自己的 canonical files
+```
+
+Git 是长期 canonical state；这些 handoff 文件只负责把当前状态、边界和下一步说清楚，不替代 `module-registry.json` 或模块原生实现。
 
 ## 研究与产品边界
 
